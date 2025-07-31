@@ -1,0 +1,45 @@
+# Node/Package Managers
+node_modules/
+.pnpm-debug.log
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+.next/
+out/
+coverage/
+build/
+*.tsbuildinfo
+
+# Env files and secrets
+.env
+.env.*
+!.env.example
+
+# IDE/editor artifacts
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Prisma/ORM
+prisma/migrations/
+prisma/dev.db
+apps/**/prisma/migrations/
+apps/**/prisma/dev.db
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# OS-specific
+Thumbs.db
+
+# Logs
+logs/
+*.log
