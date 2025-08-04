@@ -1,17 +1,33 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
-
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-   app.useGlobalPipes(
+
+  // basic security headers
+  app.use(helmet());
+
+  // allow our frontend dev origins
+  app.enableCors({
+    origin: ['http://localhost:3000', 'http://192.168.50.40:3000'],
+    credentials: true,
+  });
+
+  // validate and sanitize all incoming DTOs
+  app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // strips unrecognized properties
-      forbidNonWhitelisted: true, // throws if extra properties are sent
-      transform: true, // auto-transforms payloads to DTO classes
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
-  await app.listen(4000);
+
+  // catch and format all errors
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  await app.listen(process.env.PORT ?? 4000);
 }
 bootstrap();

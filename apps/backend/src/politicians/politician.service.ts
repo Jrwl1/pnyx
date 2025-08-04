@@ -1,18 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 
 /**
- * Handles all business logic for politicians, isolating Prisma queries
- * from controllers and keeping business rules in one place.
+ * PoliticianService
+ * Fetches and manages politician data.
  */
 @Injectable()
 export class PoliticianService {
+  private readonly logger = new Logger(PoliticianService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Returns all politicians in the database.
+   * Get all politicians.
+   * Logs the number of records returned.
    */
   async findAll() {
-    return this.prisma.politician.findMany();
+    const list = await this.prisma.politician.findMany();
+    this.logger.log(`findAll(): returned ${list.length} politicians`);
+    return list;
   }
+
+  // TODO:
+  // - findById(id: string)
+  // - create/update/delete (admin-only)
+  // - search by name/party
+  // - filter by party, region, etc.
 }

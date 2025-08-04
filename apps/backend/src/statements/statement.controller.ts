@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Patch,
+  Param,
   Body,
   UseGuards,
   Req,
@@ -9,7 +11,9 @@ import {
 import type { Request } from 'express';
 import { StatementService } from './statement.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { StatementStatus } from '@prisma/client';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { UserRole, StatementStatus } from '@prisma/client';
 import { CreateStatementDto } from './dto/create-statement.dto';
 
 @Controller('statements')
@@ -23,9 +27,7 @@ export class StatementController {
     @Req() req: Request & { user?: { userId: string } },
   ) {
     const userId = req.user?.userId;
-    if (!userId) {
-      throw new UnauthorizedException('Missing credentials');
-    }
+    if (!userId) throw new UnauthorizedException('Missing credentials');
 
     return this.statementService.create({
       politicianId: dto.politicianId,
@@ -36,5 +38,15 @@ export class StatementController {
       status: StatementStatus.pending,
     });
   }
+
+  // only mods & admins can change statement status
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.mod, UserRole.admin)
+  @Patch(':id/status')
+  async updateStatus(
+    @Param('id') id: string,
+    @Body() body: { status: StatementStatus },
+  ) {
+    return this.statementService.updateStatus(id, body.status);
+  }
 }
-// This controller handles creating new political statements.

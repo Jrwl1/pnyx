@@ -24,7 +24,7 @@ model User {
   id         String   @id @default(uuid())
   email      String   @unique
   password   String   // Will store bcrypt hash!
-  role       String   @default("user") // "user" | "mod" | "admin"
+  role       UserRole   @default(user)
   reputation Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

@@ -1,19 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { StatementStatus } from '@prisma/client';
 
-/**
- * StatementService
- * Business logic and DB access for political statements.
- * Handles creation, retrieval, and potential future moderation of statements/promises.
- */
 @Injectable()
 export class StatementService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(StatementService.name);
+
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Create a new political statement/promise record in the database.
-   * @param data - Statement payload (must pass DTO/controller validation)
+   * Save a new statement in the database.
    */
   async create(data: {
     politicianId: string;
@@ -23,13 +19,21 @@ export class StatementService {
     submittedById: string;
     status: StatementStatus;
   }) {
-    // Business rules/checks could be added here later (e.g. moderation, duplicate check)
+    this.logger.log(
+      `create(): user=${data.submittedById} → politician=${data.politicianId}`
+    );
     return this.prisma.statement.create({ data });
   }
 
-  // LATER: 
-  // - findAll() for listing
-  // - findById()
-  // - updateStatus() (for moderation)
-  // - delete() (admin only)
+  /**
+   * Update an existing statement's status.
+   * Only mods/admins should reach this via the controller.
+   */
+  async updateStatus(id: string, status: StatementStatus) {
+    this.logger.log(`updateStatus(): id=${id} → status=${status}`);
+    return this.prisma.statement.update({
+      where: { id },
+      data: { status },
+    });
+  }
 }

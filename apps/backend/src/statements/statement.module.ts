@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PrismaModule } from '../prisma.module';
 import { StatementController } from './statement.controller';
 import { StatementService } from './statement.service';
 import { AuthModule } from '../auth/auth.module';
@@ -13,7 +14,7 @@ import { AuthModule } from '../auth/auth.module';
  * Imports AuthModule so JWT-based guards can protect these endpoints.
  */
 @Module({
-  imports: [AuthModule],
+  imports: [PrismaModule,AuthModule],
   controllers: [StatementController],
   providers: [StatementService],
   exports: [StatementService],
