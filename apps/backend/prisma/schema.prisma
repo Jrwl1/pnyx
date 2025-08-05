@@ -21,40 +21,79 @@ enum UserRole {
 }
 
 model User {
-  id         String   @id @default(uuid())
-  email      String   @unique
-  password   String   // Will store bcrypt hash!
-  role       UserRole   @default(user)
-  reputation Int      @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  statements Statement[]
+  id          String     @id @default(uuid())
+  email       String     @unique
+  password    String
+  role        UserRole   @default(user)
+  reputation  Int        @default(0)
+  trustScore  Float      @default(0)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  statements  Statement[]
+  votes       Vote[]
+  editLogs    EditLog[] // back relation for edit history
 }
 
 model Politician {
-  id        String   @id @default(uuid())
-  name      String
-  party     String
-  office    String
-  region    String
-  termStart DateTime
-  termEnd   DateTime
-  createdAt DateTime @default(now())
-  statements Statement[]
+  id            String     @id @default(uuid())
+  name          String
+  party         String
+  office        String
+  region        String
+  termStart     DateTime
+  termEnd       DateTime
+  isDeleted     Boolean    @default(false)
+  deletedBy     String?
+  deletedAt     DateTime?
+  pendingDelete Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+
+  statements    Statement[]
 }
 
 model Statement {
-  id             String     @id @default(uuid())
-  politicianId   String
-  submittedById  String?
-  text           String
-  sourceUrl      String
-  dateMade       DateTime
-  status         String    @default("pending") // pending, kept, broken, etc.
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            String          @id @default(uuid())
+  politicianId  String
+  submittedById String?
+  text          String
+  sourceUrl     String
+  dateMade      DateTime
+  status        StatementStatus @default(pending)
+  isDeleted     Boolean         @default(false)
+  deletedBy     String?
+  deletedAt     DateTime?
+  pendingDelete Boolean         @default(false)
+  flagged       Boolean         @default(false)   // auto-set when too many down-votes
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
-  // Relations
-  politician     Politician @relation(fields: [politicianId], references: [id])
-  submittedBy    User?      @relation(fields: [submittedById], references: [id])
+  politician    Politician      @relation(fields: [politicianId], references: [id])
+  submittedBy   User?           @relation(fields: [submittedById], references: [id])
+  votes         Vote[]
+}
+
+model Vote {
+  id          String     @id @default(uuid())
+  userId      String
+  statementId String
+  value       Int        // +1 = upvote, -1 = downvote
+  createdAt   DateTime   @default(now())
+
+  user        User       @relation(fields: [userId], references: [id])
+  statement   Statement  @relation(fields: [statementId], references: [id])
+
+  @@unique([userId, statementId])
+}
+
+model EditLog {
+  id          String     @id @default(uuid())
+  entityType  String     // "Statement" or "Politician"
+  entityId    String
+  userId      String
+  timestamp   DateTime   @default(now())
+  before      Json
+  after       Json
+
+  user        User       @relation(fields: [userId], references: [id])
 }

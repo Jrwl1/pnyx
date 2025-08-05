@@ -13,22 +13,27 @@
 
 ## MVP Features Implemented
 
-- Monorepo: clean split between frontend (Next.js) and backend (NestJS)  
+- Monorepo: frontend (Next.js) and backend (NestJS)  
 - Dockerized local Postgres with Prisma ORM  
 - User registration & login (secure JWT auth)  
 - DTO-based input validation (class-validator + global pipe)  
 - Modularized backend into feature modules (Auth, Politicians, Statements)  
-- Global rate limiting (20 req/min) via @nestjs/throttler for now
+- Global rate limiting (20 req/min) via @nestjs/throttler for now  
 - HTTP request logging middleware (`LoggerMiddleware`)  
 - Security headers with Helmet + CORS setup  
-- Ready for role-based access, full error handling, and testing  
+- Ready for role-based access, full error handling, and testing   
 
 ---
+
 ## Next up
--Add structured service-level logging (NestJS Logger or Pino)
--Implement role-based permissions & RBAC
--Harden CORS / security headers for production
--Write E2E tests for core flows (auth, statements)
+
+- Add structured service-level logging (NestJS Logger or Pino)  
+- Implement role-based permissions & RBAC  
+- Harden CORS / security headers for production  
+- Write E2E tests for core flows (auth, statements)  
+
+---
+
 ## Local Development (Quick Start)
 
 ```bash

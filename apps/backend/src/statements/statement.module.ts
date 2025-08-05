@@ -3,6 +3,7 @@ import { PrismaModule } from '../prisma.module';
 import { StatementController } from './statement.controller';
 import { StatementService } from './statement.service';
 import { AuthModule } from '../auth/auth.module';
+import { VoteService } from './vote.service';
 
 /**
  * StatementModule
@@ -16,7 +17,10 @@ import { AuthModule } from '../auth/auth.module';
 @Module({
   imports: [PrismaModule,AuthModule],
   controllers: [StatementController],
-  providers: [StatementService],
+  providers: [
+    StatementService,
+    VoteService,
+  ],
   exports: [StatementService],
 })
 export class StatementModule {}
