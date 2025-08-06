@@ -112,3 +112,5 @@ export class PoliticianController {
     return this.politicianService.approveDelete(id, actorId);
   }
 }
+// This controller handles CRUD operations for politicians, allowing users to create, read, update, and delete politician records.
+// It uses guards to restrict certain actions to authenticated users and roles (mods/admins).

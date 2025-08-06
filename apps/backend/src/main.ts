@@ -16,6 +16,11 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Version all API routes under /api/v1, but leave /health unprefixed
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['health'],
+  });
+
   // validate and sanitize all incoming DTOs
   app.useGlobalPipes(
     new ValidationPipe({

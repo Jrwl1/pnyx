@@ -27,10 +27,10 @@
 
 ## Next up
 
-- Add structured service-level logging (NestJS Logger or Pino)  
-- Implement role-based permissions & RBAC  
-- Harden CORS / security headers for production  
-- Write E2E tests for core flows (auth, statements)  
+- Complete RBAC enforcement and role management UI  
+- Expand structured logging with centralized log aggregation  
+- Write full E2E test coverage for core user and statement flows  
+- Implement robust error handling and monitoring/alerts
 
 ---
 
