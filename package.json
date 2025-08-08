@@ -4,13 +4,16 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend start:dev\"",
+    "dev": "pnpm --parallel --filter frontend dev --filter backend dev",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "pnpm --filter backend start:dev",
     "build": "pnpm -r build",
     "start": "pnpm --filter frontend start && pnpm --filter backend start",
     "test:e2e": "jest --config test/jest-e2e.json",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "lint": "pnpm --filter frontend lint",
+    "format": "prettier --write \"apps/frontend/**/*.{ts,tsx,js,jsx,css,md}\"",
+    "format:check": "prettier --check \"apps/frontend/**/*.{ts,tsx,js,jsx,css,md}\""
   },
   "workspaces": [
     "apps/*",
@@ -24,6 +27,18 @@
   },
   "devDependencies": {
     "concurrently": "^9.2.0",
-    "husky": "^8.0.0"
+    "husky": "^8.0.0",
+    "lint-staged": "^16.1.4",
+    "prettier": "^3.2.5"
+  },
+  "lint-staged": {
+    "apps/frontend/src/**/*.{ts,tsx}": [
+      "pnpm --filter frontend format",
+      "git add"
+    ],
+    "apps/frontend/public/**/*.{css,md}": [
+      "pnpm --filter frontend format",
+      "git add"
+    ]
   }
 }
