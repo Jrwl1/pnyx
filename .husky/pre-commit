@@ -1,7 +1,6 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run lint, format and staged fixes in the frontend workspace:
 pnpm --filter frontend lint
-pnpm --filter frontend format -- --check
+pnpm --filter frontend run format:check
 pnpm --filter frontend exec lint-staged
