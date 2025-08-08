@@ -33,12 +33,8 @@
   },
   "lint-staged": {
     "apps/frontend/src/**/*.{ts,tsx}": [
-      "pnpm --filter frontend format",
-      "git add"
-    ],
-    "apps/frontend/public/**/*.{css,md}": [
-      "pnpm --filter frontend format",
-      "git add"
+      "cd apps/frontend && pnpm lint",
+      "cd apps/frontend && pnpm format"
     ]
   }
 }
