@@ -128,3 +128,19 @@ Evidence (commands + summarized results):
 Commit: 019eaf7
 Files touched: docs/delegation/_latest_failed_run.md (new), ai/memory/ISSUES.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): ISS-001.
+
+---
+
+Date: 2026-02-13
+Milestone/Sprint: AI OS lockdown — delegation + rules enforced
+Summary (1–3 bullets):
+- Added canonical docs: ai/workflows/DELEGATION_SMOKE_TEST.md, ai/workflows/DELEGATION_PROMPT_TEMPLATES.md, ai/memory/TOOLING_DRIFT.md. Updated DELEGATION_MODE (WSL cwd hard rule, skills fallback), TOOLING (ref TOOLING_DRIFT), RULES (R10).
+- Ran delegation smoke test per DELEGATION_SMOKE_TEST: delegate_run with cwd=/mnt/c/Users/john/aios/Pnyx, skills_mode=explicit, skills=["doc"]; created docs/_mcp_smoke_test_3.md; status completed.
+- Commits: f9f2c63 (workflow + TOOLING_DRIFT), 2be1f5b (rule/policy edits); third commit for smoke artifact + this WORKLOG entry.
+Why (link to requirement/milestone/issue): User request — lock down AI OS wiring so delegation + rules never regress.
+Evidence (commands + summarized results):
+- delegate_run: cwd=/mnt/c/Users/john/aios/Pnyx, skills_mode=explicit, skills=["doc"], task create docs/_mcp_smoke_test_3.md (4 lines). Result: status completed, run_dir /home/john/.codex/delegator/runs/2026-02-13_171443101_da8249078f65. File verified in repo.
+- Delegation run_dir: /home/john/.codex/delegator/runs/2026-02-13_171443101_da8249078f65
+Commit: (third commit hash)
+Files touched: ai/workflows/DELEGATION_SMOKE_TEST.md, DELEGATION_PROMPT_TEMPLATES.md, ai/memory/TOOLING_DRIFT.md, ai/workflows/DELEGATION_MODE.md, ai/memory/TOOLING.md, ai/RULES.md, docs/_mcp_smoke_test_3.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): None.
