@@ -111,3 +111,20 @@ Evidence (commands + summarized results):
 Commit: e1c37f2 (DELEGATION_MODE); a8294a1 (WORKLOG entries).
 Files touched: ai/workflows/DELEGATION_MODE.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-13
+Milestone/Sprint: Debugging / delegation forensic
+Summary (1–3 bullets):
+- Forensic debug of latest failed MCP delegate_run: identified run_dir from in-repo docs; run_dir not accessible from this session (delegator host path).
+- Report: docs/delegation/_latest_failed_run.md — run_dir path, extracted cwd (Windows), exit code 1, root cause (Windows path passed into WSL execution), minimal fix (use WSL cwd).
+- ISSUES.md: ISS-001 opened; WORKLOG evidence appended.
+Why (link to requirement/milestone/issue): User request — forensic debug latest failed delegate_run without manual inputs.
+Evidence (commands + summarized results):
+- Run dir path from docs: /home/john/.codex/delegator/runs/2026-02-13_155923353_4c9853185dcd (docs/_mcp_smoke_test.md, WORKLOG).
+- Attempted WSL access: wsl ls -t /home/john/.codex/delegator/runs → No such file or directory; wsl sh -c "echo HOME; ls \$HOME/.codex" → HOME=C:Usersjohn (no run dir); Get-ChildItem \\wsl.localhost\..., C:\Users\john\.codex\... → no run dir found. Conclusion: run_dir on delegator host only.
+- Extracted cwd from docs/_mcp_smoke_test.md: c:\Users\john\aios\Pnyx. Exit code 1 from same file.
+Commit: 019eaf7
+Files touched: docs/delegation/_latest_failed_run.md (new), ai/memory/ISSUES.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): ISS-001.
