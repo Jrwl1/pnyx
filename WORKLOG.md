@@ -141,6 +141,6 @@ Why (link to requirement/milestone/issue): User request — lock down AI OS wiri
 Evidence (commands + summarized results):
 - delegate_run: cwd=/mnt/c/Users/john/aios/Pnyx, skills_mode=explicit, skills=["doc"], task create docs/_mcp_smoke_test_3.md (4 lines). Result: status completed, run_dir /home/john/.codex/delegator/runs/2026-02-13_171443101_da8249078f65. File verified in repo.
 - Delegation run_dir: /home/john/.codex/delegator/runs/2026-02-13_171443101_da8249078f65
-Commit: (third commit hash)
+Commit: 9e46b65
 Files touched: ai/workflows/DELEGATION_SMOKE_TEST.md, DELEGATION_PROMPT_TEMPLATES.md, ai/memory/TOOLING_DRIFT.md, ai/workflows/DELEGATION_MODE.md, ai/memory/TOOLING.md, ai/RULES.md, docs/_mcp_smoke_test_3.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
