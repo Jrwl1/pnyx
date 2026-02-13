@@ -5,13 +5,13 @@ WHAT IT DO? How Coordinator uses MCP delegation tools (delegate_autopilot, deleg
 When to use:
 Coordinator may delegate work (e.g. batch tasks, parallel runs, long autopilot) during DO mode or other cross-cutting work. Optional; not required for every sprint.
 
-Delegated cwd (WSL paths required):
-- When invoking delegate_run / delegate_autopilot / delegate_resume, pass cwd as a WSL (Linux) path, not a Windows path. The delegated runner typically executes in a WSL or Linux environment; Windows paths (e.g. C:\Users\...) are not reliable there.
-- Helper: Windows path `C:\Users\...` maps to WSL path `/mnt/c/Users/...`. Use this mapping when the repo is on a Windows drive and the delegate runs in WSL.
+Delegated cwd (WSL paths required — HARD RULE):
+- MUST pass cwd as a WSL (Linux) path. Windows paths (e.g. C:\Users\...) cause runs to fail; the runner executes in WSL/Linux.
+- Conversion: `C:\` → `/mnt/c/`, backslash → forward slash. Example: `C:\Users\john\aios\Pnyx` → `/mnt/c/Users/john/aios/Pnyx`. For D: use `/mnt/d/`, etc.
+- Canonical procedure and triage: ai/workflows/DELEGATION_SMOKE_TEST.md. Copy-paste task text: ai/workflows/DELEGATION_PROMPT_TEMPLATES.md.
 
-WSL path conversion (snippet):
-- Windows: `C:\Users\john\aios\Pnyx` → WSL: `/mnt/c/Users/john/aios/Pnyx`
-- Rule: Replace `C:\` with `/mnt/c/`, then replace backslash with forward slash. For drive D: use `/mnt/d/`, etc.
+Skills fallback (prevent empty selection):
+- If skills_mode is auto and the tool reports "selected_skills is empty" or run fails for missing skills, use skills_mode: explicit and set skills to a known-good list (e.g. ["doc"] for doc-only tasks). Default fallback: skills_mode: explicit, skills: ["doc"].
 
 Tools:
 - delegate_autopilot: Start an automated run; returns run_id. Use when a task can run with minimal interaction.
@@ -28,4 +28,4 @@ When delegation is used, the WORKLOG entry for that step must include:
 Rules:
 - Only Coordinator (or role explicitly allowed in ROLES) initiates delegation.
 - run_id is evidence of the delegation; it does not replace commit hash for any change that touches the repo.
-- See ai/memory/TOOLING.md for setup gotchas (timeouts, TOML, run dirs, recursion prevention).
+- See ai/memory/TOOLING.md for setup gotchas (timeouts, TOML, run dirs, recursion prevention). Tool versions and drift: ai/memory/TOOLING_DRIFT.md.
