@@ -55,3 +55,20 @@ Evidence (commands + summarized results):
 Commit: 36e26a1
 Files touched: AGENTS.md, ai/workflows/DELEGATION_MODE.md, ai/workflows/DO_MODE.md, ai/workflows/COMMIT_PROTOCOL.md, ai/memory/TOOLING.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-13
+Milestone/Sprint: AI OS wiring verification (no product code)
+Summary (1–3 bullets):
+- Audited repo tree (depth 4), core files, WHAT IT DO headers; all 31 .md files compliant; no code files yet.
+- Extracted and validated workflow invariants (PLAN/DO/REVIEW, permissions, sprint transitions, commit protocol, spec change flow); repo files support them.
+- MCP delegate_run smoke test: tool invoked; run failed (codex exec exit 1); run_dir produced at /home/john/.codex/delegator/runs/2026-02-13_155923353_4c9853185dcd; created docs/_mcp_smoke_test.md in-repo to record outcome.
+Why (link to requirement/milestone/issue): User request — verify AI OS wired end-to-end (rules, files, tool integration).
+Evidence (commands + summarized results):
+- Tree: Get-ChildItem -Recurse -Depth 4 (38 .md files under repo root, excl. .git). Core files AGENTS.md, ai/LOADOUT.md, ai/RULES.md, PROJECT_STATUS.md, WORKLOG.md, TASKS.md, ai/planning/V1_SPEC_LOCK.md, ai/memory/CHANGE_REQUESTS.md, ai/memory/ISSUES.md, ai/workflows/*, ai/roadmap/SPRINT.md, MILESTONES.md exist and non-empty.
+- WHAT IT DO: grep across *.md — every file has "WHAT IT DO?" in top section (line 3).
+- No package.json; git status has uncommitted modifications (pre-existing).
+Commit: 72ebee3
+Files touched: docs/_mcp_smoke_test.md (new), WORKLOG.md.
+Follow-ups / deferred issues (IDs): delegate_run failure: inspect run_dir stderr.log/result.json for root cause if re-running MCP smoke test.
