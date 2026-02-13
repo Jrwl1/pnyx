@@ -17,3 +17,10 @@ Run directories sensitivity:
 Skills recursion prevention (delegator_exclude):
 - When a skill or agent can invoke the delegator (or another agent that delegates back), recursion can occur. Use delegator_exclude (or equivalent) so the delegator is excluded from the list of callable tools/skills inside delegated runs.
 - Document which skills/tools are excluded in your setup and add a note here when you change it.
+
+Environment (record once per host / WSL distro):
+- WSL distro + Ubuntu version: Record output of `wsl -l -v` (Windows) or `lsb_release -a` (inside WSL). Example: Ubuntu 22.04.
+- node -v and npm -v: Record from inside WSL (or same env where delegation runs). Example: node v20.x, npm 10.x.
+- codex --version (from WSL): Run `codex --version` in WSL and record here (delegation often runs in WSL).
+- codex mcp get codex-specialized-subagents: Run `codex mcp get codex-specialized-subagents` (in WSL if that’s where MCP runs) and paste or summarize output here.
+- MCP server path used: Path to the codex-specialized-subagents server or config entry (e.g. in Cursor MCP settings or codex config). Record so others can match the same server.
