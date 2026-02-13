@@ -24,3 +24,7 @@ Environment (record once per host / WSL distro):
 - codex --version (from WSL): Run `codex --version` in WSL and record here (delegation often runs in WSL).
 - codex mcp get codex-specialized-subagents: Run `codex mcp get codex-specialized-subagents` (in WSL if that’s where MCP runs) and paste or summarize output here.
 - MCP server path used: Path to the codex-specialized-subagents server or config entry (e.g. in Cursor MCP settings or codex config). Record so others can match the same server.
+
+Toolchain policy (record only; not enforced by code yet):
+- If repo has mise.toml: recommended toolchain = versions pinned in mise.toml. Fallback to system/other versions is allowed; document any divergence in WORKLOG or TOOLING.
+- Node repos: must pin packageManager in package.json (e.g. "packageManager": "npm@10.2.0" or "pnpm@9.0.0"). This is a recorded rule; automated enforcement (e.g. CI or pre-commit) may be added later.
