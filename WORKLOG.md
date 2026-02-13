@@ -108,6 +108,6 @@ Summary (1–3 bullets):
 Why (link to requirement/milestone/issue): User request — delegation reliability (steps 3–4).
 Evidence (commands + summarized results):
 - Edited ai/workflows/DELEGATION_MODE.md; git add + commit.
-Commit: e1c37f2
-Files touched: ai/workflows/DELEGATION_MODE.md.
+Commit: e1c37f2 (DELEGATION_MODE); a8294a1 (WORKLOG entries).
+Files touched: ai/workflows/DELEGATION_MODE.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
