@@ -52,6 +52,6 @@ Summary (1–3 bullets):
 Why (link to requirement/milestone/issue): User request — delegation workflow + tooling gotchas.
 Evidence (commands + summarized results):
 - New files: ai/workflows/DELEGATION_MODE.md, ai/memory/TOOLING.md. Modified: AGENTS.md, ai/workflows/DO_MODE.md, ai/workflows/COMMIT_PROTOCOL.md.
-Commit: <hash>
+Commit: 36e26a1
 Files touched: AGENTS.md, ai/workflows/DELEGATION_MODE.md, ai/workflows/DO_MODE.md, ai/workflows/COMMIT_PROTOCOL.md, ai/memory/TOOLING.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
