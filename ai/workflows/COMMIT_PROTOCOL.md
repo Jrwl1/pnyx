@@ -1,5 +1,7 @@
 COMMIT_PROTOCOL.md — Commit + Evidence Discipline
 
+WHAT IT DO? Every step anchored by commit; WORKLOG has hash + proof. Defines impl vs docs commits, evidence requirements, review gating, no-dirty-tree rule.
+
 Principle:
 Every meaningful step must be anchored by a commit, and WORKLOG must reference the commit hash.
 
@@ -20,9 +22,13 @@ Evidence requirements (WORKLOG):
 
 Commands run + summarized result (pass/fail, key counts)
 
-Commit hash that contains the change
+Commit hash that contains the change (mandatory for any repo change)
+
+When delegation was used: delegation run_id + tool name + artifacts (see ai/workflows/DELEGATION_MODE.md). Commit hashes remain mandatory for repo changes.
 
 Link to relevant issue/milestone/spec section
+
+Quality check: New .md/code files have "WHAT IT DO?" header at top (see R9).
 
 Review gating:
 

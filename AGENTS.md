@@ -1,5 +1,7 @@
 AGENTS.md — AI OS Router (READ THIS FIRST)
 
+WHAT IT DO? Router + route map. Read first; then LOADOUT, RULES, PROJECT_STATUS; then at most 2 docs from route map. Enforces output discipline and commit evidence.
+
 Prime directive (mandatory):
 
 Always read AGENTS.md first.
@@ -53,6 +55,14 @@ ai/planning/V1_SPEC_LOCK.md
 
 ai/memory/ISSUES.md
 
+Delegation mode (Coordinator / cross-cutting):
+Read:
+
+ai/workflows/DELEGATION_MODE.md
+Optional:
+
+ai/memory/TOOLING.md
+
 Architecture / boundaries:
 Read:
 
@@ -103,3 +113,5 @@ No speculative claims about repo behavior. Cite file paths or command output.
 Prefer minimal diffs. No "cleanup" changes unless requested.
 
 Every non-trivial step must be anchored with a commit and recorded in WORKLOG.md with commit hash.
+
+New .md and code files: include "WHAT IT DO?" header at top (R9).
