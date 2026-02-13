@@ -72,3 +72,42 @@ Evidence (commands + summarized results):
 Commit: 72ebee3 (artifact); 92912fa (WORKLOG entry).
 Files touched: docs/_mcp_smoke_test.md (new), WORKLOG.md.
 Follow-ups / deferred issues (IDs): delegate_run failure: inspect run_dir stderr.log/result.json for root cause if re-running MCP smoke test.
+
+---
+
+Date: 2026-02-13
+Milestone/Sprint: Toolchain + delegation hardening
+Summary (1–3 bullets):
+- Added ai/memory/TOOLING.md environment section: WSL distro + Ubuntu version, node -v / npm -v, codex --version (from WSL), codex mcp get codex-specialized-subagents output, MCP server path (record placeholders + commands).
+Why (link to requirement/milestone/issue): User request — harden toolchain + delegation reliability (step 1).
+Evidence (commands + summarized results):
+- Edited ai/memory/TOOLING.md; git add + commit.
+Commit: 453ed80
+Files touched: ai/memory/TOOLING.md.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-13
+Milestone/Sprint: Toolchain + delegation hardening
+Summary (1–3 bullets):
+- Added toolchain policy to ai/memory/TOOLING.md: mise.toml → recommended toolchain (fallback allowed); Node repos must pin packageManager in package.json (rule recorded, no code enforcement yet).
+Why (link to requirement/milestone/issue): User request — harden toolchain + delegation reliability (step 2).
+Evidence (commands + summarized results):
+- Edited ai/memory/TOOLING.md; git add + commit.
+Commit: 8bba1d7
+Files touched: ai/memory/TOOLING.md.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-13
+Milestone/Sprint: Toolchain + delegation hardening
+Summary (1–3 bullets):
+- DELEGATION_MODE.md: require WSL paths for delegated cwd; added helper note (C:\Users\... → /mnt/c/Users/...); added short WSL path conversion snippet (rule: C:\ → /mnt/c/, backslash → slash).
+Why (link to requirement/milestone/issue): User request — delegation reliability (steps 3–4).
+Evidence (commands + summarized results):
+- Edited ai/workflows/DELEGATION_MODE.md; git add + commit.
+Commit: e1c37f2
+Files touched: ai/workflows/DELEGATION_MODE.md.
+Follow-ups / deferred issues (IDs): None.
