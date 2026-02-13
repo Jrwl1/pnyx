@@ -69,6 +69,6 @@ Evidence (commands + summarized results):
 - Tree: Get-ChildItem -Recurse -Depth 4 (38 .md files under repo root, excl. .git). Core files AGENTS.md, ai/LOADOUT.md, ai/RULES.md, PROJECT_STATUS.md, WORKLOG.md, TASKS.md, ai/planning/V1_SPEC_LOCK.md, ai/memory/CHANGE_REQUESTS.md, ai/memory/ISSUES.md, ai/workflows/*, ai/roadmap/SPRINT.md, MILESTONES.md exist and non-empty.
 - WHAT IT DO: grep across *.md — every file has "WHAT IT DO?" in top section (line 3).
 - No package.json; git status has uncommitted modifications (pre-existing).
-Commit: 72ebee3
+Commit: 72ebee3 (artifact); 92912fa (WORKLOG entry).
 Files touched: docs/_mcp_smoke_test.md (new), WORKLOG.md.
 Follow-ups / deferred issues (IDs): delegate_run failure: inspect run_dir stderr.log/result.json for root cause if re-running MCP smoke test.
