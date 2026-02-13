@@ -33,6 +33,6 @@ Evidence (commands + summarized results):
 - git status (clean after each commit).
 - Commit 1: c11b4ea — chore(ai-os): bootstrap structure (8 files).
 - Commit 2: 54036f6 — docs(ai-os): seed workflows + planning templates (24 files).
-Commit: <pending commit 3>
+Commit: 61ef0ea
 Files touched: All paths per PHASE 0 (AGENTS, PROJECT_STATUS, TASKS, WORKLOG; ai/*; ai/workflows/*; ai/planning/*; ai/roadmap/*; ai/memory/*).
 Follow-ups / deferred issues (IDs): None.
