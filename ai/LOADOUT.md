@@ -1,5 +1,7 @@
 LOADOUT.md — Minimal Always-Read Context
 
+WHAT IT DO? Minimal always-read context: AGENTS, RULES, PROJECT_STATUS; TASKS and WORKLOG for tracking.
+
 This repo uses an "AI OS" doc system.
 
 Always-read:

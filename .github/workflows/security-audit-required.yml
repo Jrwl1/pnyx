@@ -1,0 +1,185 @@
+# Require a security audit note when security-sensitive files change.
+# Patterns: docs/security/SENSITIVE_PATHS.md (one per line).
+# Audit: docs/_security_audit.md OR docs/security/audit-*.md; must include Verdict and Files reviewed listing changed sensitive files.
+
+name: Security audit required
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+jobs:
+  security-audit-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.sha }}" > changed.txt
+          else
+            if [ "${{ github.event.before }}" = "0000000000000000000000000000000000000000" ]; then
+              touch changed.txt
+            else
+              git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" > changed.txt
+            fi
+          fi
+          echo "Changed files:"
+          cat changed.txt
+
+      - name: Require security audit when sensitive files change
+        run: |
+          set -e
+          POLICY_FILE="docs/security/SENSITIVE_PATHS.md"
+          AUDIT_ALT="docs/_security_audit.md"
+          AUDIT_GLOB="docs/security/audit-"
+          TEMPLATE="docs/security/AUDIT_TEMPLATE.md"
+          EXAMPLE_AUDIT="docs/security/audit-<shortdesc>.md"
+
+          # Load patterns (skip comments and blank)
+          get_patterns() {
+            [ -f "$POLICY_FILE" ] || { echo "::error::Policy file $POLICY_FILE not found."; exit 1; }
+            grep -v '^[[:space:]]*#' "$POLICY_FILE" | grep -v '^[[:space:]]*$' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' || true
+          }
+
+          # Match one path against one pattern (bash-only, no substring globs)
+          matches() {
+            local f="$1" p="$2" base prefix suffix
+            [ -n "$p" ] || return 1
+            base=$(basename "$f")
+
+            # Dir prefix: pattern ends with /**
+            if [[ "$p" == *'/**' ]]; then
+              prefix="${p%/\*\*}"
+              [[ "$f" == "$prefix" || "$f" == "$prefix/"* ]] && return 0
+              return 1
+            fi
+
+            # Suffix: pattern is *.xyz
+            if [[ "$p" == \*.* ]]; then
+              suffix="${p#\*}"
+              [[ "$f" == *"$suffix" ]] && return 0
+              return 1
+            fi
+
+            # .env* or **/.env*
+            if [[ "$p" == '.env'* ]]; then
+              [[ "$base" == .env* ]] && return 0
+              [[ "$f" == *'/.env'* ]] && return 0
+              return 1
+            fi
+            if [[ "$p" == '*/.env'* ]]; then
+              [[ "$f" == *'/.env'* ]] && return 0
+              [[ "$base" == .env* ]] && return 0
+              return 1
+            fi
+
+            # Basename prefix*suffix (e.g. Dockerfile*, docker-compose*.yml)
+            if [[ "$p" == *'*'* ]]; then
+              prefix="${p%%\**}"
+              suffix="${p#*\*}"
+              if [[ -n "$suffix" ]]; then
+                [[ "$base" == "$prefix"* && "$base" == *"$suffix" ]] && return 0
+              else
+                [[ "$base" == "$prefix"* ]] && return 0
+              fi
+              return 1
+            fi
+
+            # Exact basename
+            [[ "$base" == "$p" ]] && return 0
+            return 1
+          }
+
+          # Collect changed sensitive paths
+          sensitive_changed=""
+          while IFS= read -r f || [ -n "$f" ]; do
+            [ -z "$f" ] && continue
+            while IFS= read -r pattern || [ -n "$pattern" ]; do
+              [ -z "$pattern" ] && continue
+              if matches "$f" "$pattern"; then
+                sensitive_changed="${sensitive_changed}${sensitive_changed:+$'\n'}$f"
+                break
+              fi
+            done < <(get_patterns)
+          done < changed.txt
+
+          if [ -z "$sensitive_changed" ]; then
+            echo "No security-sensitive files changed. Skipping audit requirement."
+            exit 0
+          fi
+
+          # Find audit note in changed files
+          audit_file=""
+          while IFS= read -r f || [ -n "$f" ]; do
+            [ -z "$f" ] && continue
+            if [ "$f" = "$AUDIT_ALT" ]; then
+              audit_file="$f"
+              break
+            fi
+            if [[ "$f" == "$AUDIT_GLOB"*.md ]]; then
+              audit_file="$f"
+              break
+            fi
+          done < changed.txt
+
+          if [ -z "$audit_file" ]; then
+            echo ""
+            echo "::error::Security-sensitive files were changed but no security audit note was found in this PR/push."
+            echo ""
+            echo "Changed security-sensitive files:"
+            echo "$sensitive_changed" | while read -r line; do echo "  - $line"; done
+            echo ""
+            echo "Add ONE of these files to your change (and commit it):"
+            echo "  - $AUDIT_ALT"
+            echo "  - $EXAMPLE_AUDIT"
+            echo ""
+            echo "Use the template: $TEMPLATE"
+            echo ""
+            exit 1
+          fi
+
+          # Parse audit note: strict Verdict; Files reviewed must list ALL changed sensitive files
+          [ -f "$audit_file" ] || { echo "::error::Audit file $audit_file not in workspace."; exit 1; }
+          grep -q 'Files reviewed:' "$audit_file" || { echo "::error::Audit file must include a 'Files reviewed:' section listing every changed sensitive file."; exit 1; }
+
+          # Verdict: accept only "Verdict: SHIP" or "Verdict: NO-SHIP" (reject TODO, SHIP/NO-SHIP, etc.)
+          verdict_line=$(grep 'Verdict:' "$audit_file" | head -1 | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          if [[ "$verdict_line" != "Verdict: SHIP" && "$verdict_line" != "Verdict: NO-SHIP" ]]; then
+            echo ""
+            echo "::error::Verdict must be exactly 'Verdict: SHIP' or 'Verdict: NO-SHIP'. No TODO, no SHIP/NO-SHIP, no other text."
+            echo ""
+            echo "Current line: '$verdict_line'"
+            echo "Edit: $audit_file"
+            echo ""
+            exit 1
+          fi
+
+          # Files reviewed: every changed sensitive file must appear literally in the section
+          files_reviewed_section=$(sed -n '/Files reviewed:/,/^## /p' "$audit_file" | sed '1d;/^## /d')
+          missing_list=""
+          while IFS= read -r sens || [ -n "$sens" ]; do
+            [ -z "$sens" ] && continue
+            if ! echo "$files_reviewed_section" | grep -qF "$sens"; then
+              missing_list="${missing_list}${missing_list:+$'\n'}  - $sens"
+            fi
+          done <<< "$sensitive_changed"
+
+          if [ -n "$missing_list" ]; then
+            echo ""
+            echo "::error::'Files reviewed:' must list every changed security-sensitive file. Missing:"
+            echo "$missing_list"
+            echo ""
+            echo "Add the missing paths under 'Files reviewed:' in $audit_file"
+            echo ""
+            exit 1
+          fi
+
+          echo "Security audit note valid. Check passed."

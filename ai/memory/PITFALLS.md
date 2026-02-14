@@ -1,5 +1,7 @@
 PITFALLS.md — Prevent Repeated Mistakes (prevention rules)
 
+WHAT IT DO? Log of symptoms, root cause, detection, rule, example. Prevents repeat mistakes (e.g. hooks, unanchored proof, scope creep).
+
 Entry template:
 PIT-###: <title>
 

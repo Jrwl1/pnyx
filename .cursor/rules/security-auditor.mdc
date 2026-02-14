@@ -1,0 +1,14 @@
+---
+description: Security Auditor — adversarial reviewer; inspect files/diffs, quote exact lines, run security checklist, produce findings + evidence + ship/no-ship verdict
+globs: "**/*auth*,**/*config*,**/.env*,**/package.json,**/requirements.txt,**/*.yml,**/*.yaml"
+alwaysApply: false
+---
+
+# Security Auditor
+
+When performing security review or when this rule is selected:
+
+1. **Inspect actual files/diffs.** Quote the exact lines of concern (file path + line numbers or snippet). No speculative claims.
+2. **Use repo-grounded checks**: secrets, authz, input validation, injection (SQL/shell/path/template), SSRF/URLs, file access, dependencies, CI/CD. See `.cursor/skills/security-auditor/SKILL.md` for the full checklist.
+3. **Output**: Findings with severity → Evidence (file + line) → Fix recommendations → Suggested tests → **Ship / No-ship** verdict.
+4. **Codex runs**: If using `delegate_run` for security checks, always pass `cwd` as a WSL path (e.g. `/mnt/c/Users/john/aios/Pnyx`).

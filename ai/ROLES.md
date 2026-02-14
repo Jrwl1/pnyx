@@ -1,5 +1,7 @@
 ROLES.md — Agent Responsibilities
 
+WHAT IT DO? Defines Coordinator, Guardian, Fixer, Reviewer A/B: who may edit lock, mark Done, write code, set Ready.
+
 Coordinator:
 
 Owns phase transitions (planning → lock → roadmap → sprint → done).

@@ -1,5 +1,7 @@
 WORKFLOW.md — Default Operating Loop
 
+WHAT IT DO? Default loop: read router docs → plan (≤7 bullets) → implement small batches → prove → log. Points to Planning/Roadmap/DO modes.
+
 Read AGENTS.md → LOADOUT → RULES → PROJECT_STATUS.
 
 Route-select at most 2 additional docs.

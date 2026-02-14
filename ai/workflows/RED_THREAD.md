@@ -1,5 +1,7 @@
 RED_THREAD.md — Drift Handling Protocol
 
+WHAT IT DO? When drift (scope creep, refactor itch, tool spiral, spec confusion): log to ISSUES, add corrective TASK, reduce to smallest next step. No silent spec changes.
+
 Drift types:
 
 Scope creep (adding features not in sprint/milestone)

@@ -1,5 +1,7 @@
 PLANNING_MODE.md — From Pitch to Locked V1
 
+WHAT IT DO? Steps from PITCH → VISION/SCOPE → REQs/flows/data/API/arch/test → LOCK_CHECKLIST → locked V1_SPEC_LOCK. No product code before lock.
+
 Goal:
 Produce a locked ai/planning/V1_SPEC_LOCK.md that is unambiguous and testable, before any feature coding.
 

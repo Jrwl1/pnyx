@@ -1,0 +1,14 @@
+---
+description: Audit note generator — when editing security-sensitive paths or user says "generate audit note", create/update audit stub in docs/security/ using SENSITIVE_PATHS rules
+globs: "**/.env*,**/package-lock.json,**/pnpm-lock.yaml,**/yarn.lock,.github/workflows/**,**/*.yml,**/*.yaml,**/Dockerfile*,**/docker-compose*.yml"
+alwaysApply: false
+---
+
+# Audit note generator
+
+When this rule applies (you are editing a file that matches **docs/security/SENSITIVE_PATHS.md** patterns, or the user asks to **generate audit note**):
+
+1. **Inspect real state:** Run `git diff --name-only` and `git diff --name-only --cached`; read **docs/security/SENSITIVE_PATHS.md**. Do not guess paths.
+2. **Use the same matching as CI:** Apply the pattern rules from **.github/workflows/security-audit-required.yml** (dir `/**`, `*.suffix`, `.env*`, basename, etc.) to decide which changed files are sensitive. See **.cursor/skills/audit-note-generator/SKILL.md** for the exact algorithm.
+3. **Always write or update an audit note** in **docs/security/** when any changed file is sensitive: create **docs/security/audit-&lt;yyyy-mm-dd&gt;-&lt;shortdesc&gt;.md** or update **docs/_security_audit.md** if that file is already in the change. Populate from **docs/security/AUDIT_TEMPLATE.md**; fill Timestamp, PR/Commit placeholder, **Files reviewed:** with all changed sensitive paths (exact), and **Verdict: TODO (SHIP/NO-SHIP)**.
+4. **Never guess paths.** Only include in **Files reviewed:** paths that appear in the diff and match a SENSITIVE_PATHS pattern.

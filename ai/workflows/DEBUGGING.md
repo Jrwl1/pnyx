@@ -1,5 +1,7 @@
 DEBUGGING.md — Deterministic Debug Loop
 
+WHAT IT DO? Reproduce → observe → isolate → fix → guard (regression) → prove → log. After 2 failures without new evidence: triage in WORKLOG + ISSUES.
+
 Order:
 
 Reproduce: exact steps/inputs/env. Capture exact error text.

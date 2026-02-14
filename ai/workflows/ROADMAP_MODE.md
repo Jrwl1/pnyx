@@ -1,5 +1,7 @@
 ROADMAP_MODE.md — Locked V1 → Milestones → Current Sprint
 
+WHAT IT DO? Derive MILESTONES from locked V1, set SPRINT for next milestone. No scope changes; change requests if spec touch needed.
+
 Goal:
 Derive milestones and a current sprint from the locked V1 spec. No scope changes allowed here.
 
