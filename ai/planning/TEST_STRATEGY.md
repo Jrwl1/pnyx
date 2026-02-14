@@ -1,35 +1,64 @@
 TEST_STRATEGY.md — Proof Plan
 
-WHAT IT DO? Min checks per sprint (lint/typecheck/tests/build), regression rules, unit vs e2e. No proof without commit hash.
+WHAT IT DO? Defines minimum proof commands, regression targets, and negative auth/conflict coverage required per sprint.
 
-Define:
+## Minimum checks required every sprint
 
-Minimum checks required for every sprint (lint/typecheck/tests/build)
+Run all checks that exist for the selected stack. Command placeholders:
 
-- Lint: project’s linter must pass on changed code.
-- Typecheck: if the stack is typed (e.g. TypeScript, typed Python), typecheck must pass.
-- Tests: automated test suite must pass (unit and, where present, integration/e2e).
-- Build: application build (or equivalent “runnable” artifact) must succeed.
+- Lint: `<lint-command>`
+- Typecheck: `<typecheck-command>`
+- Unit/integration tests: `<test-command>`
+- Build/package: `<build-command>`
 
-What must have regression tests
+Evidence rule:
+- For each reported pass, record command and summarized result in WORKLOG with commit hash.
 
-- Politician identity: create, list, no duplicate identity (per REQ-001).
-- Statement capture: create statement with politician + timestamp + body; list by politician (REQ-002).
-- Verification status: set and update status; status visible and in history (REQ-003).
-- Voting: submit vote; aggregate visible; one vote per user per statement if that is the rule (REQ-004).
-- Revision history: every edit produces a history entry; history viewable (REQ-005).
-- View flows: list politicians; list statements for politician; view statement detail and history (REQ-006, FLOW-001, FLOW-005).
+## Regression coverage (required)
 
-Unit vs integration vs e2e guidance (if applicable)
+- Politician identity and dedupe
+  - create politician success
+  - duplicate by externalId -> 409
+  - duplicate by normalized name+region+office -> 409
+- Statement capture
+  - create statement requires politicianId/sourceUrl/body/dateSaid
+  - create with unknown politician -> 404
+  - duplicate statement fingerprint -> 409
+  - list ordering by dateSaid DESC, createdAt DESC, id ASC
+- Verification lifecycle
+  - allowed transitions only (`pending->verified|disputed`, `verified<->disputed`)
+  - disallowed/no-op transition -> 409
+  - status change writes audit row
+- Voting
+  - authenticated vote success with value support/oppose
+  - duplicate vote same user/statement -> 409
+  - anonymous vote -> 403
+  - aggregate updated correctly
+- Edit permissions
+  - author edit inside 30-minute window succeeds
+  - author edit outside 30-minute window -> 403
+  - moderator/admin edit any non-deleted statement succeeds
+- Delete lifecycle
+  - author withdraw soft-deletes statement
+  - moderator propose delete sets pending flag
+  - admin approve delete requires pending state
+  - invalid lifecycle transitions -> 409
+- Read flows
+  - anonymous can view politicians/statements/revisions
+  - revision history ordering is deterministic
 
-- Unit: domain logic (e.g. statement validation, status transitions, vote aggregation) in isolation; fast, no DB.
-- Integration: persistence and APIs (e.g. create/read statement, update status, record vote) against real or test DB.
-- E2E: critical paths only for V1 — view politician and statements (FLOW-001), view revision history (FLOW-005); optionally add statement (FLOW-002) and vote (FLOW-004) once stack and auth are decided.
+## Auth negative tests (required)
 
-"No proof without commit hash" rule reminder
+- Anonymous denied for add politician, add statement, vote, edit, withdraw.
+- User denied for set verification status, propose delete, approve delete.
+- Moderator denied for approve delete.
 
-- Every non-trivial step must be anchored with a commit and recorded in WORKLOG.md with commit hash. CI or local run of lint/typecheck/tests/build counts as proof only when referenced by that commit.
+## Test layers
 
-OPEN QUESTIONS
+- Unit: transition logic, dedupe policy, vote aggregation.
+- Integration: persistence constraints (FKs, unique keys), operation status codes.
+- E2E: FLOW-001, FLOW-003, FLOW-005, FLOW-007, FLOW-008.
 
-- Test stack (language, test runner, DB for integration tests) to be decided when tech stack is chosen.
+## Deferred stack decisions
+
+- Exact command strings are finalized after stack/tooling selection and then replace placeholders above.

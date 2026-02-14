@@ -1,109 +1,115 @@
 REQUIREMENTS.md — Functional Requirements + Acceptance Criteria
 
-WHAT IT DO? Numbered requirements with acceptance criteria and priority. Each REQ maps to flows and test category.
-
-Format:
-REQ-001: <title>
-Description:
-Acceptance criteria:
-AC1:
-AC2:
-Priority: Must / Should / Could
-Notes:
-
-Start listing requirements below.
+WHAT IT DO? Defines V1 functional requirements with testable acceptance criteria, priority, and alignment to CAP/FLOW/INV decisions.
 
 ---
 
-REQ-001: Politician identity
-
-Description: Store verified politician identities so statements can be attributed.
-
+REQ-001: Politician identity catalog
+Description:
+- System stores canonical politician identities for statement attribution and discovery.
 Acceptance criteria:
-AC1: System can create and list politicians (minimal identity: name, stable id).
-AC2: Each politician has a single canonical identity (no duplicates for same person in V1).
-
+- AC1: System can create and list politicians with required fields `id`, `name`, `createdAt`.
+- AC2: Canonical identity dedupe uses `externalId` when present, otherwise normalized `(name, region, office)`.
+- AC3: Duplicate canonical identity is rejected with conflict.
 Priority: Must
-
-Notes: Fields and source of truth for "verified" TBD in DATA_MODEL.
+Notes: Aligns with INV-005 and CAP-002.
 
 ---
 
 REQ-002: Statement capture
-
-Description: Create and store statements tied to a politician with timestamp and content.
-
+Description:
+- System stores statements tied to one politician with source and date context.
 Acceptance criteria:
-AC1: A statement has exactly one politician, a timestamp, and a body (text).
-AC2: User can list statements for a given politician (ordered by time or relevance).
-AC3: New statements are persisted and appear in list and in revision history.
-
+- AC1: Create requires `politicianId`, `sourceUrl`, `body`, `dateSaid`.
+- AC2: A created statement is initialized with `verificationStatus=pending`.
+- AC3: Listing statements for one politician is ordered by `dateSaid DESC`, then `createdAt DESC`, then `id ASC`.
+- AC4: Create writes an initial revision record (`changeType=createStatement`).
 Priority: Must
-
-Notes: Who can create (actor) TBD; see OPEN QUESTIONS.
+Notes: Aligns with INV-001, INV-002, INV-004 and CAP-003.
 
 ---
 
-REQ-003: Verification status
-
-Description: Each statement has a verification status from a defined set.
-
+REQ-003: Verification status lifecycle
+Description:
+- Each statement has one verification status from a closed set with role-gated transitions.
 Acceptance criteria:
-AC1: Every statement has exactly one verification status (e.g. unverified / verified / disputed; set TBD in DATA_MODEL).
-AC2: Status can be updated; previous value is part of revision history.
-AC3: Current status is visible wherever the statement is shown.
-
+- AC1: Allowed status values are exactly `pending`, `verified`, `disputed`.
+- AC2: Only moderator/admin can change status.
+- AC3: Allowed transitions are `pending->verified|disputed`, `verified->disputed`, `disputed->verified`; no-op transitions are rejected as conflict.
+- AC4: Every status change writes a revision/audit entry.
 Priority: Must
-
-Notes: Who can set/change status TBD; see OPEN QUESTIONS.
+Notes: Aligns with INV-002, INV-004 and CAP-005.
 
 ---
 
-REQ-004: Voting on statements
-
-Description: Users can vote on statements to signal agreement/disagreement or accuracy (semantic TBD).
-
+REQ-004: Voting semantics and aggregation
+Description:
+- Authenticated users can cast one vote per statement with deterministic meaning.
 Acceptance criteria:
-AC1: A user can submit a vote on a statement (e.g. up/down or agree/disagree; schema TBD).
-AC2: Aggregate vote outcome is visible (e.g. count or score) for the statement.
-AC3: Vote is recorded and reflected in aggregates without requiring page reload (or within one refresh in V1).
-
+- AC1: Vote meaning is fixed as `support` or `oppose` for the statement claim.
+- AC2: One vote per `(statementId, userId)` is enforced; duplicate create returns conflict and does not overwrite.
+- AC3: Statement detail exposes aggregate `{support, oppose, score}` after successful vote write.
+- AC4: Anonymous vote attempts are forbidden.
 Priority: Should
-
-Notes: One vote per user per statement in V1 unless otherwise decided.
+Notes: Aligns with INV-003 and CAP-006.
 
 ---
 
-REQ-005: Revision history
-
-Description: Edits to statements (and optionally status changes) are tracked; no silent edits.
-
+REQ-005: Revision history and no silent edits
+Description:
+- Statement lifecycle changes are transparently auditable and viewable.
 Acceptance criteria:
-AC1: For each statement, a history of changes (who, when, what changed) is stored.
-AC2: Users can view revision history for a statement.
-AC3: Edits do not overwrite without creating a history entry.
-
+- AC1: Create/edit/status/withdraw/propose-delete/approve-delete actions each append an audit row.
+- AC2: Revision history view returns ordered records with actor, timestamp, change type, and before/after payload.
+- AC3: Statement edits never replace content without an appended audit row.
 Priority: Must
-
-Notes: Scope of "edits" (body only vs status, politician, etc.) TBD in DATA_MODEL.
+Notes: Aligns with INV-004 and CAP-008.
 
 ---
 
-REQ-006: View politicians and statements
-
-Description: Users can discover and view politicians and their statements.
-
+REQ-006: Public read UX contract
+Description:
+- Any user can browse politicians and statements without authentication.
 Acceptance criteria:
-AC1: User can list politicians (e.g. by name or filter; minimal list in V1).
-AC2: User can open a politician and see that politician’s statements with timestamp and verification status.
-AC3: User can open a statement and see detail plus revision history and vote aggregate.
-
+- AC1: Unauthenticated user can list politicians and list statements by politician.
+- AC2: Statement detail shows verification status, vote aggregate, and revision history access.
+- AC3: Read operations do not mutate data and do not require write permissions.
 Priority: Must
-
-Notes: Read-only flow; no auth required for view in V1 unless decided otherwise.
+Notes: Aligns with CAP-001 and FLOW-001/FLOW-008.
 
 ---
 
-OPEN QUESTIONS
+REQ-007: Add politician capability (CAP-002)
+Description:
+- Registered users can manually add politician records under canonical dedupe rules.
+Acceptance criteria:
+- AC1: `user|moderator|admin` can add politician; anonymous cannot.
+- AC2: On success, system returns new politician id and created timestamp.
+- AC3: Duplicate canonical identity returns conflict.
+Priority: Must
+Notes: Direct CAP-002 coverage.
 
-- Who is authorized to create statements and to set/change verification status? (REQ-002, REQ-003, SCOPE.)
+---
+
+REQ-008: Withdraw and moderated delete workflow (CAP-007)
+Description:
+- Authors can withdraw their own statements; moderators can propose delete; admins can approve delete.
+Acceptance criteria:
+- AC1: Author withdraw performs immediate soft delete and logs audit entry.
+- AC2: Moderator propose-delete sets `pendingDelete=true` and logs audit entry.
+- AC3: Admin approve-delete requires pending delete and performs soft delete with audit entry.
+- AC4: Unauthorized actor for each step is rejected with forbidden.
+Priority: Must
+Notes: Direct CAP-007 coverage.
+
+---
+
+REQ-009: Edit window policy
+Description:
+- Edit permission for authors is bounded by a fixed grace window.
+Acceptance criteria:
+- AC1: Author may edit own statement only within 30 minutes from `createdAt`.
+- AC2: Moderator/admin may edit any non-deleted statement outside author window.
+- AC3: Author edit outside 30-minute window is forbidden.
+Priority: Must
+Notes: Resolves grace-window fork in lock-critical behavior; aligns with CAP-004.
