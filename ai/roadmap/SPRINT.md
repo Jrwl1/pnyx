@@ -1,5 +1,7 @@
 SPRINT.md — Current Sprint
 
+WHAT IT DO? Current sprint scope (maps to milestone + CAPs), DoD, proof commands. Reviewer Ready / Coordinator Done checklists.
+
 Sprint ID:
 Status: Planned / Active / Ready for Done / Done
 

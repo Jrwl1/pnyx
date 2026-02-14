@@ -1,5 +1,7 @@
 ARCHITECTURE.md — Boundaries + Module Responsibilities
 
+WHAT IT DO? Folder structure, module boundaries, data ownership, cross-cutting concerns. Links to DECISIONS.
+
 Define:
 
 Proposed folder structure

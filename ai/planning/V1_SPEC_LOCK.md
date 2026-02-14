@@ -1,5 +1,7 @@
 V1_SPEC_LOCK.md — LOCKED V1 SPEC (source of truth)
 
+WHAT IT DO? Condensed V1 source of truth (CAP IDs). Only Coordinator edits; changes via CHANGE_REQUESTS. No product code until LOCKED.
+
 Status: DRAFT (do not implement product features until LOCKED)
 Locked at:
 Lock rules:

@@ -1,5 +1,7 @@
 LOCK_CHECKLIST.md — Ready to Lock V1?
 
+WHAT IT DO? Checklist to verify PITCH→REQs→flows→data→API→test→CAPs complete; then lock V1_SPEC_LOCK and log.
+
 Checklist:
 
 PITCH completed and matches intent

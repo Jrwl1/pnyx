@@ -1,5 +1,7 @@
 DATA_MODEL.md — Entities, Relationships, Invariants
 
+WHAT IT DO? Entities with purpose, fields, relationships, invariants. Global INV IDs. Feeds V1 lock.
+
 Entity template:
 ENTITY: <Name>
 
