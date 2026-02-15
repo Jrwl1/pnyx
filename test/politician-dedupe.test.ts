@@ -72,4 +72,18 @@ describe("politician dedupe", () => {
       .send({ name: "Other", externalId: "ext-123" })
       .expect(409);
   });
+
+  it("create without externalId when matching normalized record has externalId returns 409", async () => {
+    await request(app)
+      .post("/politicians")
+      .set(userHeaders)
+      .send({ name: "Eve Brown", region: "TX", office: "Mayor", externalId: "ext-456" })
+      .expect(201);
+
+    await request(app)
+      .post("/politicians")
+      .set(userHeaders)
+      .send({ name: "eve brown", region: "tx", office: "mayor" })
+      .expect(409);
+  });
 });

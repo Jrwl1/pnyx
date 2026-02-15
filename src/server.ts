@@ -37,14 +37,38 @@ app.post("/politicians", requireRole("user"), (req, res) => {
     return;
   }
 
+  const trimmedName = name.trim();
+  const trimmedRegion = (region ?? "").toString().trim();
+  const trimmedOffice = (office ?? "").toString().trim();
+  const normalizedKey = `${trimmedName.toLowerCase()}|${trimmedRegion.toLowerCase()}|${trimmedOffice.toLowerCase()}`;
+
+  // Canonical dedupe: reject if same (name,region,office) exists (including rows with externalId).
+  const existing = db.prepare(
+    "SELECT 1 FROM politicians WHERE deleted_at IS NULL AND normalized_key = ? LIMIT 1"
+  ).get(normalizedKey) as { "1"?: number } | undefined;
+  if (existing) {
+    res.status(409).json({ error: "duplicate politician identity" });
+    return;
+  }
+
   try {
     const stmt = db.prepare(
       "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 0, ?)"
     );
-    const result = stmt.run(name.trim(), region ?? null, office ?? null, externalId ?? null, req.auth.userId ?? "system");
+    const result = stmt.run(
+      trimmedName,
+      trimmedRegion || null,
+      trimmedOffice || null,
+      externalId ?? null,
+      req.auth.userId ?? "system"
+    );
     res.status(201).json({ id: result.lastInsertRowid });
-  } catch {
-    res.status(409).json({ error: "duplicate politician identity" });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || (err as Error).message?.includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "duplicate politician identity" : "internal server error"
+    });
   }
 });
 
