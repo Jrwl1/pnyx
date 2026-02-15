@@ -192,3 +192,18 @@ Evidence (commands + summarized results):
 Commit: 894b949
 Files touched: package.json, tsconfig.json, tsconfig.build.json, eslint.config.mjs, .gitignore, migrations/0001_initial.sql, src/auth/context.ts, src/auth/role-guard.ts, src/db/client.ts, src/db/migrate.ts, src/index.ts, src/server.ts, src/types/roles.ts, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Dependency installation retry required once npm registry DNS is reachable.
+
+---
+
+Date: 2026-02-15
+Milestone/Sprint: S0-T01 (lint fix)
+Summary (1–3 bullets):
+- Fixed ESLint config: `recommendedTypeChecked` was applied globally without parserOptions; moved to recommended-only, restricted type-aware rules to src/**/*.ts, ignored eslint.config.mjs.
+- Fixed @typescript-eslint/no-namespace in src/auth/context.ts (Express augmentation requires global namespace; added eslint-disable with rationale).
+- Removed unused eslint-disable directives in src/db/migrate.ts and src/server.ts.
+Why (link to requirement/milestone/issue): S0-T01 proof command `pnpm lint` was failing.
+Evidence (commands + summarized results):
+- `pnpm lint` -> pass (exit 0).
+Commit: 0b02332
+Files touched: eslint.config.mjs, src/auth/context.ts, src/db/migrate.ts, src/server.ts.
+Follow-ups / deferred issues (IDs): None.
