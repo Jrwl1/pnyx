@@ -7,7 +7,7 @@ import { authContext } from "./auth/context.js";
 import { requireRole } from "./auth/role-guard.js";
 import { db } from "./db/client.js";
 
-const app = express();
+export const app = express();
 app.use(express.json());
 app.use(authContext);
 
