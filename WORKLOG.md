@@ -170,6 +170,6 @@ Summary (1–3 bullets):
 Why (link to requirement/milestone/issue): ROADMAP_MODE — derive milestones from locked V1, set current sprint, anchor with commit.
 Evidence (commands + summarized results):
 - git add ai/roadmap/MILESTONES.md ai/roadmap/SPRINT.md PROJECT_STATUS.md; git commit -m "docs(roadmap): M0 + S0 Active + PROJECT_STATUS for Roadmap mode" → 3 files changed.
-Commit: f4ad280 (roadmap); fdfa06f (WORKLOG entry).
+Commit: f4ad280 (roadmap); a033a57 (WORKLOG entry).
 Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
