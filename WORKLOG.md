@@ -155,6 +155,6 @@ Summary (1–3 bullets):
 Why (link to requirement/milestone/issue): Coordinator next step — lock V1 spec so product implementation may proceed per V1 scope.
 Evidence (commands + summarized results):
 - git add ai/planning/V1_SPEC_LOCK.md; git commit -m "chore(status): lock V1_SPEC_LOCK (Coordinator)" → 1 file changed.
-Commit: 4faf4a9 (lock); 32b6254 (WORKLOG entry).
+Commit: 4faf4a9 (lock); 16287b1 (WORKLOG entry).
 Files touched: ai/planning/V1_SPEC_LOCK.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
