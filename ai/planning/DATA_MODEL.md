@@ -8,6 +8,7 @@ WHAT IT DO? Defines V1 entities, fields, constraints, status lifecycle, and glob
 - `pending`
 - `verified`
 - `disputed`
+- `rejected`
 
 `voteValue` (closed set):
 - `support`
@@ -65,6 +66,8 @@ Fields:
 - `sourceUrl` (string/url, required)
 - `body` (string/text, required)
 - `dateSaid` (date or datetime, required)
+- `normalizedBodyHash` (string, required)
+- `statementFingerprint` (string, required)
 - `verificationStatus` (enum, required, default `pending`)
 - `authorId` (string/uuid, FK -> User.id, required)
 - `createdAt` (datetime, required)
@@ -86,17 +89,30 @@ Index/constraints notes:
 - PK: `id`.
 - FK: `politicianId` required and must reference existing politician.
 - FK: `authorId`, `withdrawnBy`, `pendingDeleteSetBy`, `deletedBy` must reference existing users when not null.
-- Optional duplicate-protection index (recommended): `(politicianId, dateSaid, normalizedBodyHash)` for fast duplicate detection.
+- Statement normalization for duplicate detection:
+  - normalize text by trim, collapse whitespace, lowercase, normalize quotes and dashes.
+  - hash normalized text into `normalizedBodyHash`.
+- V1 duplicate reject key: `(politicianId, normalizedBodyHash, sourceUrl)`.
+- `statementFingerprint` is derived from `(politicianId, normalizedBodyHash, sourceUrl)`.
+- If `sourceUrl` becomes optional in a future version, fallback key can use `dateSaid`.
+- Fuzzy matching is out of scope in V1; V1.1 may add assistive similarity suggestions (for example trigram similarity >= 0.85) but never auto-reject.
 - `deletedAt IS NOT NULL` implies statement is excluded from normal list/read responses.
 
 Verification status transition rules:
 - Allowed transitions by role `moderator|admin` only:
   - `pending -> verified`
   - `pending -> disputed`
+  - `pending -> rejected`
   - `verified -> disputed`
+  - `verified -> rejected`
   - `disputed -> verified`
+  - `rejected -> disputed`
 - Direct transitions to same status are rejected as conflict.
 - Every successful status transition must create a `RevisionAudit` row with `changeType=setVerificationStatus`.
+- Reason-required downgrade rule:
+  - `verified -> disputed|rejected` requires non-empty reason.
+  - `pending -> rejected` reason is optional in theory but recommended; V1 contract enforces it.
+  - If future aliases (`kept`, `broken`) are introduced, `kept|broken -> disputed` also requires reason.
 
 ## ENTITY: Vote
 
@@ -109,6 +125,7 @@ Fields:
 - `userId` (string/uuid, FK -> User.id, required)
 - `value` (enum `support|oppose`, required)
 - `createdAt` (datetime, required)
+- `updatedAt` (datetime, required)
 
 Relationships:
 - Many-to-one with `Statement`.
@@ -117,7 +134,7 @@ Relationships:
 Index/constraints notes:
 - PK: `id`.
 - Unique: `(statementId, userId)`.
-- Duplicate vote policy for V1: second create for same `(statementId, userId)` is rejected (conflict), no overwrite.
+- One vote record per `(statementId, userId)` in V1; recast vote updates existing row `value` and `updatedAt`.
 - Votes are not accepted on soft-deleted statements.
 
 ## ENTITY: RevisionAudit
@@ -144,11 +161,13 @@ Index/constraints notes:
 - FK: `statementId`, `actorId` required.
 - Ordered display index: `(statementId, createdAt DESC, id DESC)`.
 - Rows are append-only in V1 (no update/delete of audit rows).
+- Status downgrade transitions that lower confidence must persist non-empty `reason`.
 
 ## Global invariants
 
 - `INV-001`: Every statement references exactly one existing politician (`Statement.politicianId` non-null FK).
-- `INV-002`: Every statement has exactly one `verificationStatus` from `{pending, verified, disputed}`.
+- `INV-002`: Every statement has exactly one `verificationStatus` from `{pending, verified, disputed, rejected}`.
 - `INV-003`: At most one vote exists per `(statementId, userId)`.
 - `INV-004`: No silent statement lifecycle changes: create/edit/status/withdraw/propose-delete/approve-delete each produce at least one `RevisionAudit` record.
 - `INV-005`: Politician canonical identity is unique. Dedupe precedence is `externalId` when present, else normalized `(name, region, office)`.
+- `INV-006`: Public statement reads exclude soft-deleted records by default; moderator/admin reads include pending-delete by default and include soft-deleted only when explicitly requested.

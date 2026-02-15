@@ -20,6 +20,9 @@ Expected result:
 Error cases:
 - Invalid politician id -> `404`.
 - Politician with no statements -> empty list.
+Visibility defaults:
+- `anonymous|user` lists exclude pending-delete and soft-deleted statements.
+- `moderator|admin` lists include pending-delete by default and exclude soft-deleted by default unless `includeDeleted=true`.
 State transitions:
 - None (read-only).
 
@@ -54,16 +57,18 @@ Preconditions:
 Steps:
 1. Actor submits `politicianId`, `sourceUrl`, `body`, `dateSaid`.
 2. System validates required fields and politician existence.
-3. System checks duplicate statement rule for same politician/date/body fingerprint.
-4. System creates statement with `verificationStatus=pending`.
-5. System appends `RevisionAudit(changeType=createStatement)`.
+3. System normalizes body (trim, collapse whitespace, lowercase, normalize quotes/dashes) and computes hash.
+4. System checks duplicate statement key `(politicianId, normalizedTextHash, sourceUrl)`.
+5. System creates statement with `verificationStatus=pending`.
+6. System appends `RevisionAudit(changeType=createStatement)`.
 Expected result:
 - Statement is visible in politician list and has initial revision history.
 Error cases:
 - Missing required input -> validation error.
 - Unknown politician -> `404`.
 - Anonymous actor -> `403`.
-- Duplicate statement -> `409` (deny policy).
+- Duplicate statement key -> `409` with clear duplicate message.
+- Add-statement rate limit exceeded -> `429`.
 State transitions:
 - Statement created.
 - Revision audit created.
@@ -76,18 +81,20 @@ Actors:
 Preconditions:
 - Statement exists.
 Steps:
-1. Actor submits `newStatus` in `{pending, verified, disputed}`.
-2. System validates role and transition rule.
-3. System updates statement status.
-4. System appends `RevisionAudit(changeType=setVerificationStatus)`.
+1. Actor submits `newStatus` in `{pending, verified, disputed, rejected}`.
+2. For downgrade transitions, actor provides reason.
+3. System validates role and transition rule.
+4. System updates statement status.
+5. System appends `RevisionAudit(changeType=setVerificationStatus)` including reason when required.
 Expected result:
 - Status changes are visible on statement detail and history.
 Error cases:
 - Role below moderator -> `403`.
 - Statement not found -> `404`.
 - Invalid/no-op/forbidden transition -> `409`.
+- Required downgrade reason missing -> validation error.
 State transitions:
-- `pending -> verified|disputed`, `verified -> disputed`, `disputed -> verified`.
+- `pending -> verified|disputed|rejected`, `verified -> disputed|rejected`, `disputed -> verified`, `rejected -> disputed`.
 
 ---
 
@@ -99,17 +106,17 @@ Preconditions:
 - Actor authenticated.
 Steps:
 1. Actor submits vote value `support` or `oppose`.
-2. System checks uniqueness for `(statementId,userId)`.
-3. System writes vote.
+2. System upserts by `(statementId,userId)`.
+3. If no prior vote exists, create vote; else overwrite `value` on existing row.
 4. System returns updated aggregate `{support, oppose, score}`.
 Expected result:
-- Vote is persisted once and reflected in aggregate.
+- User has exactly one current vote per statement and aggregate reflects latest vote.
 Error cases:
 - Anonymous actor -> `403`.
 - Statement not found -> `404`.
-- Duplicate vote -> `409`.
+- Vote rate limit exceeded -> `429`.
 State transitions:
-- Vote record created.
+- Vote record created or updated.
 
 ---
 

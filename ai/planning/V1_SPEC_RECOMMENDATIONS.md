@@ -77,3 +77,7 @@ WHAT IT DO? Concrete, prioritized recommendations to tighten V1 planning docs be
 3. Should soft-deleted statements be visible to moderators/admin in default list views, or only via explicit include-deleted filters?
 4. Should verification status changes require a mandatory reason when transitioning from `verified` to `disputed`?
 5. Do we need rate limits for add statement/vote operations in V1, or defer anti-abuse controls to post-V1 hardening?
+
+## Open questions after population
+
+None.
