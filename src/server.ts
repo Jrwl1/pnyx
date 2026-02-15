@@ -72,6 +72,18 @@ app.post("/politicians", requireRole("user"), (req, res) => {
   }
 });
 
+app.get("/statements", (_req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT s.id, s.politician_id AS politicianId, s.source_url AS sourceUrl, s.body, s.date_said AS dateSaid,
+       s.verification_status AS verificationStatus, s.author_id AS authorId, s.created_at AS createdAt
+       FROM statements s WHERE s.deleted_at IS NULL AND s.pending_delete = 0
+       ORDER BY s.created_at DESC`
+    )
+    .all();
+  res.json({ items: rows });
+});
+
 app.post("/statements", requireRole("user"), (req, res) => {
   const { politicianId, sourceUrl, body, dateSaid } = req.body as {
     politicianId?: number;
@@ -85,19 +97,41 @@ app.post("/statements", requireRole("user"), (req, res) => {
     return;
   }
 
-  const normalizedBodyHash = crypto.createHash("sha256").update(body.trim().toLowerCase()).digest("hex");
+  const politician = db.prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(politicianId) as { "1"?: number } | undefined;
+  if (!politician) {
+    res.status(404).json({ error: "politician not found" });
+    return;
+  }
+
+  const trimmedBody = body.trim().toLowerCase();
+  const normalizedBodyHash = crypto.createHash("sha256").update(trimmedBody).digest("hex");
   const statementFingerprint = crypto.createHash("sha256").update(`${politicianId}|${normalizedBodyHash}|${sourceUrl}`).digest("hex");
+
+  const duplicate = db.prepare("SELECT 1 FROM statements WHERE statement_fingerprint = ? AND deleted_at IS NULL LIMIT 1").get(statementFingerprint) as { "1"?: number } | undefined;
+  if (duplicate) {
+    res.status(409).json({ error: "duplicate statement" });
+    return;
+  }
 
   try {
     const result = db
       .prepare(
         "INSERT INTO statements (politician_id, source_url, body, date_said, normalized_body_hash, statement_fingerprint, verification_status, author_id) VALUES (?, ?, ?, ?, ?, ?, 'pending', ?)"
       )
-      .run(politicianId, sourceUrl, body, dateSaid, normalizedBodyHash, statementFingerprint, req.auth.userId ?? "system");
+      .run(politicianId, sourceUrl, body.trim(), dateSaid, normalizedBodyHash, statementFingerprint, req.auth.userId ?? "system");
 
-    res.status(201).json({ id: result.lastInsertRowid });
-  } catch {
-    res.status(409).json({ error: "duplicate statement or invalid politician" });
+    const statementId = result.lastInsertRowid as number;
+    db.prepare(
+      "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'createStatement', NULL, ?)"
+    ).run(statementId, req.auth.userId ?? "system", body.trim());
+
+    res.status(201).json({ id: statementId, verificationStatus: "pending" });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || (err as Error).message?.includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "duplicate statement" : "internal server error"
+    });
   }
 });
 
