@@ -189,6 +189,6 @@ Evidence (commands + summarized results):
 - `pnpm lint` -> failed because `eslint` unavailable (install blocked).
 - `pnpm typecheck` -> failed because `tsc` unavailable (install blocked).
 - `pnpm build` -> failed because `tsc` unavailable (install blocked).
-Commit: <pending>
+Commit: 894b949
 Files touched: package.json, tsconfig.json, tsconfig.build.json, eslint.config.mjs, .gitignore, migrations/0001_initial.sql, src/auth/context.ts, src/auth/role-guard.ts, src/db/client.ts, src/db/migrate.ts, src/index.ts, src/server.ts, src/types/roles.ts, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Dependency installation retry required once npm registry DNS is reachable.
