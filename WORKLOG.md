@@ -254,3 +254,18 @@ Evidence (commands + summarized results):
 Commit: 93a2e8b
 Files touched: src/server.ts, test/statement-capture.test.ts.
 Follow-ups / deferred issues (IDs): better-sqlite3 bindings still blocking tests.
+
+---
+
+Date: 2026-02-15
+Milestone/Sprint: Code review recommendations
+Summary (1–3 bullets):
+- fix(auth): replaced spoofable x-role/x-user-id with JWT; authContext reads Authorization Bearer, verifies JWT, sets req.auth; POST /auth/token issues tokens when secret === JWT_SECRET; tests use authHeaders() helper; spoofed-header test added.
+- docs: SPRINT_GAP_MATRIX.md (task→code mapping), THREAT_MODEL.md (trust boundaries, assets, mitigations), IMPLEMENTATION_GAP_PLAN.md (priority batch plan).
+Why (link to requirement/milestone/issue): Codex review: critical privilege-escalation via headers; user requested fix + sprint matrix + threat model + gap plan.
+Evidence (commands + summarized results):
+- pnpm lint && pnpm typecheck && pnpm build -> pass.
+- pnpm test -> blocked: better-sqlite3 native bindings.
+Commit: bfc04e5 (auth), 63b248f (docs)
+Files touched: src/auth/context.ts, src/auth/jwt.ts, src/server.ts, test/helpers/auth.ts, test/politician-dedupe.test.ts, test/statement-capture.test.ts, test/setup.ts; docs/SPRINT_GAP_MATRIX.md, docs/security/THREAT_MODEL.md, docs/IMPLEMENTATION_GAP_PLAN.md.
+Follow-ups / deferred issues (IDs): None.
