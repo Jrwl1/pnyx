@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   js.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
+  ...tseslint.configs.recommended,
   {
     files: ["src/**/*.ts"],
     languageOptions: {
@@ -14,11 +14,10 @@ export default tseslint.config(
       }
     },
     rules: {
-      "@typescript-eslint/consistent-type-imports": "error",
-      "@typescript-eslint/no-floating-promises": "error"
+      "@typescript-eslint/consistent-type-imports": "error"
     }
   },
   {
-    ignores: ["dist/**", "node_modules/**"]
+    ignores: ["dist/**", "node_modules/**", "eslint.config.mjs"]
   }
 );

@@ -45,6 +45,5 @@ export const applyMigrations = (): void => {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   applyMigrations();
-  // eslint-disable-next-line no-console
   console.log("Migrations applied.");
 }

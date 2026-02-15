@@ -162,7 +162,6 @@ const port = Number(process.env.PORT ?? 3000);
 
 export const startServer = (): void => {
   app.listen(port, () => {
-    // eslint-disable-next-line no-console
     console.log(`Pnyx service listening on port ${port}`);
   });
 };

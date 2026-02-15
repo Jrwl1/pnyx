@@ -8,7 +8,9 @@ export type AuthContext = {
   userId?: string;
 };
 
+// Express type augmentation requires global namespace; no ES module equivalent.
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       auth: AuthContext;
