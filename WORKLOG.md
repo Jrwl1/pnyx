@@ -144,3 +144,17 @@ Evidence (commands + summarized results):
 Commit: 9e46b65
 Files touched: ai/workflows/DELEGATION_SMOKE_TEST.md, DELEGATION_PROMPT_TEMPLATES.md, ai/memory/TOOLING_DRIFT.md, ai/workflows/DELEGATION_MODE.md, ai/memory/TOOLING.md, ai/RULES.md, docs/_mcp_smoke_test_3.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2025-02-15
+Milestone/Sprint: V1 spec lock (Coordinator)
+Summary (1–3 bullets):
+- Set ai/planning/V1_SPEC_LOCK.md status to LOCKED; added Locked at: 2025-02-15.
+- Only Coordinator edits lock file per R2; no CHANGE_REQUESTS needed for initial lock.
+Why (link to requirement/milestone/issue): Coordinator next step — lock V1 spec so product implementation may proceed per V1 scope.
+Evidence (commands + summarized results):
+- git add ai/planning/V1_SPEC_LOCK.md; git commit -m "chore(status): lock V1_SPEC_LOCK (Coordinator)" → 1 file changed.
+Commit: 4faf4a9 (lock); 32b6254 (WORKLOG entry).
+Files touched: ai/planning/V1_SPEC_LOCK.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): None.
