@@ -173,3 +173,22 @@ Evidence (commands + summarized results):
 Commit: f4ad280 (roadmap); a033a57 (WORKLOG entry).
 Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-15
+Milestone/Sprint: S0-T01 (V1 app skeleton + auth roles + baseline schema)
+Summary (1–3 bullets):
+- Bootstrapped TypeScript Node service skeleton with pnpm scripts for `lint`, `typecheck`, `build`, `migrate`, `start`.
+- Added role-aware auth wiring for `anonymous/user/moderator/admin` and protected operations (`user` writes, `moderator` verification/pending-delete, `admin` approve-delete).
+- Added baseline SQLite migration (`users`, `politicians`, `statements`, `votes`, `revision_audits`) and migration runner with one-time `schema_migrations` tracking.
+Why (link to requirement/milestone/issue): S0-T01 implementation per locked V1 spec auth and data model baseline.
+Evidence (commands + summarized results):
+- `pnpm install` -> failed: `ERR_PNPM_META_FETCH_FAIL` with `getaddrinfo EAI_AGAIN registry.npmjs.org` (dependency fetch unavailable in current environment).
+- `pnpm migrate` -> failed because `tsx` unavailable (install blocked).
+- `pnpm lint` -> failed because `eslint` unavailable (install blocked).
+- `pnpm typecheck` -> failed because `tsc` unavailable (install blocked).
+- `pnpm build` -> failed because `tsc` unavailable (install blocked).
+Commit: <pending>
+Files touched: package.json, tsconfig.json, tsconfig.build.json, eslint.config.mjs, .gitignore, migrations/0001_initial.sql, src/auth/context.ts, src/auth/role-guard.ts, src/db/client.ts, src/db/migrate.ts, src/index.ts, src/server.ts, src/types/roles.ts, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Dependency installation retry required once npm registry DNS is reachable.
