@@ -223,3 +223,18 @@ Evidence (commands + summarized results):
 Commit: 318418b
 Files touched: package.json, pnpm-lock.yaml, src/server.ts, test/setup.ts, test/setup-migrate.ts, test/politician-dedupe.test.ts, vitest.config.ts, vitest.e2e.config.ts.
 Follow-ups / deferred issues (IDs): better-sqlite3 native bindings — run `pnpm approve-builds` or install node-gyp and rebuild.
+
+---
+
+Date: 2026-02-15
+Milestone/Sprint: S0-T02 (design recommendations)
+Summary (1–3 bullets):
+- POST /politicians: reserve 409 for uniqueness; return 500 for other DB/runtime errors (catch SQLITE_CONSTRAINT_UNIQUE, else 500).
+- App-level canonical dedupe: before insert, check if any row (including those with externalId) has same normalized (name,region,office); reject with 409.
+- Added test: create without externalId when matching normalized record has externalId -> 409.
+Why (link to requirement/milestone/issue): Design Q&A per V1_SPEC_LOCK, INV-005, API_CONTRACT.
+Evidence (commands + summarized results):
+- pnpm lint && pnpm typecheck && pnpm build -> pass.
+Commit: 4ebd375
+Files touched: src/server.ts, test/politician-dedupe.test.ts.
+Follow-ups / deferred issues (IDs): None.
