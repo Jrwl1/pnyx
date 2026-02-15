@@ -4,23 +4,20 @@ WHAT IT DO? Single source of current repo state, mode, and next action. Keep sho
 
 State:
 
-Repo: bootstrapping AI OS (no product code yet). Planning docs populated from PITCH.
+Repo: V1 spec locked. Roadmap set; S0 Active. No product code yet.
 
-Current mode: Planning (in progress)
+Current mode: Roadmap (S0 Active)
 
 What is true now:
 
-- PITCH.md is filled (one-liner, user, problem, solution, success metrics, non-goals).
-- SCOPE.md, REQUIREMENTS.md, USER_FLOWS.md, and TEST_STRATEGY.md are updated from PITCH with V1-small, concrete content; OPEN QUESTIONS are recorded where decisions are missing.
-- TASKS.md includes a V1 backlog derived from REQUIREMENTS and USER_FLOWS.
-- DATA_MODEL.md, API_CONTRACT.md, ARCHITECTURE.md not yet filled. V1_SPEC_LOCK.md is still DRAFT.
+- ai/planning/V1_SPEC_LOCK.md is LOCKED (Locked at: 2025-02-15).
+- ai/roadmap/MILESTONES.md defines M0 (V1 core implementation) mapped to CAP-001..CAP-008 and rate limits.
+- ai/roadmap/SPRINT.md S0 is Active; scope = M0 (skeleton, politician/statement/vote/verification/delete/revision, rate limits, proof, review closeout).
 
 Next action:
 
-- Resolve OPEN QUESTIONS in SCOPE/REQUIREMENTS/USER_FLOWS (who creates statements, who sets verification status, how politicians are added).
-- Complete DATA_MODEL.md, API_CONTRACT.md, ARCHITECTURE.md; then run LOCK_CHECKLIST.md and lock V1_SPEC_LOCK.md.
+- Execute S0 in DO mode: implement per ai/workflows/DO_MODE.md and ai/roadmap/SPRINT.md (S0-T01..S0-T12).
 
 Notes:
 
-- V1 spec is not locked yet. No product implementation until V1_SPEC_LOCK is LOCKED.
-- Milestones/sprint remain placeholders until V1_SPEC_LOCK is locked.
+- Product implementation may proceed per V1 scope. Milestones/sprint are set; S0 is the current sprint.
