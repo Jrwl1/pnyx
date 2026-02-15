@@ -207,3 +207,19 @@ Evidence (commands + summarized results):
 Commit: 0b02332
 Files touched: eslint.config.mjs, src/auth/context.ts, src/db/migrate.ts, src/server.ts.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-15
+Milestone/Sprint: S0-T02 (CAP-002 politician create/list + dedupe)
+Summary (1–3 bullets):
+- Added vitest + supertest, test/test:e2e scripts, vitest.config.ts, vitest.e2e.config.ts; test setup uses :memory: DB.
+- Politician create/list already implemented by Codex (S0-T01); migration has external_id UNIQUE and normalized_key unique index; requireRole("user") enforces 403 for anonymous; INSERT catches duplicates -> 409.
+- Added test/politician-dedupe.test.ts: authenticated create + list, anonymous 403, duplicate (name,region,office) 409, duplicate externalId 409. Exported app from server.ts for supertest.
+Why (link to requirement/milestone/issue): S0-T02 per SPRINT.md, CAP-002 per V1_SPEC_LOCK.
+Evidence (commands + summarized results):
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+- `pnpm test -- -t "politician dedupe"` -> fails: better-sqlite3 native bindings not built (pnpm ignored build scripts; node-gyp not in path).
+Commit: 318418b
+Files touched: package.json, pnpm-lock.yaml, src/server.ts, test/setup.ts, test/setup-migrate.ts, test/politician-dedupe.test.ts, vitest.config.ts, vitest.e2e.config.ts.
+Follow-ups / deferred issues (IDs): better-sqlite3 native bindings — run `pnpm approve-builds` or install node-gyp and rebuild.
