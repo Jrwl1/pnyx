@@ -238,3 +238,19 @@ Evidence (commands + summarized results):
 Commit: 4ebd375
 Files touched: src/server.ts, test/politician-dedupe.test.ts.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-15
+Milestone/Sprint: S0-T03 (CAP-003 statement create/list)
+Summary (1–3 bullets):
+- POST /statements: check politician exists -> 404; check duplicate fingerprint -> 409; initial RevisionAudit(createStatement); return 201 { id, verificationStatus: "pending" }; 500 for other DB errors.
+- GET /statements: list endpoint; exclude deleted and pending-delete; ORDER BY created_at DESC.
+- test/statement-capture.test.ts: required fields, unknown politician 404, anonymous 403, duplicate 409, pending status + list returns.
+Why (link to requirement/milestone/issue): S0-T03 per SPRINT.md, CAP-003 per V1_SPEC_LOCK.
+Evidence (commands + summarized results):
+- pnpm lint && pnpm typecheck && pnpm build -> pass.
+- pnpm test -- -t "statement capture" -> blocked: better-sqlite3 native bindings not built.
+Commit: 93a2e8b
+Files touched: src/server.ts, test/statement-capture.test.ts.
+Follow-ups / deferred issues (IDs): better-sqlite3 bindings still blocking tests.
