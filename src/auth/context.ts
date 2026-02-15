@@ -1,7 +1,9 @@
-// WHAT IT DO? Extracts lightweight auth context from headers for role-based guards.
+// WHAT IT DO? Extracts auth context from verified JWT; no token or invalid = anonymous.
 import type { Request, Response, NextFunction } from "express";
 
-import { isKnownRole, type Role } from "../types/roles.js";
+import { type Role } from "../types/roles.js";
+
+import { verifyToken } from "./jwt.js";
 
 export type AuthContext = {
   role: Role;
@@ -19,14 +21,26 @@ declare global {
 }
 
 export const authContext = (req: Request, _res: Response, next: NextFunction): void => {
-  const rawRole = req.header("x-role");
-  const rawUserId = req.header("x-user-id");
+  const authHeader = req.header("authorization");
+  const match = authHeader?.match(/^Bearer\s+(\S+)$/i);
+  const token = match?.[1];
 
-  const role = rawRole && isKnownRole(rawRole) ? rawRole : "anonymous";
+  if (!token) {
+    req.auth = { role: "anonymous" };
+    next();
+    return;
+  }
+
+  const payload = verifyToken(token);
+  if (!payload) {
+    req.auth = { role: "anonymous" };
+    next();
+    return;
+  }
+
   req.auth = {
-    role,
-    userId: rawUserId ?? undefined
+    role: payload.role,
+    userId: payload.userId
   };
-
   next();
 };

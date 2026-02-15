@@ -4,12 +4,29 @@ import crypto from "node:crypto";
 import express from "express";
 
 import { authContext } from "./auth/context.js";
+import { signToken } from "./auth/jwt.js";
 import { requireRole } from "./auth/role-guard.js";
 import { db } from "./db/client.js";
 
 export const app = express();
 app.use(express.json());
 app.use(authContext);
+
+app.post("/auth/token", (req, res) => {
+  const { userId, role, secret } = req.body as { userId?: string; role?: string; secret?: string };
+  const expectedSecret = process.env.JWT_SECRET ?? "dev-secret-do-not-use-in-production";
+  if (!userId || !role || secret !== expectedSecret) {
+    res.status(401).json({ error: "invalid or missing userId, role, or secret" });
+    return;
+  }
+  const knownRoles = ["user", "moderator", "admin"];
+  if (!knownRoles.includes(role)) {
+    res.status(400).json({ error: "role must be user, moderator, or admin" });
+    return;
+  }
+  const token = signToken({ userId, role: role as "user" | "moderator" | "admin" });
+  res.json({ token });
+});
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
