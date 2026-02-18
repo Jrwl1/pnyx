@@ -152,6 +152,94 @@ app.post("/statements", requireRole("user"), (req, res) => {
   }
 });
 
+app.patch("/statements/:id", requireRole("user"), (req, res) => {
+  const statementId = Number(req.params.id);
+  const { body: bodyPatch, sourceUrl: sourceUrlPatch, dateSaid: dateSaidPatch } = req.body as {
+    body?: string;
+    sourceUrl?: string;
+    dateSaid?: string;
+  };
+
+  if (bodyPatch === undefined && sourceUrlPatch === undefined && dateSaidPatch === undefined) {
+    res.status(400).json({ error: "at least one of body, sourceUrl, dateSaid is required" });
+    return;
+  }
+
+  const row = db
+    .prepare(
+      "SELECT id, politician_id, author_id, created_at, body, source_url, date_said, deleted_at FROM statements WHERE id = ?"
+    )
+    .get(statementId) as
+    | {
+        id: number;
+        politician_id: number;
+        author_id: string;
+        created_at: string;
+        body: string;
+        source_url: string;
+        date_said: string;
+        deleted_at: string | null;
+      }
+    | undefined;
+
+  if (!row || row.deleted_at) {
+    res.status(404).json({ error: "statement not found" });
+    return;
+  }
+
+  const isAuthor =
+    req.auth.userId != null && String(req.auth.userId) === String((row as Record<string, unknown>).author_id);
+  const createdStr = row.created_at;
+  // SQLite datetime('now') is UTC; parse as UTC so 30min window is correct across envs
+  const createdAtMs = Number.isNaN(Date.parse(createdStr))
+    ? 0
+    : new Date(createdStr.replace(" ", "T") + (createdStr.endsWith("Z") ? "" : "Z")).getTime();
+  const withinWindow = createdAtMs > 0 && createdAtMs + 30 * 60 * 1000 >= Date.now();
+  const isModOrAdmin = req.auth.role === "moderator" || req.auth.role === "admin";
+  const allowed = (isAuthor && withinWindow) || isModOrAdmin;
+  if (!allowed) {
+    res.status(403).json({ error: "forbidden", message: "edit not allowed: outside window or unauthorized" });
+    return;
+  }
+
+  const newBody = (bodyPatch !== undefined ? bodyPatch : row.body).trim();
+  const newSourceUrl = sourceUrlPatch !== undefined ? sourceUrlPatch : row.source_url;
+  const newDateSaid = dateSaidPatch !== undefined ? dateSaidPatch : row.date_said;
+
+  if (!newBody || !newSourceUrl || !newDateSaid) {
+    res.status(400).json({ error: "body, sourceUrl, and dateSaid must be non-empty" });
+    return;
+  }
+
+  const trimmedBody = newBody.toLowerCase();
+  const normalizedBodyHash = crypto.createHash("sha256").update(trimmedBody).digest("hex");
+  const statementFingerprint = crypto
+    .createHash("sha256")
+    .update(`${row.politician_id}|${normalizedBodyHash}|${newSourceUrl}`)
+    .digest("hex");
+
+  const duplicate = db
+    .prepare("SELECT 1 FROM statements WHERE statement_fingerprint = ? AND id != ? AND deleted_at IS NULL LIMIT 1")
+    .get(statementFingerprint, statementId) as { "1"?: number } | undefined;
+  if (duplicate) {
+    res.status(409).json({ error: "duplicate statement" });
+    return;
+  }
+
+  db.prepare(
+    "UPDATE statements SET body = ?, source_url = ?, date_said = ?, normalized_body_hash = ?, statement_fingerprint = ?, updated_at = datetime('now') WHERE id = ?"
+  ).run(newBody, newSourceUrl, newDateSaid, normalizedBodyHash, statementFingerprint, statementId);
+
+  const fromValue = JSON.stringify({ body: row.body, sourceUrl: row.source_url, dateSaid: row.date_said });
+  const toValue = JSON.stringify({ body: newBody, sourceUrl: newSourceUrl, dateSaid: newDateSaid });
+  db.prepare(
+    "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'editStatement', ?, ?)"
+  ).run(statementId, req.auth.userId ?? "system", fromValue, toValue);
+
+  const updated = db.prepare("SELECT updated_at AS updatedAt FROM statements WHERE id = ?").get(statementId) as { updatedAt: string };
+  res.json({ ok: true, updatedAt: updated.updatedAt });
+});
+
 app.patch("/statements/:id/verification", requireRole("moderator"), (req, res) => {
   const statementId = Number(req.params.id);
   const { newStatus, reason } = req.body as { newStatus?: string; reason?: string };
