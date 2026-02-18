@@ -269,3 +269,19 @@ Evidence (commands + summarized results):
 Commit: bfc04e5 (auth), 63b248f (docs)
 Files touched: src/auth/context.ts, src/auth/jwt.ts, src/server.ts, test/helpers/auth.ts, test/politician-dedupe.test.ts, test/statement-capture.test.ts, test/setup.ts; docs/SPRINT_GAP_MATRIX.md, docs/security/THREAT_MODEL.md, docs/IMPLEMENTATION_GAP_PLAN.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-18
+Milestone/Sprint: S0-T04 (CAP-004 statement edit policy + audit)
+Summary (1–3 bullets):
+- PATCH /statements/:id: author can edit within 30 min; moderator/admin can edit any non-deleted statement; 404 if not found/deleted, 403 if outside window or unauthorized.
+- Each edit updates body/source_url/date_said (merge patch), recomputes fingerprint, rejects duplicate with 409; writes RevisionAudit row with changeType editStatement (from_value/to_value JSON).
+- test/edit-window-audit.test.ts: author within 30 min, author after 30 min 403, moderator/admin override, non-author 403, 404, audit row asserted.
+Why (link to requirement/milestone/issue): S0-T04 per SPRINT.md, CAP-004 per V1_SPEC_LOCK, INV-004.
+Evidence (commands + summarized results):
+- pnpm lint && pnpm typecheck && pnpm test && pnpm build -> pass (18 tests).
+- pnpm test -- -t "edit window and audit" -> 7 passed.
+Commit: b9a323d
+Files touched: src/server.ts, test/edit-window-audit.test.ts.
+Follow-ups / deferred issues (IDs): None.
