@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T08 (CAP-008 revision history read flow)
+Summary (1–3 bullets):
+- Added `GET /statements/:id/revisions` to expose ordered revision audit rows for a statement.
+- Endpoint is public (anonymous and authenticated users can read) and returns `404` for missing/deleted statements.
+- Added `test/revision-history.test.ts` for ordered history, auth/anon visibility, and missing statement behavior.
+Why (link to requirement/milestone/issue): S0-T08 per `ai/roadmap/SPRINT.md` CAP-008 done criteria.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "revision history"` -> pass (7 files, 34 tests total; new suite 3 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: b87c6fc
+Files touched: src/server.ts, test/revision-history.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T07 (CAP-007 delete lifecycle + visibility defaults)
 Summary (1–3 bullets):
 - Added author-only withdraw endpoint (`POST /statements/:id/withdraw`) with soft-delete fields (`withdrawn_at`, `deleted_at`).
