@@ -102,6 +102,53 @@ app.get("/statements", (_req, res) => {
   res.json({ items: rows });
 });
 
+app.get("/statements/:id", (req, res) => {
+  const statementId = Number(req.params.id);
+  const includePending = req.auth.role === "moderator" || req.auth.role === "admin";
+  const row = db
+    .prepare(
+      `SELECT s.id, s.politician_id AS politicianId, s.source_url AS sourceUrl, s.body, s.date_said AS dateSaid,
+       s.verification_status AS verificationStatus, s.author_id AS authorId, s.created_at AS createdAt, s.updated_at AS updatedAt
+       FROM statements s
+       WHERE s.id = ? AND s.deleted_at IS NULL AND (s.pending_delete = 0 OR ? = 1)
+       LIMIT 1`
+    )
+    .get(statementId, includePending ? 1 : 0) as
+    | {
+        id: number;
+        politicianId: number;
+        sourceUrl: string;
+        body: string;
+        dateSaid: string;
+        verificationStatus: string;
+        authorId: string;
+        createdAt: string;
+        updatedAt: string;
+      }
+    | undefined;
+
+  if (!row) {
+    res.status(404).json({ error: "statement not found" });
+    return;
+  }
+
+  const aggregate = db
+    .prepare(
+      "SELECT COALESCE(sum(CASE WHEN value='support' THEN 1 ELSE 0 END), 0) AS support, COALESCE(sum(CASE WHEN value='oppose' THEN 1 ELSE 0 END), 0) AS oppose FROM votes WHERE statement_id = ?"
+    )
+    .get(statementId) as { support: number; oppose: number };
+  const revisionMeta = db
+    .prepare("SELECT COUNT(*) AS revisionCount FROM revision_audits WHERE statement_id = ?")
+    .get(statementId) as { revisionCount: number };
+
+  res.json({
+    ...row,
+    aggregate,
+    revisionCount: revisionMeta.revisionCount,
+    revisionHistoryUrl: `/statements/${statementId}/revisions`
+  });
+});
+
 app.post("/statements", requireRole("user"), (req, res) => {
   const { politicianId, sourceUrl, body, dateSaid } = req.body as {
     politicianId?: number;
