@@ -20,13 +20,13 @@ Problem (1–3 lines):
 Political statements are scattered, forgotten, or reframed over time, making accountability weak and short-lived. Voters lack a structured, persistent system to evaluate what was promised versus what actually happened.
 
 Proposed solution (1–3 lines):
-Capture political statements as structured entries tied to verified identities, allow community review and status tracking, and provide a transparent history of edits and outcomes.
+Capture political statements as structured entries tied to verified identities, allow community to add statements, review and status tracking, and provide a transparent history outcomes.
 
 Why now:
 Political discourse is increasingly digital, fragmented, and fast-moving. Trust in institutions is declining, and there is demand for transparent, verifiable information beyond headlines and social feeds.
 
 Why this approach:
-Instead of opinion-driven commentary, this system focuses on structured data: statements, timestamps, verification status, and role-based moderation. It creates a durable accountability layer rather than another debate forum.
+Instead of opinion-driven commentary, this system focuses on structured data: statements, timestamps, verification status, and role-based moderation. It creates a durable accountability layer rather than another debate forum. 
 
 Success metric (measurable):
 
