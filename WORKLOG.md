@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T06 (CAP-006 voting overwrite)
+Summary (1–3 bullets):
+- Added statement existence guard to vote endpoint (`404` for missing/deleted statement).
+- Kept one-row-per-user overwrite semantics and normalized aggregate to numeric `support/oppose` counts with `COALESCE`.
+- Added `test/vote-overwrite-aggregate.test.ts` for authenticated vote, recast overwrite behavior, anonymous denial, and missing statement handling.
+Why (link to requirement/milestone/issue): S0-T06 per `ai/roadmap/SPRINT.md` CAP-006 done criteria.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "vote overwrite aggregate"` -> pass (5 files, 27 tests total; new suite 4 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: cfbe827
+Files touched: src/server.ts, test/vote-overwrite-aggregate.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T05 (CAP-005 verification lifecycle transitions)
 Summary (1–3 bullets):
 - Enforced explicit verification transition map, invalid/no-op transition `409`, and downgrade reason requirement.
