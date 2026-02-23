@@ -382,6 +382,29 @@ app.post("/statements/:id/approve-delete", requireRole("admin"), (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/statements/:id/revisions", (req, res) => {
+  const statementId = Number(req.params.id);
+  const statement = db
+    .prepare("SELECT 1 FROM statements WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+    .get(statementId) as { "1"?: number } | undefined;
+  if (!statement) {
+    res.status(404).json({ error: "statement not found" });
+    return;
+  }
+
+  const items = db
+    .prepare(
+      `SELECT id, statement_id AS statementId, actor_id AS actorId, change_type AS changeType,
+       from_value AS fromValue, to_value AS toValue, reason, created_at AS createdAt
+       FROM revision_audits
+       WHERE statement_id = ?
+       ORDER BY id ASC`
+    )
+    .all(statementId);
+
+  res.json({ items });
+});
+
 const port = Number(process.env.PORT ?? 3000);
 
 export const startServer = (): void => {
