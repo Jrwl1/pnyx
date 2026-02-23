@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T10 (CAP rate limits)
+Summary (1–3 bullets):
+- Implemented in-memory fixed-window rate limiting with explicit buckets for `login`, `register`, `add-statement`, `vote`, plus a `global` fallback.
+- Added `POST /auth/register` and applied route limiters to auth/write paths (`/auth/token`, `/auth/register`, `/statements`, `/statements/:id/votes`) with clear `429` JSON responses.
+- Added `test/rate-limit-429.test.ts`; test setup now pins test-only limiter config and enables deterministic limiter activation via test headers.
+Why (link to requirement/milestone/issue): S0-T10 per `ai/roadmap/SPRINT.md` rate-limit done criteria.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "rate limit 429"` -> pass (9 files, 41 tests total; new suite 4 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: 8ac6dd6
+Files touched: src/server.ts, test/setup.ts, test/rate-limit-429.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T09 (CAP-001 read surfaces)
 Summary (1–3 bullets):
 - Added `GET /statements/:id` read surface with anonymous access, `404` for invalid/missing ids, and role-aware pending visibility.
