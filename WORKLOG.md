@@ -43,6 +43,23 @@ Follow-ups / deferred issues (IDs): None.
 
 ---
 
+Date: 2026-02-24
+Milestone/Sprint: S0-T01 (migration CLI execution guard)
+Summary (1–3 bullets):
+- Fixed direct-execution detection in `src/db/migrate.ts` to work under tsx/Windows path forms.
+- `pnpm migrate` now executes `applyMigrations()` and prints completion as expected.
+Why (link to requirement/milestone/issue): S0-T01 done criteria includes migrations apply.
+Evidence (commands + summarized results):
+- `pnpm migrate` -> pass, output includes `Migrations applied.`
+- `pnpm tsx -e "...SELECT name FROM sqlite_master..."` -> tables present: `politicians, revision_audits, schema_migrations, sqlite_sequence, statements, users, votes`.
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+- `pnpm test` -> pass (3 files, 18 tests).
+Commit: 0d32192
+Files touched: src/db/migrate.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
 Date: 2025-02-13
 Milestone/Sprint: AI OS docs (delegation + tooling)
 Summary (1–3 bullets):
