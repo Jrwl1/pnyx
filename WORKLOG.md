@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T09 (CAP-001 read surfaces)
+Summary (1–3 bullets):
+- Added `GET /statements/:id` read surface with anonymous access, `404` for invalid/missing ids, and role-aware pending visibility.
+- Detail response now includes verification status, vote aggregate, revision count, and revision history reference URL.
+- Added `test/read-surfaces.test.ts` for browse/list/detail flows, invalid id `404`, and empty-state list behavior.
+Why (link to requirement/milestone/issue): S0-T09 per `ai/roadmap/SPRINT.md` CAP-001 done criteria.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "read surfaces"` -> pass (8 files, 37 tests total; new suite 3 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: 35cf00a
+Files touched: src/server.ts, test/read-surfaces.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T08 (CAP-008 revision history read flow)
 Summary (1–3 bullets):
 - Added `GET /statements/:id/revisions` to expose ordered revision audit rows for a statement.
