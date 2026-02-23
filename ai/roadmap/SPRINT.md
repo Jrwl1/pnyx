@@ -3,7 +3,7 @@ SPRINT.md — Current Sprint
 WHAT IT DO? Current sprint scope (maps to milestone + CAPs), DoD, proof commands. Reviewer Ready / Coordinator Done checklists.
 
 Sprint ID: S0 - Locked V1 Core Implementation
-Status: Ready for Done
+Status: Done
 Milestone mapping: M0 (first implementation milestone)
 
 Scope (maps to V1 CAPs in `ai/planning/V1_SPEC_LOCK.md`):
@@ -49,7 +49,7 @@ Reviewer Ready checklist:
 Coordinator Done checklist:
 
 - 2x Ready verdicts exist
-- Repo clean (`git status`) — pending; currently `M ai/planning/PITCH.md` (pre-existing unrelated edit)
+- Repo clean (`git status`)
 - Closeout docs commit exists
 - `PROJECT_STATUS.md` updated
 - `WORKLOG.md` sprint closeout appended
