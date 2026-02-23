@@ -309,13 +309,21 @@ app.post("/statements/:id/votes", requireRole("user"), (req, res) => {
     return;
   }
 
+  const statement = db
+    .prepare("SELECT 1 FROM statements WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+    .get(statementId) as { "1"?: number } | undefined;
+  if (!statement) {
+    res.status(404).json({ error: "statement not found" });
+    return;
+  }
+
   db.prepare(
     "INSERT INTO votes (statement_id, user_id, value) VALUES (?, ?, ?) ON CONFLICT(statement_id, user_id) DO UPDATE SET value=excluded.value, updated_at=datetime('now')"
   ).run(statementId, req.auth.userId ?? "unknown", value);
 
   const agg = db
     .prepare(
-      "SELECT sum(CASE WHEN value='support' THEN 1 ELSE 0 END) AS support, sum(CASE WHEN value='oppose' THEN 1 ELSE 0 END) AS oppose FROM votes WHERE statement_id = ?"
+      "SELECT COALESCE(sum(CASE WHEN value='support' THEN 1 ELSE 0 END), 0) AS support, COALESCE(sum(CASE WHEN value='oppose' THEN 1 ELSE 0 END), 0) AS oppose FROM votes WHERE statement_id = ?"
     )
     .get(statementId);
 
