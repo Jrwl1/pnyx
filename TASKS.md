@@ -12,16 +12,16 @@ Planning:
 - [ ] Write API_CONTRACT.md (if applicable)
 - [ ] Write ARCHITECTURE.md (boundaries + folders)
 - [x] Write TEST_STRATEGY.md
-- [ ] Run LOCK_CHECKLIST.md and lock V1_SPEC_LOCK.md
+- [x] Run LOCK_CHECKLIST.md and lock V1_SPEC_LOCK.md
 
 Roadmap:
 
-- [ ] Derive MILESTONES.md from locked V1
-- [ ] Set SPRINT.md for first milestone
+- [x] Derive MILESTONES.md from locked V1
+- [x] Set SPRINT.md for first milestone
 
 DO (after lock):
 
-- [ ] Execute sprint via ai/workflows/DO_MODE.md
+- [x] Execute sprint via ai/workflows/DO_MODE.md
 
 ---
 

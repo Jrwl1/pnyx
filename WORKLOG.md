@@ -53,7 +53,7 @@ Evidence (commands + summarized results):
 - `pnpm test -- -t "politician dedupe"` -> pass (10 files, 42 tests passed; includes S0-T02 suite).
 - `pnpm test -- -t "statement capture"` -> pass (10 files, 42 tests passed; includes S0-T03 suite).
 - `pnpm tsx -e "import { app } from './src/server.ts'; const server = app.listen(0, () => { console.log('app-start-ok'); server.close(); });"` -> prints `app-start-ok`.
-Commit: <pending>
+Commit: 2f0294f
 Files touched: WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
 

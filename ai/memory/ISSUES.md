@@ -37,8 +37,10 @@ Expected vs actual: Subagent should run in repo and create artifact. Actual: cod
 
 Evidence (file/line or WORKLOG ref): docs/_mcp_smoke_test.md (Parameters, Status); docs/delegation/_latest_failed_run.md.
 
-Status: open
+Status: fixed
+
+Fix commit: 9e46b65
 
 Fix: Use WSL cwd for delegation (e.g. /mnt/c/Users/john/aios/Pnyx). See ai/workflows/DELEGATION_MODE.md and docs/delegation/_latest_failed_run.md minimal fix.
 
-Notes: Root cause = Windows path passed into WSL execution. DELEGATION_MODE already requires WSL paths; this run predated or did not apply that.
+Notes: Root cause = Windows path passed into WSL execution. Verified fixed by delegation smoke test run with WSL cwd (`/mnt/c/...`) and completed status (`docs/_mcp_smoke_test_3.md`, WORKLOG 2026-02-13 entry, commit 9e46b65).
