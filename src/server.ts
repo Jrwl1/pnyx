@@ -90,14 +90,15 @@ app.post("/politicians", requireRole("user"), (req, res) => {
 });
 
 app.get("/statements", (_req, res) => {
+  const includePending = _req.auth.role === "moderator" || _req.auth.role === "admin";
   const rows = db
     .prepare(
       `SELECT s.id, s.politician_id AS politicianId, s.source_url AS sourceUrl, s.body, s.date_said AS dateSaid,
-       s.verification_status AS verificationStatus, s.author_id AS authorId, s.created_at AS createdAt
-       FROM statements s WHERE s.deleted_at IS NULL AND s.pending_delete = 0
+        s.verification_status AS verificationStatus, s.author_id AS authorId, s.created_at AS createdAt
+       FROM statements s WHERE s.deleted_at IS NULL AND (s.pending_delete = 0 OR ? = 1)
        ORDER BY s.created_at DESC`
     )
-    .all();
+    .all(includePending ? 1 : 0);
   res.json({ items: rows });
 });
 
@@ -340,6 +341,29 @@ app.post("/statements/:id/pending-delete", requireRole("moderator"), (req, res) 
     res.status(404).json({ error: "statement not found" });
     return;
   }
+
+  res.json({ ok: true });
+});
+
+app.post("/statements/:id/withdraw", requireRole("user"), (req, res) => {
+  const statementId = Number(req.params.id);
+  const statement = db
+    .prepare("SELECT id, author_id AS authorId, deleted_at AS deletedAt FROM statements WHERE id = ?")
+    .get(statementId) as { id: number; authorId: string; deletedAt: string | null } | undefined;
+
+  if (!statement || statement.deletedAt) {
+    res.status(404).json({ error: "statement not found" });
+    return;
+  }
+
+  if (String(statement.authorId) !== String(req.auth.userId)) {
+    res.status(403).json({ error: "forbidden", message: "only the author can withdraw" });
+    return;
+  }
+
+  db.prepare(
+    "UPDATE statements SET withdrawn_at = datetime('now'), deleted_at = datetime('now'), pending_delete = 0, updated_at = datetime('now') WHERE id = ?"
+  ).run(statementId);
 
   res.json({ ok: true });
 });
