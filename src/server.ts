@@ -243,31 +243,60 @@ app.patch("/statements/:id", requireRole("user"), (req, res) => {
 app.patch("/statements/:id/verification", requireRole("moderator"), (req, res) => {
   const statementId = Number(req.params.id);
   const { newStatus, reason } = req.body as { newStatus?: string; reason?: string };
-  const allowed = new Set(["pending", "verified", "disputed", "rejected"]);
+  const statuses = ["pending", "verified", "disputed", "rejected"] as const;
+  type VerificationStatus = (typeof statuses)[number];
+  const isVerificationStatus = (value: string): value is VerificationStatus => {
+    return statuses.includes(value as VerificationStatus);
+  };
+  const transitionMap: Record<VerificationStatus, VerificationStatus[]> = {
+    pending: ["verified", "disputed", "rejected"],
+    verified: ["disputed", "rejected"],
+    disputed: ["verified", "rejected"],
+    rejected: ["pending"]
+  };
+  const statusRank: Record<VerificationStatus, number> = {
+    verified: 3,
+    disputed: 2,
+    pending: 1,
+    rejected: 0
+  };
 
-  if (!allowed.has(newStatus ?? "")) {
-    res.status(400).json({ error: "invalid status" });
+  if (!newStatus || !isVerificationStatus(newStatus)) {
+    res.status(409).json({ error: "invalid transition", message: "newStatus is invalid" });
     return;
   }
 
   const row = db
     .prepare("SELECT verification_status AS status FROM statements WHERE id = ? AND deleted_at IS NULL")
-    .get(statementId) as { status: string } | undefined;
+    .get(statementId) as { status: VerificationStatus } | undefined;
 
   if (!row) {
     res.status(404).json({ error: "statement not found" });
     return;
   }
 
-  const requiresReason = (row.status === "verified" && (newStatus === "disputed" || newStatus === "rejected")) || (row.status === "pending" && newStatus === "rejected");
-  if (requiresReason && !reason) {
+  if (row.status === newStatus) {
+    res.status(409).json({ error: "invalid transition", message: "no-op transition is not allowed" });
+    return;
+  }
+
+  if (!transitionMap[row.status].includes(newStatus)) {
+    res.status(409).json({
+      error: "invalid transition",
+      message: `transition ${row.status} -> ${newStatus} is not allowed`
+    });
+    return;
+  }
+
+  const requiresReason = statusRank[newStatus] < statusRank[row.status];
+  if (requiresReason && !reason?.trim()) {
     res.status(400).json({ error: "reason required for downgrade transition" });
     return;
   }
 
   db.prepare("UPDATE statements SET verification_status = ?, updated_at = datetime('now') WHERE id = ?").run(newStatus, statementId);
   db.prepare("INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value, reason) VALUES (?, ?, 'verification_status', ?, ?, ?)")
-    .run(statementId, req.auth.userId ?? "moderation", row.status, newStatus, reason ?? null);
+    .run(statementId, req.auth.userId ?? "moderation", row.status, newStatus, reason?.trim() || null);
 
   res.json({ ok: true });
 });
