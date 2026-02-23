@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T11 (full regression proof suite)
+Summary (1–3 bullets):
+- Added `test/health.e2e.test.ts` so `pnpm test:e2e` has an executable suite and the sprint proof command can pass end-to-end.
+- Ran full sprint proof command chain (`lint`, `typecheck`, `test`, `test:e2e`, `build`) successfully.
+- Captured repo status for checklist evidence.
+Why (link to requirement/milestone/issue): S0-T11 requires full regression proof suite and evidence capture.
+Evidence (commands + summarized results):
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build` -> pass; unit tests 10 files / 42 tests passed, e2e 1 file / 1 test passed.
+- `git status --short` -> `M ai/planning/PITCH.md` (pre-existing unrelated change remains).
+Commit: 6d5ed30
+Files touched: test/health.e2e.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T10 (CAP rate limits)
 Summary (1–3 bullets):
 - Implemented in-memory fixed-window rate limiting with explicit buckets for `login`, `register`, `add-statement`, `vote`, plus a `global` fallback.
