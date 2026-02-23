@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T05 (CAP-005 verification lifecycle transitions)
+Summary (1–3 bullets):
+- Enforced explicit verification transition map, invalid/no-op transition `409`, and downgrade reason requirement.
+- Preserved moderator/admin-only transition control and transition audit writes.
+- Added `test/verification-transitions.test.ts` for role gate, transition validity, downgrade reason, audit rows, and `404` missing statement.
+Why (link to requirement/milestone/issue): S0-T05 per `ai/roadmap/SPRINT.md` CAP-005 done criteria.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "verification transitions"` -> pass (4 files, 23 tests total; new suite 5 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: 54beb3d
+Files touched: src/server.ts, test/verification-transitions.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T01 (migration CLI execution guard)
 Summary (1–3 bullets):
 - Fixed direct-execution detection in `src/db/migrate.ts` to work under tsx/Windows path forms.
