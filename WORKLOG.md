@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T07 (CAP-007 delete lifecycle + visibility defaults)
+Summary (1–3 bullets):
+- Added author-only withdraw endpoint (`POST /statements/:id/withdraw`) with soft-delete fields (`withdrawn_at`, `deleted_at`).
+- Updated statement list default visibility: public/user hide pending-delete rows, moderator/admin include pending-delete rows by default; deleted rows remain excluded.
+- Added `test/delete-lifecycle-visibility.test.ts` covering withdraw, pending-delete/approve-delete role flow, and role-aware list defaults.
+Why (link to requirement/milestone/issue): S0-T07 per `ai/roadmap/SPRINT.md` CAP-007 done criteria.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "delete lifecycle visibility"` -> pass (6 files, 31 tests total; new suite 4 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: d4c313d
+Files touched: src/server.ts, test/delete-lifecycle-visibility.test.ts.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T06 (CAP-006 voting overwrite)
 Summary (1–3 bullets):
 - Added statement existence guard to vote endpoint (`404` for missing/deleted statement).
