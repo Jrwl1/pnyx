@@ -12,7 +12,100 @@ export const app = express();
 app.use(express.json());
 app.use(authContext);
 
-app.post("/auth/token", (req, res) => {
+type RateLimitRule = {
+  name: string;
+  max: number;
+  windowMs: number;
+};
+
+type RateLimitKeyResolver = (req: express.Request) => string;
+
+const readPositiveIntEnv = (name: string, fallback: number): number => {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+};
+
+const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+export const resetRateLimitState = (): void => {
+  rateLimitStore.clear();
+};
+
+const shouldEnforceRateLimit = (req: express.Request): boolean => {
+  if (process.env.NODE_ENV !== "test") {
+    return true;
+  }
+  return req.header("x-enable-rate-limit-test") === "1";
+};
+
+const createRateLimiter = (rule: RateLimitRule, resolveKey?: RateLimitKeyResolver): express.RequestHandler => {
+  return (req, res, next) => {
+    if (!shouldEnforceRateLimit(req)) {
+      next();
+      return;
+    }
+
+    const now = Date.now();
+    const baseKey = resolveKey ? resolveKey(req) : req.auth.userId ?? req.ip ?? "anonymous";
+    const testScope = process.env.NODE_ENV === "test" ? req.header("x-rate-limit-test-key") ?? "" : "";
+    const key = `${rule.name}:${baseKey}:${testScope}`;
+    const existing = rateLimitStore.get(key);
+
+    if (!existing || now > existing.resetAt) {
+      rateLimitStore.set(key, { count: 1, resetAt: now + rule.windowMs });
+      next();
+      return;
+    }
+
+    if (existing.count >= rule.max) {
+      const retryAfterSeconds = Math.max(1, Math.ceil((existing.resetAt - now) / 1000));
+      res.status(429).json({
+        error: "rate_limited",
+        message: `Too many requests for ${rule.name}. Retry in ${retryAfterSeconds}s.`,
+        retryAfterSeconds
+      });
+      return;
+    }
+
+    existing.count += 1;
+    rateLimitStore.set(key, existing);
+    next();
+  };
+};
+
+const RATE_LIMIT_WINDOW_MS = readPositiveIntEnv("RATE_LIMIT_WINDOW_MS", 60_000);
+const globalLimiter = createRateLimiter({
+  name: "global",
+  max: readPositiveIntEnv("RATE_LIMIT_GLOBAL_MAX", 500),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const loginLimiter = createRateLimiter(
+  {
+    name: "login",
+    max: readPositiveIntEnv("RATE_LIMIT_LOGIN_MAX", 30),
+    windowMs: RATE_LIMIT_WINDOW_MS
+  },
+  (req) => (req.body as { userId?: string }).userId ?? req.ip ?? "anonymous"
+);
+const registerLimiter = createRateLimiter({
+  name: "register",
+  max: readPositiveIntEnv("RATE_LIMIT_REGISTER_MAX", 20),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const addStatementLimiter = createRateLimiter({
+  name: "add-statement",
+  max: readPositiveIntEnv("RATE_LIMIT_ADD_STATEMENT_MAX", 60),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const voteLimiter = createRateLimiter({
+  name: "vote",
+  max: readPositiveIntEnv("RATE_LIMIT_VOTE_MAX", 120),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+
+app.use(globalLimiter);
+
+app.post("/auth/token", loginLimiter, (req, res) => {
   const { userId, role, secret } = req.body as { userId?: string; role?: string; secret?: string };
   const expectedSecret = process.env.JWT_SECRET ?? "dev-secret-do-not-use-in-production";
   if (!userId || !role || secret !== expectedSecret) {
@@ -26,6 +119,33 @@ app.post("/auth/token", (req, res) => {
   }
   const token = signToken({ userId, role: role as "user" | "moderator" | "admin" });
   res.json({ token });
+});
+
+app.post("/auth/register", registerLimiter, (req, res) => {
+  const { email, role } = req.body as { email?: string; role?: string };
+  const normalizedEmail = email?.trim().toLowerCase();
+  if (!normalizedEmail) {
+    res.status(400).json({ error: "email is required" });
+    return;
+  }
+
+  const effectiveRole = role ?? "user";
+  if (!["user", "moderator", "admin"].includes(effectiveRole)) {
+    res.status(400).json({ error: "role must be user, moderator, or admin" });
+    return;
+  }
+
+  try {
+    const id = crypto.randomUUID();
+    db.prepare("INSERT INTO users (id, email, role) VALUES (?, ?, ?)").run(id, normalizedEmail, effectiveRole);
+    res.status(201).json({ id, email: normalizedEmail, role: effectiveRole });
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || (err as Error).message?.includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "email already registered" : "internal server error"
+    });
+  }
 });
 
 app.get("/health", (_req, res) => {
@@ -149,7 +269,7 @@ app.get("/statements/:id", (req, res) => {
   });
 });
 
-app.post("/statements", requireRole("user"), (req, res) => {
+app.post("/statements", addStatementLimiter, requireRole("user"), (req, res) => {
   const { politicianId, sourceUrl, body, dateSaid } = req.body as {
     politicianId?: number;
     sourceUrl?: string;
@@ -349,7 +469,7 @@ app.patch("/statements/:id/verification", requireRole("moderator"), (req, res) =
   res.json({ ok: true });
 });
 
-app.post("/statements/:id/votes", requireRole("user"), (req, res) => {
+app.post("/statements/:id/votes", voteLimiter, requireRole("user"), (req, res) => {
   const statementId = Number(req.params.id);
   const { value } = req.body as { value?: string };
   if (value !== "support" && value !== "oppose") {
