@@ -1,6 +1,7 @@
 // WHAT IT DO? Applies SQL migrations exactly once in filename order.
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { db } from "./client.js";
 
@@ -43,7 +44,15 @@ export const applyMigrations = (): void => {
   }
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isExecutedDirectly = (): boolean => {
+  if (!process.argv[1]) {
+    return false;
+  }
+
+  return path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+};
+
+if (isExecutedDirectly()) {
   applyMigrations();
   console.log("Migrations applied.");
 }
