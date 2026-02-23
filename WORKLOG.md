@@ -44,6 +44,22 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-24
+Milestone/Sprint: S0-T12 (review gate prep — re-anchor earlier proof commands)
+Summary (1–3 bullets):
+- Re-ran S0-T02 and S0-T03 named proof commands to replace earlier blocked evidence windows with green results.
+- Added explicit app startup smoke check (bind/close) to backfill S0-T01 "app starts" criterion evidence.
+Why (link to requirement/milestone/issue): Reviewer gate flagged missing explicit pass anchors for earlier sprint items.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "politician dedupe"` -> pass (10 files, 42 tests passed; includes S0-T02 suite).
+- `pnpm test -- -t "statement capture"` -> pass (10 files, 42 tests passed; includes S0-T03 suite).
+- `pnpm tsx -e "import { app } from './src/server.ts'; const server = app.listen(0, () => { console.log('app-start-ok'); server.close(); });"` -> prints `app-start-ok`.
+Commit: <pending>
+Files touched: WORKLOG.md.
+Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-24
 Milestone/Sprint: S0-T11 (full regression proof suite)
 Summary (1–3 bullets):
 - Added `test/health.e2e.test.ts` so `pnpm test:e2e` has an executable suite and the sprint proof command can pass end-to-end.
