@@ -830,3 +830,38 @@ Evidence (commands + summarized results):
 Commit: 0139933
 Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Execute S5 in DO mode beginning with `S5-T01` (CR-003 acceptance and lock sync).
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S5-T01 (CR-003 acceptance + lock sync)
+Summary (1–3 bullets):
+- Added accepted CR-003 entry for CAPTCHA enforcement and assistive fuzzy duplicate hints.
+- Synced lock policy text in `V1_SPEC_LOCK.md` for new trust-hardening scope and updated status notes.
+- Backfilled CR entry with the concrete lock-sync commit reference.
+Why (link to requirement/milestone/issue): S5-T01 requires formal accepted scope expansion before implementation.
+Evidence (commands + summarized results):
+- `git status --short && git grep -nE "CR-003|Accepted|CAPTCHA|fuzzy" ai/memory/CHANGE_REQUESTS.md ai/planning/V1_SPEC_LOCK.md ai/roadmap/MILESTONES.md` -> confirmed CR-003 + lock anchors.
+- Lock sync commit -> `ba995d3` (`ai/memory/CHANGE_REQUESTS.md`, `ai/planning/V1_SPEC_LOCK.md`, `PROJECT_STATUS.md`).
+- CR backfill commit -> `21dc7ba` (sets `Spec updated in commit: ba995d3`).
+Commit: ba995d3, 21dc7ba
+Files touched: ai/memory/CHANGE_REQUESTS.md, ai/planning/V1_SPEC_LOCK.md, PROJECT_STATUS.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Implement S5-T02..S5-T06 features and tests.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S5-T02/S5-T03/S5-T04/S5-T05/S5-T06/S5-T07
+Summary (1–3 bullets):
+- Implemented CAPTCHA enforcement for `/auth/register` and `/politician-proposals` (eligible caller policy + deterministic missing/invalid errors), added abuse telemetry endpoint `/abuse/metrics`, and instrumented per-rule rate-limit outcomes.
+- Added deterministic bounded fuzzy duplicate-assist hints (`fuzzyHints.canonical`, `fuzzyHints.pendingProposals`) while preserving assistive-only behavior (no auto decision side effects).
+- Added/updated regression suites (`register-captcha`, `proposal-captcha`, `duplicate assist fuzzy`, `abuse telemetry`, role matrix updates) and synchronized planning/ops docs for the new controls.
+Why (link to requirement/milestone/issue): S5 executes M4 trust/abuse hardening while preserving lock-critical lifecycle/role/revision invariants.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "register captcha" && pnpm test -- -t "proposal captcha" && pnpm test -- -t "duplicate assist fuzzy" && pnpm test -- -t "abuse telemetry" && pnpm test -- -t "captcha" && pnpm test -- -t "duplicate assist" && pnpm typecheck` -> pass (vitest runs green at 29 files / 92 tests, typecheck pass).
+- `pnpm test -- -t "role matrix" && pnpm test -- -t "delete lifecycle visibility" && pnpm test -- -t "revision history"` -> pass (invariant suites green).
+- Implementation commit -> `057b34c` (`src/server.ts`, `test/setup.ts`, `test/register-captcha.test.ts`, `test/proposal-captcha.test.ts`, `test/proposal-duplicate-assist-fuzzy.test.ts`, `test/abuse-telemetry.test.ts`, `test/role-matrix.test.ts`).
+- Documentation sync commit -> `e2f5fb7` (`ai/planning/API_CONTRACT.md`, `ai/planning/ARCHITECTURE.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/TRACEABILITY_V1.md`).
+Commit: 057b34c, e2f5fb7
+Files touched: src/server.ts, test/setup.ts, test/register-captcha.test.ts, test/proposal-captcha.test.ts, test/proposal-duplicate-assist-fuzzy.test.ts, test/abuse-telemetry.test.ts, test/role-matrix.test.ts, ai/planning/API_CONTRACT.md, ai/planning/ARCHITECTURE.md, docs/RELEASE_READINESS_RUNBOOK.md, docs/TRACEABILITY_V1.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Run S5-T08 full proof chain, local site launch/audit, then reviewer gate and closeout.
