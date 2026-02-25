@@ -689,3 +689,18 @@ Evidence (commands + summarized results):
 Commit: 09dcaf6
 Files touched: ai/planning/API_CONTRACT.md, ai/planning/ARCHITECTURE.md, docs/TRACEABILITY_V1.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Execute S3-T05..S3-T07 (success-metrics plan, CI proof workflow, release runbook).
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T05/S3-T06/S3-T07 (metrics plan + CI proof automation + release runbook)
+Summary (1–3 bullets):
+- Added deterministic success-metrics reporting plan with SQL-backed snapshot command and output schema in `docs/SUCCESS_METRICS_PLAN.md`.
+- Added release-readiness runbook with env checklist, migration/rollback policy, proof chain, and security-audit compliance steps.
+- Added `.github/workflows/ci-proof.yml` and paired security audit note (`docs/security/audit-s3-ci-proof.md`) for sensitive workflow-path change compliance.
+Why (link to requirement/milestone/issue): S3-T05..S3-T07 require release-readiness instrumentation and CI proof automation while maintaining security-audit policy discipline.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "proposal sla metrics" && pnpm test -- -t "vote overwrite aggregate" && pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && git grep -nE "migration|rollback|env|security audit" docs` -> pass (targeted suites green; full proof chain green at 25 files / 81 tests + e2e 1 test; grep returned expected docs anchors).
+Commit: 3ab0d85, 037254c
+Files touched: docs/SUCCESS_METRICS_PLAN.md, docs/RELEASE_READINESS_RUNBOOK.md, .github/workflows/ci-proof.yml, docs/security/audit-s3-ci-proof.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Run S3-T08/S3-T09 targeted invariants/lifecycle regression checks before sprint-level closeout proof.
