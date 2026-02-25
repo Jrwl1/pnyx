@@ -16,7 +16,7 @@ describe("read surfaces", () => {
   });
 
   it("anonymous users can browse politicians/statements and fetch detail with status+aggregate+history reference", async () => {
-    const creatorHeaders = await authHeaders("creator-1", "user");
+    const creatorHeaders = await authHeaders("creator-1", "moderator");
     const politicianRes = await request(app)
       .post("/politicians")
       .set(creatorHeaders)

@@ -1,5 +1,5 @@
 // WHAT IT DO? S0-T02 proof: politician create/list with canonical dedupe (externalId first, else name/region/office).
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 
 import request from "supertest";
 
@@ -12,8 +12,8 @@ describe("politician dedupe", () => {
     db.exec("DELETE FROM politicians");
   });
 
-  it("authenticated create works and list returns created records", async () => {
-    const headers = await authHeaders();
+  it("moderator create works and list returns created records", async () => {
+    const headers = await authHeaders("mod-create", "moderator");
     const res = await request(app)
       .post("/politicians")
       .set(headers)
@@ -32,10 +32,28 @@ describe("politician dedupe", () => {
     });
   });
 
+  it("admin create works", async () => {
+    const adminHeaders = await authHeaders("admin-create", "admin");
+    await request(app)
+      .post("/politicians")
+      .set(adminHeaders)
+      .send({ name: "Admin Add", region: "CA", office: "Senator" })
+      .expect(201);
+  });
+
   it("anonymous create denied with 403", async () => {
     await request(app)
       .post("/politicians")
       .send({ name: "Bob Jones" })
+      .expect(403);
+  });
+
+  it("user create denied with 403", async () => {
+    const headers = await authHeaders("plain-user", "user");
+    await request(app)
+      .post("/politicians")
+      .set(headers)
+      .send({ name: "User denied" })
       .expect(403);
   });
 
@@ -48,7 +66,7 @@ describe("politician dedupe", () => {
   });
 
   it("duplicate (name,region,office) returns 409", async () => {
-    const headers = await authHeaders();
+    const headers = await authHeaders("mod-dup-1", "moderator");
     await request(app)
       .post("/politicians")
       .set(headers)
@@ -67,7 +85,7 @@ describe("politician dedupe", () => {
   });
 
   it("duplicate externalId returns 409", async () => {
-    const headers = await authHeaders();
+    const headers = await authHeaders("mod-dup-2", "moderator");
     await request(app)
       .post("/politicians")
       .set(headers)
@@ -82,7 +100,7 @@ describe("politician dedupe", () => {
   });
 
   it("create without externalId when matching normalized record has externalId returns 409", async () => {
-    const headers = await authHeaders();
+    const headers = await authHeaders("mod-dup-3", "moderator");
     await request(app)
       .post("/politicians")
       .set(headers)

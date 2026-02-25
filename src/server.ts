@@ -97,6 +97,16 @@ const addStatementLimiter = createRateLimiter({
   max: readPositiveIntEnv("RATE_LIMIT_ADD_STATEMENT_MAX", 60),
   windowMs: RATE_LIMIT_WINDOW_MS
 });
+const proposalSubmitLimiter = createRateLimiter({
+  name: "politician-proposal",
+  max: readPositiveIntEnv("RATE_LIMIT_POLITICIAN_PROPOSAL_MAX", 20),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const politicianCreateLimiter = createRateLimiter({
+  name: "politician-create",
+  max: readPositiveIntEnv("RATE_LIMIT_POLITICIAN_CREATE_MAX", 40),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
 const voteLimiter = createRateLimiter({
   name: "vote",
   max: readPositiveIntEnv("RATE_LIMIT_VOTE_MAX", 120),
@@ -104,6 +114,48 @@ const voteLimiter = createRateLimiter({
 });
 
 app.use(globalLimiter);
+
+type CanonicalPoliticianInput = {
+  name: string;
+  region?: string;
+  office?: string;
+  externalId?: string;
+};
+
+type CanonicalPoliticianResult =
+  | { ok: true; id: number }
+  | { ok: false; status: 400 | 409 | 500; error: string };
+
+const createCanonicalPolitician = (input: CanonicalPoliticianInput, actorId: string): CanonicalPoliticianResult => {
+  const trimmedName = input.name.trim();
+  if (!trimmedName) {
+    return { ok: false, status: 400, error: "name is required" };
+  }
+
+  const trimmedRegion = (input.region ?? "").toString().trim();
+  const trimmedOffice = (input.office ?? "").toString().trim();
+  const trimmedExternalId = input.externalId?.trim() || null;
+  const normalizedKey = `${trimmedName.toLowerCase()}|${trimmedRegion.toLowerCase()}|${trimmedOffice.toLowerCase()}`;
+
+  const existing = db.prepare(
+    "SELECT 1 FROM politicians WHERE deleted_at IS NULL AND normalized_key = ? LIMIT 1"
+  ).get(normalizedKey) as { "1"?: number } | undefined;
+  if (existing) {
+    return { ok: false, status: 409, error: "duplicate politician identity" };
+  }
+
+  try {
+    const stmt = db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 0, ?)"
+    );
+    const result = stmt.run(trimmedName, trimmedRegion || null, trimmedOffice || null, trimmedExternalId, actorId);
+    return { ok: true, id: result.lastInsertRowid as number };
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || (err as Error).message?.includes("UNIQUE constraint");
+    return { ok: false, status: isUniqueness ? 409 : 500, error: isUniqueness ? "duplicate politician identity" : "internal server error" };
+  }
+};
 
 app.post("/auth/token", loginLimiter, (req, res) => {
   const { userId, role, secret } = req.body as { userId?: string; role?: string; secret?: string };
@@ -170,7 +222,7 @@ app.get("/politicians", (_req, res) => {
   res.json({ items: rows });
 });
 
-app.post("/politicians", requireRole("user"), (req, res) => {
+app.post("/politicians", politicianCreateLimiter, requireRole("moderator"), (req, res) => {
   const { name, region, office, externalId } = req.body as {
     name?: string;
     region?: string;
@@ -183,39 +235,238 @@ app.post("/politicians", requireRole("user"), (req, res) => {
     return;
   }
 
+  const created = createCanonicalPolitician({ name, region, office, externalId }, req.auth.userId ?? "moderation");
+  if (!created.ok) {
+    res.status(created.status).json({ error: created.error });
+    return;
+  }
+
+  res.status(201).json({ id: created.id });
+});
+
+type ProposalStatus = "pending" | "approved" | "rejected" | "duplicate";
+const isProposalStatus = (value: string): value is ProposalStatus => {
+  return ["pending", "approved", "rejected", "duplicate"].includes(value);
+};
+
+app.post("/politician-proposals", proposalSubmitLimiter, requireRole("user"), (req, res) => {
+  const { name, region, office, externalId, sourceNote } = req.body as {
+    name?: string;
+    region?: string;
+    office?: string;
+    externalId?: string;
+    sourceNote?: string;
+  };
+
+  if (!name || !name.trim()) {
+    res.status(400).json({ error: "name is required" });
+    return;
+  }
+
   const trimmedName = name.trim();
   const trimmedRegion = (region ?? "").toString().trim();
   const trimmedOffice = (office ?? "").toString().trim();
+  const trimmedExternalId = externalId?.trim() || null;
   const normalizedKey = `${trimmedName.toLowerCase()}|${trimmedRegion.toLowerCase()}|${trimmedOffice.toLowerCase()}`;
 
-  // Canonical dedupe: reject if same (name,region,office) exists (including rows with externalId).
-  const existing = db.prepare(
-    "SELECT 1 FROM politicians WHERE deleted_at IS NULL AND normalized_key = ? LIMIT 1"
-  ).get(normalizedKey) as { "1"?: number } | undefined;
-  if (existing) {
+  if (trimmedExternalId) {
+    const dupCanonicalExternal = db
+      .prepare("SELECT 1 FROM politicians WHERE deleted_at IS NULL AND external_id = ? LIMIT 1")
+      .get(trimmedExternalId) as { "1"?: number } | undefined;
+    if (dupCanonicalExternal) {
+      res.status(409).json({ error: "duplicate politician identity" });
+      return;
+    }
+  }
+
+  const dupCanonicalNormalized = db
+    .prepare("SELECT 1 FROM politicians WHERE deleted_at IS NULL AND normalized_key = ? LIMIT 1")
+    .get(normalizedKey) as { "1"?: number } | undefined;
+  if (dupCanonicalNormalized) {
     res.status(409).json({ error: "duplicate politician identity" });
     return;
   }
 
   try {
-    const stmt = db.prepare(
-      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 0, ?)"
-    );
-    const result = stmt.run(
-      trimmedName,
-      trimmedRegion || null,
-      trimmedOffice || null,
-      externalId ?? null,
-      req.auth.userId ?? "system"
-    );
-    res.status(201).json({ id: result.lastInsertRowid });
+    const result = db
+      .prepare(
+        "INSERT INTO politician_proposals (submitted_by, name, region, office, external_id, source_note, status) VALUES (?, ?, ?, ?, ?, ?, 'pending')"
+      )
+      .run(req.auth.userId ?? "unknown", trimmedName, trimmedRegion || null, trimmedOffice || null, trimmedExternalId, sourceNote?.trim() || null);
+
+    const proposalId = result.lastInsertRowid as number;
+    db.prepare(
+      "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason) VALUES (?, ?, 'submitted', NULL, 'pending', NULL)"
+    ).run(proposalId, req.auth.userId ?? "unknown");
+
+    res.status(201).json({ id: proposalId, status: "pending" });
   } catch (err) {
     const code = (err as { code?: string })?.code;
     const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || (err as Error).message?.includes("UNIQUE constraint");
     res.status(isUniqueness ? 409 : 500).json({
-      error: isUniqueness ? "duplicate politician identity" : "internal server error"
+      error: isUniqueness ? "duplicate pending proposal" : "internal server error"
     });
   }
+});
+
+app.get("/politician-proposals", requireRole("user"), (req, res) => {
+  const statusRaw = (req.query.status as string | undefined)?.trim().toLowerCase();
+  const statusFilter = statusRaw && statusRaw !== "all" ? statusRaw : null;
+  if (statusFilter && !isProposalStatus(statusFilter)) {
+    res.status(400).json({ error: "invalid status filter" });
+    return;
+  }
+
+  const isModerator = req.auth.role === "moderator" || req.auth.role === "admin";
+  const items = isModerator
+    ? db
+        .prepare(
+          `SELECT id, submitted_by AS submittedBy, name, region, office, external_id AS externalId,
+            source_note AS sourceNote, status, decision_by AS decisionBy, decision_reason AS decisionReason,
+            linked_politician_id AS linkedPoliticianId, created_at AS createdAt, decided_at AS decidedAt
+           FROM politician_proposals
+           WHERE (? IS NULL OR status = ?)
+           ORDER BY created_at DESC`
+        )
+        .all(statusFilter, statusFilter)
+    : db
+        .prepare(
+          `SELECT id, submitted_by AS submittedBy, name, region, office, external_id AS externalId,
+            source_note AS sourceNote, status, decision_by AS decisionBy, decision_reason AS decisionReason,
+            linked_politician_id AS linkedPoliticianId, created_at AS createdAt, decided_at AS decidedAt
+           FROM politician_proposals
+           WHERE submitted_by = ? AND (? IS NULL OR status = ?)
+           ORDER BY created_at DESC`
+        )
+        .all(req.auth.userId ?? "unknown", statusFilter, statusFilter);
+
+  res.json({ items });
+});
+
+app.patch("/politician-proposals/:id/review", requireRole("moderator"), (req, res) => {
+  const proposalId = Number(req.params.id);
+  const { decision, reason, linkedPoliticianId } = req.body as {
+    decision?: string;
+    reason?: string;
+    linkedPoliticianId?: number;
+  };
+
+  if (decision !== "approve" && decision !== "reject" && decision !== "duplicate") {
+    res.status(400).json({ error: "decision must be approve, reject, or duplicate" });
+    return;
+  }
+
+  if ((decision === "reject" || decision === "duplicate") && !reason?.trim()) {
+    res.status(400).json({ error: "reason is required for reject or duplicate" });
+    return;
+  }
+
+  const actorId = req.auth.userId ?? "moderation";
+  const reviewTx = db.transaction(() => {
+    const proposal = db
+      .prepare(
+        `SELECT id, submitted_by AS submittedBy, name, region, office, external_id AS externalId,
+         status, linked_politician_id AS linkedPoliticianId
+         FROM politician_proposals WHERE id = ?`
+      )
+      .get(proposalId) as
+      | {
+          id: number;
+          submittedBy: string;
+          name: string;
+          region: string | null;
+          office: string | null;
+          externalId: string | null;
+          status: ProposalStatus;
+          linkedPoliticianId: number | null;
+        }
+      | undefined;
+
+    if (!proposal) {
+      return { ok: false as const, status: 404 as const, error: "proposal not found" };
+    }
+    if (proposal.status !== "pending") {
+      return { ok: false as const, status: 409 as const, error: "proposal is not pending" };
+    }
+
+    if (decision === "approve") {
+      const created = createCanonicalPolitician(
+        {
+          name: proposal.name,
+          region: proposal.region ?? undefined,
+          office: proposal.office ?? undefined,
+          externalId: proposal.externalId ?? undefined
+        },
+        actorId
+      );
+
+      if (!created.ok) {
+        return { ok: false as const, status: created.status, error: created.error };
+      }
+
+      db.prepare(
+        "UPDATE politician_proposals SET status = 'approved', decision_by = ?, decision_reason = ?, linked_politician_id = ?, updated_at = datetime('now'), decided_at = datetime('now') WHERE id = ?"
+      ).run(actorId, reason?.trim() || null, created.id, proposalId);
+      db.prepare(
+        "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, linked_politician_id) VALUES (?, ?, 'approved', 'pending', 'approved', ?, ?)"
+      ).run(proposalId, actorId, reason?.trim() || null, created.id);
+
+      return { ok: true as const, status: "approved" as const, politicianId: created.id };
+    }
+
+    let linkedId: number | null = null;
+    if (decision === "duplicate") {
+      linkedId = linkedPoliticianId ?? null;
+      if (linkedId != null) {
+        const linked = db
+          .prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+          .get(linkedId) as { "1"?: number } | undefined;
+        if (!linked) {
+          return { ok: false as const, status: 404 as const, error: "linked politician not found" };
+        }
+      }
+    }
+
+    const nextStatus = decision === "reject" ? "rejected" : "duplicate";
+    const action = decision === "reject" ? "rejected" : "duplicate";
+    db.prepare(
+      "UPDATE politician_proposals SET status = ?, decision_by = ?, decision_reason = ?, linked_politician_id = ?, updated_at = datetime('now'), decided_at = datetime('now') WHERE id = ?"
+    ).run(nextStatus, actorId, reason?.trim() || null, linkedId, proposalId);
+    db.prepare(
+      "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, linked_politician_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
+    ).run(proposalId, actorId, action, nextStatus, reason?.trim() || null, linkedId);
+
+    return { ok: true as const, status: nextStatus, politicianId: linkedId };
+  });
+
+  const result = reviewTx();
+  if (!result.ok) {
+    res.status(result.status).json({ error: result.error });
+    return;
+  }
+
+  res.json({ ok: true, status: result.status, politicianId: result.politicianId });
+});
+
+app.get("/politician-proposals/:id/audits", requireRole("moderator"), (req, res) => {
+  const proposalId = Number(req.params.id);
+  const proposal = db.prepare("SELECT id FROM politician_proposals WHERE id = ?").get(proposalId) as { id: number } | undefined;
+  if (!proposal) {
+    res.status(404).json({ error: "proposal not found" });
+    return;
+  }
+
+  const items = db
+    .prepare(
+      `SELECT id, proposal_id AS proposalId, actor_id AS actorId, action, from_status AS fromStatus,
+       to_status AS toStatus, reason, linked_politician_id AS linkedPoliticianId, created_at AS createdAt
+       FROM politician_proposal_audits
+       WHERE proposal_id = ?
+       ORDER BY id ASC`
+    )
+    .all(proposalId);
+
+  res.json({ items });
 });
 
 app.get("/statements", (_req, res) => {
