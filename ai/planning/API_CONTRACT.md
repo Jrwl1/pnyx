@@ -1,203 +1,308 @@
-API_CONTRACT.md — Internal Interface Contract (V1)
+API_CONTRACT.md — Internal Interface Contract (Implemented V1)
 
-WHAT IT DO? Defines testable internal UI<->backend operations for V1 (no public API), with role auth, inputs/outputs, list visibility defaults, rate limits, and 403/404/409/429 behavior.
+WHAT IT DO? Defines the current internal HTTP contract implemented in `src/server.ts`, including auth gates, request/response semantics, and error/rate-limit behavior used by tests.
 
 ## Scope
 
-- No external/public API in V1.
-- Interfaces are internal only (`ui -> backend`).
-- Contract is written in HTTP-like operation form because it is directly testable.
+- V1 exposes internal backend endpoints only (no external/public API contract).
+- Paths and semantics below reflect the implemented service (`src/server.ts`) rather than hypothetical `/internal/*` routes.
 
-## Auth model (role gates)
+## Auth model
 
-- `anonymous`: read-only.
-- `user`: read + add politician + add statement + vote + edit own statement within grace window + withdraw own statement.
-- `moderator`: all user actions + edit any statement + set verification status + propose delete.
-- `admin`: all moderator actions + approve delete.
+- `anonymous`: read-only routes without guard middleware.
+- `user`: baseline authenticated writes.
+- `moderator`: user privileges plus moderation actions.
+- `admin`: moderator privileges plus admin-only delete approval.
+
+Role enforcement model:
+- `requireRole("user")` allows `user|moderator|admin`.
+- `requireRole("moderator")` allows `moderator|admin`.
+- `requireRole("admin")` allows only `admin`.
 
 ## Error contract
 
-- `403 FORBIDDEN`: authenticated user exists but lacks permission for requested action.
-- `404 NOT_FOUND`: target resource does not exist or is not readable in current lifecycle state.
-- `409 CONFLICT`: uniqueness/rule conflict (duplicate politician identity, duplicate statement, invalid lifecycle transition, no-op status update).
-- `429 TOO_MANY_REQUESTS`: request exceeds rate limit policy; body includes retry guidance and clear user-facing message.
+- `400`: validation failure (missing/invalid fields, unsupported filters, invalid reason taxonomy).
+- `401`: invalid token grant input for `POST /auth/token`.
+- `403`: authenticated but insufficient role or blocked policy action (for example privileged self-assignment on register).
+- `404`: target not found on read/write paths that require existing resources.
+- `409`: lifecycle/version/duplicate conflict.
+- `429`: rate-limit exceeded (`{ error: "rate_limited", message, retryAfterSeconds }`).
+- `500`: internal server failure fallback.
 
-## Rate limit policy (V1)
+## Rate limiting (runtime defaults)
 
-- Login: `5/min` per IP and `5/min` per account identifier.
-- Register: `3/min` per IP.
-- Add statement: `10/hour` per authenticated user.
-- Vote: `30/min` per authenticated user.
-- Global fallback: `100/5min` per IP.
-- Response contract for `429`:
-  - `{ error: "RATE_LIMITED", message: "Too many requests, please retry later.", retryAfterSeconds: number }`
-- CAPTCHA is deferred to V1.1 if abuse exceeds lightweight limit controls.
+Global behavior:
+- Global limiter applies to all routes first.
+- In `NODE_ENV=test`, rate limiting is disabled unless header `x-enable-rate-limit-test: 1` is provided.
+- Optional test scoping header `x-rate-limit-test-key` isolates counters.
 
-## Internal operations
+Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
+- `global`: `RATE_LIMIT_GLOBAL_MAX` default `500`
+- `login`: `RATE_LIMIT_LOGIN_MAX` default `30`
+- `register`: `RATE_LIMIT_REGISTER_MAX` default `20`
+- `add-statement`: `RATE_LIMIT_ADD_STATEMENT_MAX` default `60`
+- `politician-proposal`: `RATE_LIMIT_POLITICIAN_PROPOSAL_MAX` default `20`
+- `politician-create`: `RATE_LIMIT_POLITICIAN_CREATE_MAX` default `40`
+- `proposal-claim`: `RATE_LIMIT_PROPOSAL_CLAIM_MAX` default `60`
+- `proposal-review`: `RATE_LIMIT_PROPOSAL_REVIEW_MAX` default `80`
+- `proposal-assist`: `RATE_LIMIT_PROPOSAL_ASSIST_MAX` default `100`
+- `vote`: `RATE_LIMIT_VOTE_MAX` default `120`
 
-### OP-001 List politicians
-- Method/path: `GET /internal/politicians`
-- Auth: `anonymous|user|moderator|admin`
-- Input:
-  - query optional: `q`, `region`, `office`, `limit`, `cursor`
-- Output `200`:
-  - `{ items: PoliticianSummary[], nextCursor?: string }`
+## Endpoint contract
 
-### OP-002 Add politician (CAP-002)
-- Method/path: `POST /internal/politicians`
-- Auth: `user|moderator|admin`
-- Input body:
-  - `{ name: string, region?: string, office?: string, externalId?: string }`
-- Output `201`:
-  - `{ id: string, createdAt: string }`
+### Auth
+
+#### `POST /auth/token`
+- Auth: none
+- Rate limit: `login`
+- Body: `{ userId: string, role: "user"|"moderator"|"admin", secret: string }`
+- `200`: `{ token: string }`
 - Errors:
-  - `403` when role is anonymous.
-  - `409` when canonical identity collides (`externalId` or normalized `name+region+office`).
+  - `401` invalid/missing credentials or wrong secret
+  - `400` invalid role value
 
-### OP-003 Get politician statements
-- Method/path: `GET /internal/politicians/{politicianId}/statements`
-- Auth: `anonymous|user|moderator|admin`
-- Input:
-  - path: `politicianId`
-  - query optional:
-    - `includeDeleted=false` for all roles unless explicitly true.
-    - `includePendingDelete=true` default for `moderator|admin`; `false` default for `anonymous|user`.
-- Output `200`:
-  - `{ items: StatementListItem[] }`
-- Ordering rule:
-  - `dateSaid DESC`, then `createdAt DESC`, then `id ASC`.
-- Visibility defaults:
-  - public/user lists exclude `isDeleted=true` and exclude pending-delete by default.
-  - moderator/admin lists exclude `isDeleted=true` and include pending-delete by default.
+#### `POST /auth/register`
+- Auth: none
+- Rate limit: `register`
+- Body: `{ email: string, role?: string }`
+- `201`: `{ id: string, email: string, role: "user" }`
+- Policy:
+  - public registration always creates `user`
+  - requested `moderator|admin` is rejected (not normalized)
 - Errors:
-  - `404` when politician does not exist.
+  - `400` missing email or unknown role string
+  - `403` privileged role request via public register
+  - `409` duplicate email
 
-### OP-004 Add statement (CAP-003)
-- Method/path: `POST /internal/statements`
-- Auth: `user|moderator|admin`
-- Rate limit: `10/hour` per authenticated user.
-- Input body:
-  - `{ politicianId: string, sourceUrl: string, body: string, dateSaid: string }`
-- Output `201`:
-  - `{ id: string, verificationStatus: "pending" }`
-- Rules:
-  - duplicate check uses exact normalized text hash for same claim key in V1:
-    - normalize body: trim, collapse whitespace, lowercase, normalize quotes/dashes.
-    - key: `(politicianId, normalizedTextHash, sourceUrl)`.
-    - if source URL becomes optional in future versions, fallback key may use `dateSaid`.
-  - fuzzy duplicate matching is deferred to V1.1 assistive UI only and never auto-rejects.
+### Service health
+
+#### `GET /health`
+- Auth: any
+- `200`: `{ ok: true }`
+
+### Canonical politicians
+
+#### `GET /politicians`
+- Auth: any
+- `200`: `{ items: Array<{ id, name, region, office, externalId, verified, createdAt }> }`
+- Visibility: excludes soft-deleted canonical rows (`deleted_at IS NULL`)
+
+#### `POST /politicians`
+- Auth: `moderator|admin`
+- Rate limit: `politician-create`
+- Body: `{ name: string, region?: string, office?: string, externalId?: string }`
+- `201`: `{ id: number }`
+- Errors:
+  - `400` missing name
+  - `409` duplicate canonical identity
+  - `500` insert failure fallback
+
+### Politician proposals (moderated intake)
+
+#### `POST /politician-proposals`
+- Auth: `user|moderator|admin` (guard minimum `user`)
+- Rate limit: `politician-proposal`
+- Body: `{ name: string, region?: string, office?: string, externalId?: string, sourceNote?: string }`
+- `201`: `{ id: number, status: "pending" }`
 - Side effects:
-  - creates statement with `verificationStatus=pending`.
-  - creates `RevisionAudit(changeType=createStatement)`.
+  - insert proposal row
+  - append proposal audit action `submitted`
 - Errors:
-  - `403` for anonymous.
-  - `404` when politician not found.
-  - `409` duplicate statement for same claim key.
-  - `429` when rate-limited.
+  - `400` missing/blank name
+  - `409` duplicate canonical identity or duplicate pending proposal
 
-### OP-005 Edit statement (CAP-004)
-- Method/path: `PATCH /internal/statements/{statementId}`
+#### `GET /politician-proposals`
 - Auth: `user|moderator|admin`
-- Input body:
-  - `{ sourceUrl?: string, body?: string, dateSaid?: string }`
-- Output `200`:
-  - `{ id: string, updatedAt: string }`
-- Rules:
-  - `user` may edit only own statement and only within 30 minutes of `createdAt`.
-  - `moderator|admin` may edit any non-deleted statement.
-  - every edit appends `RevisionAudit(changeType=editStatement)`.
+- Query:
+  - `status`: `pending|approved|rejected|duplicate|all`
+  - `assignee`: `unassigned|me|<actorId>` (moderator/admin only)
+  - `ageBucket`: `lt1h|1to24h|gt24h`
+  - `sort`: `asc|desc` (default `desc`)
+  - `page`: integer >= 1 (default `1`)
+  - `pageSize`: integer >= 1, max `100` (default `20`)
+- Visibility:
+  - `user` receives only `submitted_by = req.auth.userId`
+  - `moderator|admin` can query across queue
+- `200`: `{ items, page, pageSize, total }`
 - Errors:
-  - `403` for out-of-window author edit or non-owner user.
-  - `404` statement not found.
+  - `400` invalid filter values or assignee filter by non-moderator
 
-### OP-006 Set verification status (CAP-005)
-- Method/path: `POST /internal/statements/{statementId}/verification-status`
+#### `GET /politician-proposals/metrics`
 - Auth: `moderator|admin`
-- Input body:
-  - `{ newStatus: "pending"|"verified"|"disputed"|"rejected", reason?: string }`
-- Output `200`:
-  - `{ id: string, verificationStatus: string, updatedAt: string }`
-- Rules:
-  - allowed transitions: `pending->verified|disputed|rejected`, `verified->disputed|rejected`, `disputed->verified`, `rejected->disputed`.
-  - no-op transition (`newStatus` equals current) is conflict.
-  - downgrade reason is required for confidence-lowering transitions:
-    - `verified->disputed|rejected`
-    - `pending->rejected`
-    - and if future aliases (`kept|broken`) are introduced, `kept|broken->disputed`.
-  - append `RevisionAudit(changeType=setVerificationStatus)` with `reason` when required.
-- Errors:
-  - `403` for role below moderator.
-  - `404` statement not found.
-  - `409` invalid transition or no-op transition.
+- `200`:
+  - `{ pending: { total, assigned, unassigned }, ageBuckets: { lt1h, oneTo24h, gt24h } }`
 
-### OP-007 Vote on statement (CAP-006)
-- Method/path: `PUT /internal/statements/{statementId}/vote`
-- Auth: `user|moderator|admin`
-- Rate limit: `30/min` per authenticated user.
-- Input body:
-  - `{ value: "support"|"oppose" }`
-- Output `200`:
-  - `{ statementId: string, myVote: "support"|"oppose", aggregate: { support: number, oppose: number, score: number } }`
-- Rules:
-  - one vote row per `(statementId,userId)`.
-  - if no vote exists, create; if vote exists, overwrite value on the same row.
-- Errors:
-  - `403` anonymous cannot vote.
-  - `404` statement not found (or soft deleted).
-  - `429` when rate-limited.
-
-### OP-008 Withdraw statement (author)
-- Method/path: `POST /internal/statements/{statementId}/withdraw`
-- Auth: `user|moderator|admin`
-- Input body: `{}`
-- Output `200`: `{ id: string, deletedAt: string }`
-- Rules:
-  - `user` may withdraw only own statement.
-  - withdraw performs immediate soft delete (`deletedAt` set) and appends `RevisionAudit(changeType=withdrawStatement)`.
-- Errors:
-  - `403` not owner.
-  - `404` statement not found.
-
-### OP-009 Propose delete (moderator)
-- Method/path: `POST /internal/statements/{statementId}/pending-delete`
+#### `POST /politician-proposals/:id/claim`
 - Auth: `moderator|admin`
-- Input body:
-  - `{ reason?: string }`
-- Output `200`: `{ id: string, pendingDelete: true }`
-- Rules:
-  - sets `pendingDelete=true`, stores actor/time, appends `RevisionAudit(changeType=proposeDelete)`.
+- Rate limit: `proposal-claim`
+- Body: `{ expectedVersion?: number }`
+- `200`: `{ ok: true, assigneeId: string, reviewVersion: number }`
+- Semantics:
+  - only `pending` proposals are claimable
+  - idempotent if already claimed by same actor
+  - optimistic lock via `review_version` when `expectedVersion` supplied
 - Errors:
-  - `403` role below moderator.
-  - `404` statement not found.
-  - `409` already pending delete or already deleted.
+  - `400` invalid id/version input
+  - `404` proposal missing
+  - `409` not pending, claimed by another moderator, or version conflict
 
-### OP-010 Approve delete (admin)
-- Method/path: `POST /internal/statements/{statementId}/approve-delete`
+#### `POST /politician-proposals/:id/release`
+- Auth: `moderator|admin`
+- Rate limit: `proposal-claim`
+- Body: `{ expectedVersion?: number }`
+- `200`: `{ ok: true, reviewVersion: number }`
+- Semantics:
+  - assignee can release own claim; admin can release any claim
+  - requires pending + currently claimed
+- Errors:
+  - `400` invalid id/version input
+  - `403` non-admin releasing another moderator claim
+  - `404` proposal missing
+  - `409` not pending/not claimed/version conflict
+
+#### `PATCH /politician-proposals/:id/review`
+- Auth: `moderator|admin`
+- Rate limit: `proposal-review`
+- Body:
+  - `{ decision: "approve"|"reject"|"duplicate", reason?: string, reasonCode?: string, linkedPoliticianId?: number, expectedVersion?: number }`
+- `200`: `{ ok: true, status: "approved"|"rejected"|"duplicate", politicianId: number|null, reviewVersion: number }`
+- Semantics:
+  - only pending proposals can be reviewed
+  - claimed proposal can only be reviewed by assignee (admin override allowed)
+  - `reject` requires reasonCode from reject taxonomy
+  - `duplicate` requires reasonCode from duplicate taxonomy
+  - `approve` forbids reasonCode
+  - optimistic lock enforced when `expectedVersion` provided
+  - writes proposal audit row with action/reason/reasonCode
+- Errors:
+  - `400` invalid decision/reason taxonomy/version
+  - `404` proposal not found or linked politician missing
+  - `409` status conflict, claim conflict, or version conflict
+
+#### `GET /politician-proposals/:id/duplicate-assist`
+- Auth: `moderator|admin`
+- Rate limit: `proposal-assist`
+- `200`: `{ proposalId, canonicalMatches, pendingProposalMatches }`
+- Match semantics:
+  - deterministic exact matching only (`externalId` and normalized key)
+  - no automatic merge/approval side effects
+- `404` when proposal is missing
+
+#### `GET /politician-proposals/:id/audits`
+- Auth: `moderator|admin`
+- Query:
+  - `actorId?`, `action?`, `status?`, `fromDate?`, `toDate?`, `page?`, `pageSize?`
+- `200`: `{ items, page, pageSize, total }`
+- Errors:
+  - `400` invalid action/status filter
+  - `404` proposal missing
+
+### Statements and lifecycle
+
+#### `GET /statements`
+- Auth: any
+- `200`: `{ items }`
+- Visibility defaults:
+  - anonymous/user exclude pending-delete and deleted rows
+  - moderator/admin include pending-delete rows, still exclude deleted rows
+
+#### `GET /statements/:id`
+- Auth: any
+- `200`: `{ id, politicianId, sourceUrl, body, dateSaid, verificationStatus, authorId, createdAt, updatedAt, aggregate, revisionCount, revisionHistoryUrl }`
+- `404` if not found, deleted, or hidden by pending-delete visibility for caller role
+
+#### `POST /statements`
+- Auth: `user|moderator|admin`
+- Rate limit: `add-statement`
+- Body: `{ politicianId: number, sourceUrl: string, body: string, dateSaid: string }`
+- `201`: `{ id: number, verificationStatus: "pending" }`
+- Side effects:
+  - inserts statement row with fingerprint dedupe
+  - appends revision audit `createStatement`
+- Errors:
+  - `400` required fields missing
+  - `404` politician missing
+  - `409` duplicate statement
+
+#### `PATCH /statements/:id`
+- Auth: `user|moderator|admin`
+- Body: `{ body?: string, sourceUrl?: string, dateSaid?: string }`
+- `200`: `{ ok: true, updatedAt: string }`
+- Semantics:
+  - at least one patch field required
+  - author may edit own statement within 30 minutes of creation
+  - moderator/admin may edit any non-deleted statement
+  - duplicate fingerprint conflicts are rejected
+  - appends revision audit `editStatement`
+- Errors:
+  - `400` invalid patch payload or empty patched values
+  - `403` edit window/ownership violation
+  - `404` statement missing/deleted
+  - `409` duplicate statement conflict
+
+#### `PATCH /statements/:id/verification`
+- Auth: `moderator|admin`
+- Body: `{ newStatus: "pending"|"verified"|"disputed"|"rejected", reason?: string }`
+- `200`: `{ ok: true }`
+- Implemented transition map:
+  - `pending -> verified|disputed|rejected`
+  - `verified -> disputed|rejected`
+  - `disputed -> verified|rejected`
+  - `rejected -> pending`
+- Reason requirement:
+  - required for confidence-lowering transitions (ranked comparison)
+- Side effects:
+  - updates `verification_status`
+  - appends revision audit with `change_type = 'verification_status'`
+- Errors:
+  - `400` required downgrade reason missing
+  - `404` statement missing/deleted
+  - `409` invalid status value, invalid transition, or no-op transition
+
+#### `POST /statements/:id/votes`
+- Auth: `user|moderator|admin`
+- Rate limit: `vote`
+- Body: `{ value: "support"|"oppose" }`
+- `200`: `{ ok: true, aggregate: { support: number, oppose: number } }`
+- Semantics:
+  - upsert by `(statement_id, user_id)` (recast overwrites)
+- Errors:
+  - `400` invalid vote value
+  - `404` statement missing/deleted
+
+#### `POST /statements/:id/pending-delete`
+- Auth: `moderator|admin`
+- `200`: `{ ok: true }`
+- Errors:
+  - `404` statement missing/deleted
+
+#### `POST /statements/:id/withdraw`
+- Auth: `user|moderator|admin`
+- `200`: `{ ok: true }`
+- Semantics:
+  - only author may withdraw
+  - sets `withdrawn_at`, `deleted_at`, clears `pending_delete`
+- Errors:
+  - `403` caller is not author
+  - `404` statement missing/deleted
+
+#### `POST /statements/:id/approve-delete`
 - Auth: `admin`
-- Input body:
-  - `{ reason?: string }`
-- Output `200`: `{ id: string, deletedAt: string }`
-- Rules:
-  - requires `pendingDelete=true`.
-  - sets `deletedAt/deletedBy`, clears `pendingDelete`, appends `RevisionAudit(changeType=approveDelete)`.
+- `200`: `{ ok: true }`
+- Semantics:
+  - requires `pending_delete = 1`
+  - sets `deleted_at`, clears `pending_delete`
 - Errors:
-  - `403` role below admin.
-  - `404` statement not found.
-  - `409` statement not pending delete or already deleted.
+  - `409` not pending delete (including missing id)
 
-### OP-011 List revision history (CAP-008)
-- Method/path: `GET /internal/statements/{statementId}/revisions`
-- Auth: `anonymous|user|moderator|admin`
-- Input:
-  - path: `statementId`
-- Output `200`:
-  - `{ items: RevisionAuditItem[] }`
-- Ordering rule:
-  - `createdAt DESC`, then `id DESC`.
+#### `GET /statements/:id/revisions`
+- Auth: any
+- `200`: `{ items: Array<{ id, statementId, actorId, changeType, fromValue, toValue, reason, createdAt }> }`
+- Ordering: `id ASC`
 - Errors:
-  - `404` statement not found.
+  - `404` statement missing/deleted
 
-## Versioning strategy (V1)
+## Versioning and change control
 
-- Contract version is pinned by the V1 spec lock document.
-- Any contract change that affects operation behavior, auth gates, lifecycle defaults, rate limiting, or 403/404/409/429 semantics requires lock doc update plus dependent planning doc updates.
+- Behavior is pinned to locked V1 scope; lock changes require accepted CR and dependent doc updates.
+- Contract changes that alter role gates, lifecycle semantics, status/error behavior, or rate-limit policy must be reflected in `ai/planning/V1_SPEC_LOCK.md` via protocol.
