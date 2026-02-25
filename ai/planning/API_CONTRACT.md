@@ -23,7 +23,7 @@ Role enforcement model:
 
 - `400`: validation failure (missing/invalid fields, unsupported filters, invalid reason taxonomy).
 - `401`: invalid token grant input for `POST /auth/token`.
-- `403`: authenticated but insufficient role or blocked policy action (for example privileged self-assignment on register).
+- `403`: authenticated but insufficient role or blocked policy action (for example privileged self-assignment on register or invalid CAPTCHA token).
 - `404`: target not found on read/write paths that require existing resources.
 - `409`: lifecycle/version/duplicate conflict.
 - `429`: rate-limit exceeded (`{ error: "rate_limited", message, retryAfterSeconds }`).
@@ -48,6 +48,12 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 - `proposal-assist`: `RATE_LIMIT_PROPOSAL_ASSIST_MAX` default `100`
 - `vote`: `RATE_LIMIT_VOTE_MAX` default `120`
 
+CAPTCHA enforcement knobs:
+- `CAPTCHA_ENFORCE_REGISTER` (`1` enables register CAPTCHA checks)
+- `CAPTCHA_ENFORCE_PROPOSAL_SUBMIT` (`1` enables proposal-submit CAPTCHA checks for eligible callers)
+- `CAPTCHA_STATIC_TOKEN` (deterministic verifier token used by current implementation)
+- Test-mode enforcement toggle header: `x-enable-captcha-test: 1`
+
 ## Endpoint contract
 
 ### Auth
@@ -64,14 +70,16 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 #### `POST /auth/register`
 - Auth: none
 - Rate limit: `register`
-- Body: `{ email: string, role?: string }`
+- Body: `{ email: string, role?: string, captchaToken?: string }`
 - `201`: `{ id: string, email: string, role: "user" }`
 - Policy:
   - public registration always creates `user`
   - requested `moderator|admin` is rejected (not normalized)
+  - when CAPTCHA enforcement is enabled, request must include valid `captchaToken`
 - Errors:
-  - `400` missing email or unknown role string
+  - `400` missing email, unknown role string, or missing required captcha token
   - `403` privileged role request via public register
+  - `403` invalid captcha token
   - `409` duplicate email
 
 ### Service health
@@ -79,6 +87,13 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 #### `GET /health`
 - Auth: any
 - `200`: `{ ok: true }`
+
+#### `GET /abuse/metrics`
+- Auth: `moderator|admin`
+- `200`: `{ captcha: { register, proposalSubmit }, rateLimit: { [rule]: { allowed, blocked } }, generatedAt }`
+- Notes:
+  - Captcha counters expose `checked`, `passed`, `failed`, `missing`, `skipped`.
+  - Rate-limit counters expose per-rule `allowed` and `blocked` totals.
 
 ### Canonical politicians
 
@@ -102,13 +117,15 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 #### `POST /politician-proposals`
 - Auth: `user|moderator|admin` (guard minimum `user`)
 - Rate limit: `politician-proposal`
-- Body: `{ name: string, region?: string, office?: string, externalId?: string, sourceNote?: string }`
+- Body: `{ name: string, region?: string, office?: string, externalId?: string, sourceNote?: string, captchaToken?: string }`
 - `201`: `{ id: number, status: "pending" }`
 - Side effects:
   - insert proposal row
   - append proposal audit action `submitted`
+  - when caller role is `user` and CAPTCHA enforcement is enabled, validates captcha token before proposal insert
 - Errors:
-  - `400` missing/blank name
+  - `400` missing/blank name or missing required captcha token
+  - `403` invalid captcha token
   - `409` duplicate canonical identity or duplicate pending proposal
 
 #### `GET /politician-proposals`
@@ -182,9 +199,10 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 #### `GET /politician-proposals/:id/duplicate-assist`
 - Auth: `moderator|admin`
 - Rate limit: `proposal-assist`
-- `200`: `{ proposalId, canonicalMatches, pendingProposalMatches }`
+- `200`: `{ proposalId, canonicalMatches, pendingProposalMatches, fuzzyHints: { canonical, pendingProposals } }`
 - Match semantics:
-  - deterministic exact matching only (`externalId` and normalized key)
+  - deterministic exact matching (`externalId` and normalized key)
+  - deterministic bounded fuzzy hints for triage scoring only
   - no automatic merge/approval side effects
 - `404` when proposal is missing
 

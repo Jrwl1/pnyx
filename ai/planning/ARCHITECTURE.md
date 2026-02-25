@@ -69,9 +69,11 @@ WHAT IT DO? Documents implemented runtime boundaries, module ownership, request 
   - role hierarchy enforced centrally by `requireRole`.
 - **Abuse control**
   - in-memory fixed-window rate limiters with per-route buckets and global fallback.
+  - request-level CAPTCHA checks on selected intake paths when enforcement is enabled.
+  - in-memory abuse telemetry counters exposed to moderation via `/abuse/metrics`.
 - **Auditability**
   - proposal lifecycle actions are audit logged (`politician_proposal_audits`).
-  - statement lifecycle actions currently audited for create/edit/verification.
+  - statement lifecycle actions are audited for create/edit/verification/pending-delete/withdraw/approve-delete.
 - **Error handling style**
   - deterministic `400/403/404/409/429` for known branches.
   - `500` fallback for unexpected failures.

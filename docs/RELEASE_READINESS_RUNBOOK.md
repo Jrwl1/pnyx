@@ -28,6 +28,13 @@ Rate-limit tuning (optional, defaults in `src/server.ts`):
 - `RATE_LIMIT_ADD_STATEMENT_MAX`
 - `RATE_LIMIT_VOTE_MAX`
 
+Abuse-hardening/captcha tuning:
+- `CAPTCHA_ENFORCE_REGISTER`
+- `CAPTCHA_ENFORCE_PROPOSAL_SUBMIT`
+- `CAPTCHA_STATIC_TOKEN`
+- `DUPLICATE_ASSIST_FUZZY_LIMIT`
+- `DUPLICATE_ASSIST_FUZZY_MIN_SCORE`
+
 ## 3) Migration procedure
 
 Apply migrations:
