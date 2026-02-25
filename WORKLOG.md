@@ -801,7 +801,7 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-25
-Milestone/Sprint: Post-S3 lifecycle audit hardening (INV-004 gap closure)
+Milestone/Sprint: S4-T01 (lifecycle audit hardening, INV-004 gap closure)
 Summary (1–3 bullets):
 - Added revision audit writes for `POST /statements/:id/pending-delete`, `POST /statements/:id/withdraw`, and `POST /statements/:id/approve-delete`.
 - Extended delete lifecycle regression assertions to verify lifecycle routes append revision audit rows with expected actors/change types.
@@ -814,3 +814,19 @@ Evidence (commands + summarized results):
 Commit: bf8a256, 5d12178
 Files touched: src/server.ts, test/delete-lifecycle-visibility.test.ts, ai/planning/DATA_MODEL.md, ai/planning/API_CONTRACT.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S5-T00 (roadmap activation + S4 naming sync)
+Summary (1–3 bullets):
+- Classified the completed lifecycle-audit hardening batch as S4 (`S4-T01`) in `WORKLOG.md`.
+- Added M4 milestone for trust/abuse hardening and replaced current sprint plan with S5 Active (`S5-T01..S5-T10`).
+- Synced status/backlog docs for S5 activation (`PROJECT_STATUS.md`, `TASKS.md`).
+Why (link to requirement/milestone/issue): User requested treating lifecycle hardening as S4 and applying the recommended next sprint plan.
+Evidence (commands + summarized results):
+- `git status --short && git grep -nE "S5|S4|trust|abuse|CR-003" ai/roadmap/MILESTONES.md ai/roadmap/SPRINT.md PROJECT_STATUS.md WORKLOG.md TASKS.md` -> confirmed S4/S5 anchors and pending roadmap/status edits.
+- `git commit -m "docs(roadmap): classify S4 and activate S5 trust-abuse plan"` -> commit `0139933` (roadmap/status/backlog docs).
+Commit: 0139933
+Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Execute S5 in DO mode beginning with `S5-T01` (CR-003 acceptance and lock sync).
