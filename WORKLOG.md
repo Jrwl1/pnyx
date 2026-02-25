@@ -865,3 +865,34 @@ Evidence (commands + summarized results):
 Commit: 057b34c, e2f5fb7
 Files touched: src/server.ts, test/setup.ts, test/register-captcha.test.ts, test/proposal-captcha.test.ts, test/proposal-duplicate-assist-fuzzy.test.ts, test/abuse-telemetry.test.ts, test/role-matrix.test.ts, ai/planning/API_CONTRACT.md, ai/planning/ARCHITECTURE.md, docs/RELEASE_READINESS_RUNBOOK.md, docs/TRACEABILITY_V1.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Run S5-T08 full proof chain, local site launch/audit, then reviewer gate and closeout.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S5-T08 (full regression proof)
+Summary (1–3 bullets):
+- Ran full sprint proof chain after S5 implementation/doc synchronization.
+- Confirmed all unit/integration and e2e suites remain green with the new trust-hardening controls.
+- Verified clean working tree after proof command completion.
+Why (link to requirement/milestone/issue): S5-T08 requires full green proof before reviewer gate.
+Evidence (commands + summarized results):
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && git status --short` -> pass (vitest `29` files / `92` tests, e2e `1` test, build pass, status clean).
+Commit: e2f5fb7, 21dc7ba
+Files touched: WORKLOG.md.
+Follow-ups / deferred issues (IDs): Launch local service and run end-to-end runtime audit checks.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S5 local runtime audit (user-requested full local audit)
+Summary (1–3 bullets):
+- Launched service locally on a dedicated audit port with isolated DB and enforcement env vars.
+- Executed runtime audit checks across health, register captcha, role-hardening, token issuance, proposal captcha+dedupe, duplicate-assist fuzzy output, abuse metrics visibility, and moderator-only telemetry access.
+- Removed generated local audit artifacts (`audit-local.db*`, `audit_server.log`) after successful run.
+Why (link to requirement/milestone/issue): User explicitly requested local site launch and full local audit after sprint implementation.
+Evidence (commands + summarized results):
+- Launch + audit command: `DB_PATH="audit-local.db" JWT_SECRET="audit-secret" CAPTCHA_ENFORCE_REGISTER="1" CAPTCHA_ENFORCE_PROPOSAL_SUBMIT="1" CAPTCHA_STATIC_TOKEN="audit-captcha" DUPLICATE_ASSIST_FUZZY_LIMIT="5" PORT="3100" pnpm tsx src/index.ts ...` + inline Node fetch audit script -> `Local audit checks passed: 16`.
+- Cleanup -> removed temporary audit files; `git status --short` clean.
+Commit: e2f5fb7, 21dc7ba
+Files touched: WORKLOG.md.
+Follow-ups / deferred issues (IDs): Run S5-T09 reviewer gate and coordinator closeout.
