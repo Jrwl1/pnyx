@@ -1234,6 +1234,10 @@ app.post("/statements/:id/pending-delete", requireRole("moderator"), (req, res) 
     return;
   }
 
+  db.prepare(
+    "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'pendingDeleteStatement', NULL, ?)"
+  ).run(statementId, req.auth.userId ?? "moderation", "pending_delete");
+
   res.json({ ok: true });
 });
 
@@ -1257,6 +1261,10 @@ app.post("/statements/:id/withdraw", requireRole("user"), (req, res) => {
     "UPDATE statements SET withdrawn_at = datetime('now'), deleted_at = datetime('now'), pending_delete = 0, updated_at = datetime('now') WHERE id = ?"
   ).run(statementId);
 
+  db.prepare(
+    "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'withdrawStatement', NULL, ?)"
+  ).run(statementId, req.auth.userId ?? "unknown", "withdrawn_deleted");
+
   res.json({ ok: true });
 });
 
@@ -1270,6 +1278,10 @@ app.post("/statements/:id/approve-delete", requireRole("admin"), (req, res) => {
     res.status(409).json({ error: "statement is not pending delete" });
     return;
   }
+
+  db.prepare(
+    "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'approveDeleteStatement', ?, ?)"
+  ).run(statementId, req.auth.userId ?? "moderation", "pending_delete", "deleted");
 
   res.json({ ok: true });
 });

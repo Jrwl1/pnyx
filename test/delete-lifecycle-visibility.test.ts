@@ -50,6 +50,17 @@ describe("delete lifecycle visibility", () => {
       .get(statementId) as { withdrawnAt: string | null; deletedAt: string | null };
     expect(row.withdrawnAt).not.toBeNull();
     expect(row.deletedAt).not.toBeNull();
+
+    const auditRows = db
+      .prepare(
+        "SELECT actor_id AS actorId, change_type AS changeType, to_value AS toValue FROM revision_audits WHERE statement_id = ? ORDER BY id ASC"
+      )
+      .all(statementId) as { actorId: string; changeType: string; toValue: string | null }[];
+    expect(auditRows.at(-1)).toMatchObject({
+      actorId: "author-withdraw",
+      changeType: "withdrawStatement",
+      toValue: "withdrawn_deleted"
+    });
   });
 
   it("non-author cannot withdraw", async () => {
@@ -87,6 +98,28 @@ describe("delete lifecycle visibility", () => {
       .get(statementId) as { deletedAt: string | null; pendingDelete: number };
     expect(row.deletedAt).not.toBeNull();
     expect(row.pendingDelete).toBe(0);
+
+    const auditRows = db
+      .prepare(
+        "SELECT actor_id AS actorId, change_type AS changeType, to_value AS toValue FROM revision_audits WHERE statement_id = ? ORDER BY id ASC"
+      )
+      .all(statementId) as { actorId: string; changeType: string; toValue: string | null }[];
+    expect(
+      auditRows.some(
+        (auditRow) =>
+          auditRow.actorId === "mod-1" &&
+          auditRow.changeType === "pendingDeleteStatement" &&
+          auditRow.toValue === "pending_delete"
+      )
+    ).toBe(true);
+    expect(
+      auditRows.some(
+        (auditRow) =>
+          auditRow.actorId === "admin-1" &&
+          auditRow.changeType === "approveDeleteStatement" &&
+          auditRow.toValue === "deleted"
+      )
+    ).toBe(true);
   });
 
   it("public/user exclude pending+deleted by default; mod/admin include pending by default", async () => {
