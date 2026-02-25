@@ -3,7 +3,7 @@ SPRINT.md — Current Sprint
 WHAT IT DO? Current sprint scope (maps to milestone + CAPs), DoD, proof commands. Reviewer Ready / Coordinator Done checklists.
 
 Sprint ID: S2 - Moderation Operations Hardening
-Status: Active
+Status: Done
 Milestone mapping: M2 (post-M1 operations hardening)
 
 Scope (maps to V1 CAPs in `ai/planning/V1_SPEC_LOCK.md`):
@@ -58,14 +58,14 @@ Proof commands (sprint-level):
 
 Reviewer Ready checklist:
 
-- Reviewer A: PASS/FAIL + WORKLOG reference
-- Reviewer B: PASS/FAIL + WORKLOG reference
-- Evidence is commit-anchored per `ai/workflows/COMMIT_PROTOCOL.md`
+- Reviewer A: PASS (subagent final) with commit-anchored refs `4063d6c`, `4a34bf4`, `83c7ab0`, `96dbf8f`; WORKLOG refs `WORKLOG.md:144`, `WORKLOG.md:160`, `WORKLOG.md:175`, `WORKLOG.md:190`.
+- Reviewer B: PASS (subagent final) with commit-anchored refs `4063d6c`, `d998155`, `4a34bf4`, `77fac60`, `83c7ab0`, `a0f7c19`, `96dbf8f`; WORKLOG refs `WORKLOG.md:144`, `WORKLOG.md:160`, `WORKLOG.md:175`, `WORKLOG.md:190`.
+- Evidence is commit-anchored per `ai/workflows/COMMIT_PROTOCOL.md`.
 
 Coordinator Done checklist:
 
-- 2x Ready verdicts exist
-- Repo clean (`git status`)
-- Closeout docs commit exists
-- `PROJECT_STATUS.md` updated
-- `WORKLOG.md` sprint closeout appended
+- [x] 2x Ready verdicts exist
+- [x] Repo clean (`git status`)
+- [x] Closeout docs commit exists
+- [x] `PROJECT_STATUS.md` updated
+- [x] `WORKLOG.md` sprint closeout appended
