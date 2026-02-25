@@ -165,3 +165,41 @@ Dependencies:
 Out-of-scope for M3:
 - New end-user feature scope beyond locked V1.
 - Fuzzy duplicate auto-rejection, CAPTCHA hardening, or public external API work.
+
+---
+
+M4: V1.1 trust and abuse hardening
+
+Goal:
+Add anti-abuse controls and moderation-assist quality upgrades deferred from V1, while preserving existing lifecycle, role, and dedupe invariants.
+
+Maps to V1 CAPs:
+- CAP-002: moderated intake reliability and reviewer tooling quality.
+- CAP-003/CAP-006: protect public write paths from automated abuse.
+- CAP-001/CAP-008: preserve read/revision transparency and invariant guarantees.
+
+Acceptance criteria:
+- Accepted CR documents scope expansion for CAPTCHA and fuzzy duplicate assistive matching.
+- Public register and politician-proposal submit paths enforce CAPTCHA policy (with test-mode override strategy documented).
+- Duplicate-assist remains assistive-only, now including bounded fuzzy candidate hints with deterministic scoring and no auto-reject behavior.
+- Abuse telemetry surfaces (rate-limit/captcha outcomes) are measurable for moderation operations.
+- Existing invariants remain green (canonical create role gate, proposal moderation rules, statement lifecycle and revision visibility).
+- Full regression + closeout evidence is commit-anchored in `WORKLOG.md`.
+
+Proof commands required:
+- `pnpm lint && pnpm typecheck && pnpm build`
+- `pnpm test -- -t "captcha"`
+- `pnpm test -- -t "duplicate assist"`
+- `pnpm test -- -t "role matrix"`
+- `pnpm test -- -t "delete lifecycle visibility" && pnpm test -- -t "revision history"`
+- `pnpm test && pnpm test:e2e`
+- `git status --short` (clean at closeout)
+
+Dependencies:
+- M3 completed and closed.
+- Scope expansion requires accepted CR before code implementation.
+
+Out-of-scope for M4:
+- Auto-merge or auto-reject decisions from fuzzy matching.
+- External/public API rollout.
+- Unrelated UX feature expansion.
