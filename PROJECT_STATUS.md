@@ -11,7 +11,7 @@ Current mode: Roadmap (S5 Active)
 What is true now:
 
 - ai/planning/V1_SPEC_LOCK.md is LOCKED (Locked at: 2025-02-15).
-- ai/memory/CHANGE_REQUESTS.md includes accepted CR-002 for moderated politician intake policy.
+- ai/memory/CHANGE_REQUESTS.md includes accepted CR-002 (moderated intake) and CR-003 (CAPTCHA + fuzzy assistive matching).
 - ai/roadmap/MILESTONES.md includes M4 (trust + abuse hardening) after completed M3.
 - ai/roadmap/SPRINT.md defines S5 Active (`S5-T01..S5-T10`) for trust/abuse hardening execution.
 - Lifecycle audit gap closure work is recorded in `WORKLOG.md` as the completed S4 hardening batch.

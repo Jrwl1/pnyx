@@ -65,3 +65,25 @@ If accepted:
 Spec updated in commit: 2088788, dba6147
 
 Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md.
+
+---
+
+CR-003: V1.1 trust hardening (CAPTCHA + fuzzy duplicate assistive hints)
+
+Proposed change: Add CAPTCHA validation to abuse-prone write paths (`POST /auth/register`, `POST /politician-proposals`) and upgrade moderation duplicate-assist to include bounded fuzzy candidate hints. Fuzzy output remains assistive-only (no auto-reject/auto-merge decisions).
+
+Motivation: Reduce automated abuse pressure on public/intake paths and improve moderation throughput on near-duplicate identity review cases.
+
+Impacted V1 sections (CAP IDs): CAP-002, CAP-003, CAP-006, CAP-008, policy decisions, proof coverage.
+
+Risks: CAPTCHA friction for legitimate users, false-positive fuzzy suggestions if scoring/thresholds are poorly tuned, telemetry interpretation drift.
+
+Testing/migration implications: Add captcha enforcement tests (required/missing/invalid/token bypass attempts), fuzzy duplicate assist determinism/ordering tests, abuse telemetry assertions, and invariant regression coverage for role/lifecycle/revision surfaces.
+
+Decision: accepted
+
+If accepted:
+
+Spec updated in commit: pending (set during S5-T01 lock sync commit)
+
+Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md.

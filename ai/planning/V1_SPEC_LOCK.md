@@ -20,6 +20,8 @@ In scope (V1)
 - Community review by status + votes only (no comments in V1).
 - Transparent statement lifecycle history (revision/audit records visible to users).
 - Lightweight rate limits on auth and write operations.
+- CAPTCHA validation on abuse-prone intake paths (`/auth/register`, `/politician-proposals`) in enforced environments.
+- Moderation duplicate-assist includes exact-match plus bounded fuzzy candidate hints (assistive-only).
 - Roles:
   - Anonymous: read-only.
   - Registered user: submit politician proposals, add statement, vote, edit own within grace window, withdraw own.
@@ -33,8 +35,8 @@ Out of scope (V1)
 - Real-time political news coverage or live feeds.
 - Public API for third-party consumers.
 - Import pipelines for politicians (V2).
-- Fuzzy duplicate auto-rejection (assistive-only fuzzy suggestions deferred to V1.1).
-- CAPTCHA hardening (deferred to V1.1).
+- Fuzzy auto-merge/auto-reject moderation decisions.
+- External CAPTCHA vendor lock-in requirements (provider implementation can remain pluggable).
 
 Non-goals (from PITCH)
 
@@ -54,7 +56,7 @@ Success criteria (measurable, V1)
 Policy decisions resolved
 
 - Duplicate statement handling: **deny with 409** using exact normalized key `(politicianId, normalizedTextHash, sourceUrl)`.
-- Duplicate matching in V1: exact hash only; fuzzy matching deferred to V1.1 as assistive UI only (never auto-reject).
+- Duplicate matching policy: exact keys enforce dedupe conflicts; moderation duplicate-assist may include bounded fuzzy hints for triage only (never auto-reject/auto-merge).
 - Duplicate vote handling: **one vote row per user/statement, recast overwrites existing vote**.
 - Author edit grace window: **30 minutes** from statement creation.
 - Verification statuses: `{pending, verified, disputed, rejected}`.
@@ -67,6 +69,7 @@ Policy decisions resolved
 - Canonical politician dedupe precedence: `externalId` when present; otherwise normalized `(name, region, office)`.
 - Politician intake policy: users submit proposals; only moderator/admin can create canonical politician records from approved proposals.
 - Registration role policy: public `/auth/register` may only create `user`; privileged role requests (`moderator|admin`) are rejected.
+- CAPTCHA policy: `/auth/register` and `/politician-proposals` require valid captcha verification when enforcement is enabled; missing/invalid captcha returns deterministic error responses.
 - V1 rate limits:
   - login: `5/min` per IP and per account
   - register: `3/min` per IP
@@ -136,6 +139,7 @@ Proof (test strategy)
 
 - Minimum checks per sprint: lint, typecheck, tests, build (TypeScript stack command placeholders are defined in TEST_STRATEGY).
 - Required regression coverage: politician add/list + dedupe; statement create/list ordering + exact duplicate key; verification transitions + downgrade reason + audit; vote overwrite + aggregate; edit window enforcement; withdraw/pending-delete/approve-delete flow; revision history visibility; rate-limit 429 behavior.
+- Required regression coverage: politician add/list + dedupe; statement create/list ordering + exact duplicate key; verification transitions + downgrade reason + audit; vote overwrite + aggregate; edit window enforcement; withdraw/pending-delete/approve-delete flow; revision history visibility; captcha enforcement + bypass resistance; duplicate-assist deterministic fuzzy hints; rate-limit 429 behavior.
 - No proof claims without commit hash in WORKLOG.
 
 ---
