@@ -642,3 +642,20 @@ Evidence (commands + summarized results):
 Commit: 6364e68
 Files touched: ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T01 (Roadmap activation — M3 + S3 draft)
+Summary (1–3 bullets):
+- Added M3 milestone for release readiness and planning source-of-truth synchronization within locked V1 scope.
+- Replaced current sprint definition with S3 Active (`S3-T01..S3-T12`) covering planning-doc reconciliation, release-readiness automation, regression safety, and closeout gates.
+- Synced status/backlog docs for S3 activation (`PROJECT_STATUS.md`, `TASKS.md`).
+Why (link to requirement/milestone/issue): User requested drafting M3 + S3 and authorized planning-doc updates.
+Evidence (commands + summarized results):
+- `git status --short && git grep -nE "M3|S3-T0|S3-T1|S3 Active" ai/roadmap/MILESTONES.md ai/roadmap/SPRINT.md PROJECT_STATUS.md TASKS.md` -> confirmed pending roadmap/status edits and expected S3/M3 anchors.
+- `git add ai/roadmap/MILESTONES.md ai/roadmap/SPRINT.md PROJECT_STATUS.md TASKS.md`
+- `git commit -m "docs(roadmap): add M3 and activate S3 release-readiness sprint"` -> 4 files changed.
+Commit: fdd85bf
+Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Execute S3 in DO mode starting with `S3-T01` (`DATA_MODEL.md` reconciliation).
