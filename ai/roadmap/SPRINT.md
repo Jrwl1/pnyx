@@ -3,7 +3,7 @@ SPRINT.md — Current Sprint
 WHAT IT DO? Current sprint scope (maps to milestone + CAPs), DoD, proof commands. Reviewer Ready / Coordinator Done checklists.
 
 Sprint ID: S1 - Moderated Politician Intake + Governance Hardening
-Status: Active
+Status: Done
 Milestone mapping: M1 (post-M0 governance hardening)
 
 Scope (maps to V1 CAPs in `ai/planning/V1_SPEC_LOCK.md`):
@@ -58,8 +58,8 @@ Proof commands (sprint-level):
 
 Reviewer Ready checklist:
 
-- Reviewer A: PASS/FAIL + WORKLOG reference
-- Reviewer B: PASS/FAIL + WORKLOG reference
+- Reviewer A: PASS + WORKLOG refs (`2088788`, `dba6147`, `5be3676`, `f0c4603`, `f0513f8`)
+- Reviewer B: PASS + WORKLOG refs (`2088788`, `dba6147`, `5be3676`, `f0c4603`, `f0513f8`)
 - Evidence is commit-anchored per `ai/workflows/COMMIT_PROTOCOL.md`
 
 Coordinator Done checklist:
