@@ -3,7 +3,7 @@ SPRINT.md — Current Sprint
 WHAT IT DO? Current sprint scope (maps to milestone + CAPs), DoD, proof commands. Reviewer Ready / Coordinator Done checklists.
 
 Sprint ID: S5 - V1.1 trust and abuse hardening
-Status: Active
+Status: Ready for Done
 Milestone mapping: M4 (post-M3 trust + abuse hardening)
 
 Scope (maps to V1 CAPs in `ai/planning/V1_SPEC_LOCK.md`):
@@ -54,8 +54,8 @@ Proof commands (sprint-level):
 
 Reviewer Ready checklist:
 
-- Reviewer A: PASS/FAIL + WORKLOG reference
-- Reviewer B: PASS/FAIL + WORKLOG reference
+- Reviewer A: PASS (2026-02-25) — refs `0139933`, `ba995d3`, `057b34c`, `e2f5fb7`, `c29dfd1` in `WORKLOG.md`
+- Reviewer B: PASS (2026-02-25) — refs `0139933`, `ba995d3`, `057b34c`, `e2f5fb7`, `c29dfd1` in `WORKLOG.md`
 - Evidence is commit-anchored per `ai/workflows/COMMIT_PROTOCOL.md`
 
 Coordinator Done checklist:
