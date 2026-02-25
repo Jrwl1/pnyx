@@ -3,7 +3,7 @@ SPRINT.md — Current Sprint
 WHAT IT DO? Current sprint scope (maps to milestone + CAPs), DoD, proof commands. Reviewer Ready / Coordinator Done checklists.
 
 Sprint ID: S3 - V1 release readiness and planning sync
-Status: Active
+Status: Ready for Done
 Milestone mapping: M3 (post-M2 release-readiness hardening)
 
 Scope (maps to V1 CAPs in `ai/planning/V1_SPEC_LOCK.md`):
@@ -56,9 +56,9 @@ Proof commands (sprint-level):
 
 Reviewer Ready checklist:
 
-- Reviewer A: PASS/FAIL + WORKLOG reference
-- Reviewer B: PASS/FAIL + WORKLOG reference
-- Evidence is commit-anchored per `ai/workflows/COMMIT_PROTOCOL.md`
+- Reviewer A: PASS (subagent final) with commit-anchored refs `5d9abd2`, `09dcaf6`, `3ab0d85`, `037254c`, `8c4c7a5`; WORKLOG refs `WORKLOG.md:666`, `WORKLOG.md:681`, `WORKLOG.md:696`, `WORKLOG.md:711`, `WORKLOG.md:726`.
+- Reviewer B: PASS (subagent final) with commit-anchored refs `5d9abd2`, `5b50bbc`, `09dcaf6`, `edd55de`, `3ab0d85`, `037254c`, `62f0df5`, `8c4c7a5`; WORKLOG refs `WORKLOG.md:666`, `WORKLOG.md:681`, `WORKLOG.md:696`, `WORKLOG.md:711`, `WORKLOG.md:726`.
+- Evidence is commit-anchored per `ai/workflows/COMMIT_PROTOCOL.md`.
 
 Coordinator Done checklist:
 
