@@ -171,6 +171,21 @@ Follow-ups / deferred issues (IDs): Implement S2-T02..S2-T09 moderation operatio
 
 ---
 
+Date: 2026-02-26
+Milestone/Sprint: S2-T02/S2-T03/S2-T04/S2-T05/S2-T06/S2-T07/S2-T08/S2-T09/S2-T10/S2-T11/S2-T12
+Summary (1–3 bullets):
+- Added moderation queue operations: claim/release ownership, queue pagination + assignee/age/status filters, and backlog SLA metrics endpoint.
+- Hardened moderation flow with reason-code taxonomy, duplicate-assist hints, optimistic-lock version checks, filtered/paginated audit reads, and dedicated moderation-path rate limits.
+- Expanded regression coverage with new S2 suites (`proposal queue ops`, `proposal sla metrics`, `proposal reason policy`, `proposal duplicate assist`, `proposal review race`, `proposal audit filters`) and updated role/invariant tests.
+Why (link to requirement/milestone/issue): Execute the full Option 1 moderation-ops hardening scope for S2 implementation tasks before sprint-level proof/closeout.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "proposal queue ops" && pnpm test -- -t "proposal sla metrics" && pnpm test -- -t "proposal reason policy" && pnpm test -- -t "proposal duplicate assist" && pnpm test -- -t "proposal review race" && pnpm test -- -t "proposal audit filters" && pnpm test -- -t "proposal rate limit" && pnpm lint && pnpm typecheck && pnpm build` -> pass (targeted suites green; aggregate run context 25 files / 81 tests passing).
+Commit: 83c7ab0
+Files touched: src/server.ts, test/setup.ts, test/politician-proposal-review.test.ts, test/politician-proposal-queue.test.ts, test/proposal-rate-limit.test.ts, test/role-matrix.test.ts, test/proposal-queue-ops.test.ts, test/proposal-sla-metrics.test.ts, test/proposal-reason-policy.test.ts, test/proposal-duplicate-assist.test.ts, test/proposal-review-race.test.ts, test/proposal-audit-filters.test.ts.
+Follow-ups / deferred issues (IDs): Run S2-T13 full regression suite and execute S2-T14 review/closeout.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
