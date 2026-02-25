@@ -674,3 +674,18 @@ Evidence (commands + summarized results):
 Commit: 5d9abd2
 Files touched: ai/planning/DATA_MODEL.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Continue S3-T02..S3-T04 doc reconciliation (`API_CONTRACT`, `ARCHITECTURE`, CAP traceability).
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T02/S3-T03/S3-T04 (API contract + architecture + traceability)
+Summary (1–3 bullets):
+- Replaced `ai/planning/API_CONTRACT.md` with the implemented route contract (`/auth`, `/politicians`, `/politician-proposals`, `/statements`) including role gates, conflict semantics, and rate-limit behavior.
+- Replaced placeholder architecture doc with concrete runtime boundaries, module ownership, request lifecycle, and cross-cutting controls.
+- Added `docs/TRACEABILITY_V1.md` mapping CAP-001..CAP-008 and S1/S2 governance controls to concrete endpoints and regression suites.
+Why (link to requirement/milestone/issue): S3-T02..S3-T04 require planning source-of-truth synchronization and endpoint-to-test traceability before release-readiness automation.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "role matrix" && pnpm test -- -t "register role hardening" && pnpm typecheck && pnpm build && pnpm test -- -t "read surfaces" && pnpm test -- -t "politician proposal"` -> pass (all command legs green; each vitest invocation reported 25 files / 81 tests passing).
+Commit: 09dcaf6
+Files touched: ai/planning/API_CONTRACT.md, ai/planning/ARCHITECTURE.md, docs/TRACEABILITY_V1.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Execute S3-T05..S3-T07 (success-metrics plan, CI proof workflow, release runbook).
