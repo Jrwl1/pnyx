@@ -25,10 +25,74 @@ const readPositiveIntEnv = (name: string, fallback: number): number => {
   return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 };
 
+const readUnitFloatEnv = (name: string, fallback: number): number => {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : fallback;
+};
+
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
+
+const rateLimitTelemetry = new Map<string, { allowed: number; blocked: number }>();
+
+type CaptchaContext = "register" | "proposalSubmit";
+type CaptchaCounters = {
+  checked: number;
+  passed: number;
+  failed: number;
+  missing: number;
+  skipped: number;
+};
+
+const createCaptchaCounters = (): CaptchaCounters => ({
+  checked: 0,
+  passed: 0,
+  failed: 0,
+  missing: 0,
+  skipped: 0
+});
+
+const captchaTelemetry: Record<CaptchaContext, CaptchaCounters> = {
+  register: createCaptchaCounters(),
+  proposalSubmit: createCaptchaCounters()
+};
+
+const recordRateLimitAllowed = (ruleName: string): void => {
+  const counters = rateLimitTelemetry.get(ruleName) ?? { allowed: 0, blocked: 0 };
+  counters.allowed += 1;
+  rateLimitTelemetry.set(ruleName, counters);
+};
+
+const recordRateLimitBlocked = (ruleName: string): void => {
+  const counters = rateLimitTelemetry.get(ruleName) ?? { allowed: 0, blocked: 0 };
+  counters.blocked += 1;
+  rateLimitTelemetry.set(ruleName, counters);
+};
+
+const recordCaptchaResult = (context: CaptchaContext, result: "passed" | "failed" | "missing" | "skipped"): void => {
+  const counters = captchaTelemetry[context];
+  if (result === "skipped") {
+    counters.skipped += 1;
+    return;
+  }
+  counters.checked += 1;
+  if (result === "passed") {
+    counters.passed += 1;
+  } else if (result === "failed") {
+    counters.failed += 1;
+  } else {
+    counters.missing += 1;
+  }
+};
 
 export const resetRateLimitState = (): void => {
   rateLimitStore.clear();
+  rateLimitTelemetry.clear();
+};
+
+export const resetAbuseTelemetryState = (): void => {
+  captchaTelemetry.register = createCaptchaCounters();
+  captchaTelemetry.proposalSubmit = createCaptchaCounters();
+  rateLimitTelemetry.clear();
 };
 
 const shouldEnforceRateLimit = (req: express.Request): boolean => {
@@ -53,11 +117,13 @@ const createRateLimiter = (rule: RateLimitRule, resolveKey?: RateLimitKeyResolve
 
     if (!existing || now > existing.resetAt) {
       rateLimitStore.set(key, { count: 1, resetAt: now + rule.windowMs });
+      recordRateLimitAllowed(rule.name);
       next();
       return;
     }
 
     if (existing.count >= rule.max) {
+      recordRateLimitBlocked(rule.name);
       const retryAfterSeconds = Math.max(1, Math.ceil((existing.resetAt - now) / 1000));
       res.status(429).json({
         error: "rate_limited",
@@ -69,6 +135,7 @@ const createRateLimiter = (rule: RateLimitRule, resolveKey?: RateLimitKeyResolve
 
     existing.count += 1;
     rateLimitStore.set(key, existing);
+    recordRateLimitAllowed(rule.name);
     next();
   };
 };
@@ -127,6 +194,68 @@ const voteLimiter = createRateLimiter({
   max: readPositiveIntEnv("RATE_LIMIT_VOTE_MAX", 120),
   windowMs: RATE_LIMIT_WINDOW_MS
 });
+
+const CAPTCHA_ENFORCE_REGISTER = process.env.CAPTCHA_ENFORCE_REGISTER === "1";
+const CAPTCHA_ENFORCE_PROPOSAL_SUBMIT = process.env.CAPTCHA_ENFORCE_PROPOSAL_SUBMIT === "1";
+const CAPTCHA_STATIC_TOKEN = process.env.CAPTCHA_STATIC_TOKEN ?? "dev-captcha-pass";
+
+const DUPLICATE_ASSIST_FUZZY_LIMIT = readPositiveIntEnv("DUPLICATE_ASSIST_FUZZY_LIMIT", 5);
+const DUPLICATE_ASSIST_FUZZY_MIN_SCORE = readUnitFloatEnv("DUPLICATE_ASSIST_FUZZY_MIN_SCORE", 0.72);
+
+const shouldEnforceCaptcha = (req: express.Request, enabled: boolean): boolean => {
+  if (!enabled) {
+    return false;
+  }
+  if (process.env.NODE_ENV !== "test") {
+    return true;
+  }
+  return req.header("x-enable-captcha-test") === "1";
+};
+
+const enforceCaptchaForRequest = (
+  req: express.Request,
+  res: express.Response,
+  context: CaptchaContext,
+  enabled: boolean
+): boolean => {
+  if (!shouldEnforceCaptcha(req, enabled)) {
+    recordCaptchaResult(context, "skipped");
+    return true;
+  }
+
+  const captchaToken = ((req.body as { captchaToken?: string }).captchaToken ?? "").trim();
+  if (!captchaToken) {
+    recordCaptchaResult(context, "missing");
+    res.status(400).json({ error: "captcha_required", message: "captchaToken is required" });
+    return false;
+  }
+  if (captchaToken !== CAPTCHA_STATIC_TOKEN) {
+    recordCaptchaResult(context, "failed");
+    res.status(403).json({ error: "captcha_invalid", message: "captcha verification failed" });
+    return false;
+  }
+
+  recordCaptchaResult(context, "passed");
+  return true;
+};
+
+const buildAbuseMetricsSnapshot = (): {
+  captcha: Record<CaptchaContext, CaptchaCounters>;
+  rateLimit: Record<string, { allowed: number; blocked: number }>;
+} => {
+  const rateLimitEntries = [...rateLimitTelemetry.entries()].sort(([left], [right]) => left.localeCompare(right));
+  const rateLimit = Object.fromEntries(
+    rateLimitEntries.map(([rule, counters]) => [rule, { allowed: counters.allowed, blocked: counters.blocked }])
+  ) as Record<string, { allowed: number; blocked: number }>;
+
+  return {
+    captcha: {
+      register: { ...captchaTelemetry.register },
+      proposalSubmit: { ...captchaTelemetry.proposalSubmit }
+    },
+    rateLimit
+  };
+};
 
 app.use(globalLimiter);
 
@@ -229,6 +358,10 @@ app.post("/auth/register", registerLimiter, (req, res) => {
     return;
   }
 
+  if (!enforceCaptchaForRequest(req, res, "register", CAPTCHA_ENFORCE_REGISTER)) {
+    return;
+  }
+
   const effectiveRole = "user";
 
   try {
@@ -246,6 +379,13 @@ app.post("/auth/register", registerLimiter, (req, res) => {
 
 app.get("/health", (_req, res) => {
   res.json({ ok: true });
+});
+
+app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
+  res.json({
+    ...buildAbuseMetricsSnapshot(),
+    generatedAt: new Date().toISOString()
+  });
 });
 
 app.get("/politicians", (_req, res) => {
@@ -286,11 +426,20 @@ app.post("/politician-proposals", proposalSubmitLimiter, requireRole("user"), (r
     office?: string;
     externalId?: string;
     sourceNote?: string;
+    captchaToken?: string;
   };
 
   if (!name || !name.trim()) {
     res.status(400).json({ error: "name is required" });
     return;
+  }
+
+  const requiresProposalCaptcha = req.auth.role === "user";
+  if (requiresProposalCaptcha && !enforceCaptchaForRequest(req, res, "proposalSubmit", CAPTCHA_ENFORCE_PROPOSAL_SUBMIT)) {
+    return;
+  }
+  if (!requiresProposalCaptcha) {
+    recordCaptchaResult("proposalSubmit", "skipped");
   }
 
   const trimmedName = name.trim();
@@ -345,6 +494,105 @@ const parsePageValue = (value: string | undefined, fallback: number, max: number
     return fallback;
   }
   return Math.min(Math.floor(parsed), max);
+};
+
+type IdentityCandidate = {
+  id: number;
+  name: string;
+  region: string | null;
+  office: string | null;
+  externalId: string | null;
+};
+
+const normalizeFuzzyValue = (value: string | null | undefined): string => {
+  return (value ?? "").trim().toLowerCase().replace(/\s+/g, " ");
+};
+
+const diceSimilarity = (leftRaw: string, rightRaw: string): number => {
+  const left = normalizeFuzzyValue(leftRaw);
+  const right = normalizeFuzzyValue(rightRaw);
+
+  if (!left && !right) {
+    return 1;
+  }
+  if (!left || !right) {
+    return 0;
+  }
+  if (left === right) {
+    return 1;
+  }
+
+  const toBigrams = (value: string): string[] => {
+    if (value.length < 2) {
+      return [value];
+    }
+    const grams: string[] = [];
+    for (let index = 0; index < value.length - 1; index += 1) {
+      grams.push(value.slice(index, index + 2));
+    }
+    return grams;
+  };
+
+  const leftBigrams = toBigrams(left);
+  const rightCounts = new Map<string, number>();
+  for (const gram of toBigrams(right)) {
+    rightCounts.set(gram, (rightCounts.get(gram) ?? 0) + 1);
+  }
+
+  let intersection = 0;
+  for (const gram of leftBigrams) {
+    const count = rightCounts.get(gram) ?? 0;
+    if (count > 0) {
+      intersection += 1;
+      rightCounts.set(gram, count - 1);
+    }
+  }
+
+  return (2 * intersection) / (leftBigrams.length + toBigrams(right).length);
+};
+
+const buildFuzzyDuplicateHints = (
+  rows: IdentityCandidate[],
+  target: Pick<IdentityCandidate, "name" | "region" | "office">,
+  exactMatchedIds: Set<number>
+): Array<IdentityCandidate & { score: number }> => {
+  const targetName = normalizeFuzzyValue(target.name);
+  const targetRegion = normalizeFuzzyValue(target.region);
+  const targetOffice = normalizeFuzzyValue(target.office);
+
+  const scored = rows
+    .filter((row) => !exactMatchedIds.has(row.id))
+    .map((row) => {
+      const nameScore = diceSimilarity(targetName, row.name);
+      const candidateRegion = normalizeFuzzyValue(row.region);
+      const candidateOffice = normalizeFuzzyValue(row.office);
+
+      const weightedScores: Array<{ weight: number; score: number }> = [{ weight: 0.8, score: nameScore }];
+
+      if (targetRegion || candidateRegion) {
+        weightedScores.push({ weight: 0.1, score: targetRegion === candidateRegion ? 1 : 0 });
+      }
+      if (targetOffice || candidateOffice) {
+        weightedScores.push({ weight: 0.1, score: targetOffice === candidateOffice ? 1 : 0 });
+      }
+
+      const totalWeight = weightedScores.reduce((acc, part) => acc + part.weight, 0);
+      const weightedScore = weightedScores.reduce((acc, part) => acc + part.score * part.weight, 0) / totalWeight;
+
+      return {
+        ...row,
+        score: Number(weightedScore.toFixed(3))
+      };
+    })
+    .filter((row) => row.score >= DUPLICATE_ASSIST_FUZZY_MIN_SCORE)
+    .sort((left, right) => {
+      if (right.score !== left.score) {
+        return right.score - left.score;
+      }
+      return left.id - right.id;
+    });
+
+  return scored.slice(0, DUPLICATE_ASSIST_FUZZY_LIMIT);
 };
 
 type ProposalTxError = {
@@ -765,10 +1013,19 @@ app.get("/politician-proposals/:id/duplicate-assist", proposalAssistLimiter, req
   const proposalId = Number(req.params.id);
   const proposal = db
     .prepare(
-      `SELECT id, external_id AS externalId, normalized_submission_key AS normalizedKey
+      `SELECT id, name, region, office, external_id AS externalId, normalized_submission_key AS normalizedKey
        FROM politician_proposals WHERE id = ?`
     )
-    .get(proposalId) as { id: number; externalId: string | null; normalizedKey: string } | undefined;
+    .get(proposalId) as
+    | {
+        id: number;
+        name: string;
+        region: string | null;
+        office: string | null;
+        externalId: string | null;
+        normalizedKey: string;
+      }
+    | undefined;
 
   if (!proposal) {
     res.status(404).json({ error: "proposal not found" });
@@ -845,6 +1102,32 @@ app.get("/politician-proposals/:id/duplicate-assist", proposalAssistLimiter, req
     "normalizedKey"
   );
 
+  const fuzzyCanonicalHints = buildFuzzyDuplicateHints(
+    db
+      .prepare("SELECT id, name, region, office, external_id AS externalId FROM politicians WHERE deleted_at IS NULL ORDER BY id")
+      .all() as IdentityCandidate[],
+    {
+      name: proposalRow.name,
+      region: proposalRow.region,
+      office: proposalRow.office
+    },
+    new Set(canonicalMap.keys())
+  );
+
+  const fuzzyPendingProposalHints = buildFuzzyDuplicateHints(
+    db
+      .prepare(
+        "SELECT id, name, region, office, external_id AS externalId FROM politician_proposals WHERE id != ? AND status = 'pending' ORDER BY id"
+      )
+      .all(proposalId) as IdentityCandidate[],
+    {
+      name: proposalRow.name,
+      region: proposalRow.region,
+      office: proposalRow.office
+    },
+    new Set(pendingMap.keys())
+  );
+
   const canonicalMatches = [...canonicalMap.values()].map((row) => ({
     id: row.id,
     name: row.name,
@@ -862,7 +1145,15 @@ app.get("/politician-proposals/:id/duplicate-assist", proposalAssistLimiter, req
     matchOn: [...row.matchOn]
   }));
 
-  res.json({ proposalId, canonicalMatches, pendingProposalMatches });
+  res.json({
+    proposalId,
+    canonicalMatches,
+    pendingProposalMatches,
+    fuzzyHints: {
+      canonical: fuzzyCanonicalHints,
+      pendingProposals: fuzzyPendingProposalHints
+    }
+  });
 });
 
 app.get("/politician-proposals/:id/audits", requireRole("moderator"), (req, res) => {

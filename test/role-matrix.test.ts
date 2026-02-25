@@ -97,6 +97,11 @@ describe("role matrix", () => {
       .set(userHeaders)
       .expect(403);
 
+    await request(app)
+      .get("/abuse/metrics")
+      .set(userHeaders)
+      .expect(403);
+
     const modHeaders = await authHeaders("matrix-mod-ops", "moderator");
     const claim = await request(app)
       .post(`/politician-proposals/${submit.body.id}/claim`)
@@ -116,6 +121,11 @@ describe("role matrix", () => {
 
     await request(app)
       .get("/politician-proposals/metrics")
+      .set(modHeaders)
+      .expect(200);
+
+    await request(app)
+      .get("/abuse/metrics")
       .set(modHeaders)
       .expect(200);
 
