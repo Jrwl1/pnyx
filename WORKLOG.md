@@ -140,6 +140,22 @@ Follow-ups / deferred issues (IDs): None.
 
 ---
 
+Date: 2026-02-26
+Milestone/Sprint: S2-T01 (Roadmap activation — Option 1 moderation ops hardening)
+Summary (1–3 bullets):
+- Added M2 milestone for moderation operations hardening (queue ownership, triage metrics, reason policy, race safety, audit filters, moderation rate controls).
+- Replaced current sprint definition with S2 Active (`S2-T01..S2-T14`) based on Option 1 (lock-safe moderation ops hardening).
+- Synced current status docs to S2 Active execution mode (`PROJECT_STATUS.md`, `TASKS.md`).
+Why (link to requirement/milestone/issue): User requested Sprint 2 planning with Option 1 and asked to populate sprint docs.
+Evidence (commands + summarized results):
+- `git add ai/roadmap/MILESTONES.md ai/roadmap/SPRINT.md PROJECT_STATUS.md TASKS.md`
+- `git commit -m "docs(roadmap): activate M2 and S2 operations plan"` -> 4 files changed.
+Commit: 4063d6c
+Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md.
+Follow-ups / deferred issues (IDs): Start S2 DO mode execution beginning with S2-T01 migration batch.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
