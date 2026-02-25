@@ -90,6 +90,22 @@ Follow-ups / deferred issues (IDs): Implement proposal submit/review/create endp
 
 ---
 
+Date: 2026-02-25
+Milestone/Sprint: S1-T03/S1-T04/S1-T05/S1-T06/S1-T08/S1-T09/S1-T10/S1-T11/S1-T12
+Summary (1–3 bullets):
+- Implemented moderated intake API: proposal submit/read/review/audits plus moderator/admin-only canonical politician create and atomic approve-to-create linking.
+- Added dedicated intake/create rate limits and updated role gates (`user` cannot create canonical politicians; `moderator|admin` can review/create).
+- Added end-to-end proposal test coverage: submit, review, approval-link, queue reads, audits, proposal/create rate limits, role matrix, and updated existing politician/read-surface tests.
+Why (link to requirement/milestone/issue): Execute S1 core governance hardening tasks after CR-002 activation.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "politician proposal submit" && pnpm test -- -t "politician proposal review" && pnpm test -- -t "proposal approval create link" && pnpm test -- -t "politician proposal queue" && pnpm test -- -t "politician proposal audit" && pnpm test -- -t "proposal rate limit" && pnpm test -- -t "role matrix" && pnpm test -- -t "politician dedupe"` -> pass after review-action fix (19 files / 66 tests passed in each targeted run).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: f0c4603
+Files touched: src/server.ts, test/setup.ts, test/politician-dedupe.test.ts, test/read-surfaces.test.ts, test/politician-proposal-submit.test.ts, test/politician-proposal-review.test.ts, test/proposal-approval-create-link.test.ts, test/politician-proposal-queue.test.ts, test/politician-proposal-audit.test.ts, test/proposal-rate-limit.test.ts, test/role-matrix.test.ts.
+Follow-ups / deferred issues (IDs): Run S1-T13 full regression and execute S1-T14 review/closeout.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
