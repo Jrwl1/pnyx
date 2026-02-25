@@ -273,6 +273,9 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 #### `POST /statements/:id/pending-delete`
 - Auth: `moderator|admin`
 - `200`: `{ ok: true }`
+- Side effects:
+  - sets `pending_delete = 1`
+  - appends revision audit with `change_type = 'pendingDeleteStatement'`
 - Errors:
   - `404` statement missing/deleted
 
@@ -282,6 +285,8 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 - Semantics:
   - only author may withdraw
   - sets `withdrawn_at`, `deleted_at`, clears `pending_delete`
+- Side effects:
+  - appends revision audit with `change_type = 'withdrawStatement'`
 - Errors:
   - `403` caller is not author
   - `404` statement missing/deleted
@@ -292,6 +297,8 @@ Default windows and maxima (`RATE_LIMIT_WINDOW_MS` default `60000`):
 - Semantics:
   - requires `pending_delete = 1`
   - sets `deleted_at`, clears `pending_delete`
+- Side effects:
+  - appends revision audit with `change_type = 'approveDeleteStatement'`
 - Errors:
   - `409` not pending delete (including missing id)
 

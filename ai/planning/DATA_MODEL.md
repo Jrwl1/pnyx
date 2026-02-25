@@ -136,7 +136,7 @@ Columns:
 
 Notes:
 - No DB-level enum constraint on `change_type`; values are produced by handlers.
-- Current handlers write `createStatement`, `editStatement`, and `verification_status`.
+- Current handlers write `createStatement`, `editStatement`, `verification_status`, `pendingDeleteStatement`, `withdrawStatement`, and `approveDeleteStatement`.
 
 ## Entity: politician_proposals
 
@@ -208,8 +208,7 @@ Indexes/constraints:
 - `INV-003` one vote row per `(statement, user)`:
   - Enforced by UNIQUE `(statement_id, user_id)` and vote upsert.
 - `INV-004` auditable statement lifecycle:
-  - Implemented coverage today is `create`, `edit`, and `verification` transitions via `revision_audits`.
-  - Delete lifecycle routes currently mutate `statements` without writing `revision_audits` rows.
+  - Implemented coverage includes `create`, `edit`, `verification`, `pending-delete`, `withdraw`, and `approve-delete` transitions via `revision_audits`.
 - `INV-005` canonical politician uniqueness with precedence:
   - `external_id` uniqueness plus normalized-key uniqueness and create-time duplicate checks.
 - `INV-006` role-aware soft-delete visibility:
