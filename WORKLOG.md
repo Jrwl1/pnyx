@@ -156,6 +156,21 @@ Follow-ups / deferred issues (IDs): Start S2 DO mode execution beginning with S2
 
 ---
 
+Date: 2026-02-26
+Milestone/Sprint: S2-T01 (proposal-ops migration)
+Summary (1–3 bullets):
+- Added migration `0003_proposal_ops_hardening.sql` with moderation-ops queue fields (`assignee_id`, `assigned_at`, `decision_code`, `review_version`) and audit field (`reason_code`).
+- Added moderation-ops indexes for status+assignee queue scans and audit actor/action/status filters.
+- Expanded migration schema test assertions for new columns/indexes.
+Why (link to requirement/milestone/issue): S2-T01 requires queue operations schema foundation before endpoint hardening.
+Evidence (commands + summarized results):
+- `pnpm migrate && pnpm test -- -t "migration"` -> pass (`Migrations applied.`; migration suite green, total 19 test files / 66 tests passing in run).
+Commit: 4a34bf4
+Files touched: migrations/0003_proposal_ops_hardening.sql, test/migration.test.ts.
+Follow-ups / deferred issues (IDs): Implement S2-T02..S2-T09 moderation operations endpoints and tests.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
