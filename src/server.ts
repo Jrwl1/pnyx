@@ -107,6 +107,21 @@ const politicianCreateLimiter = createRateLimiter({
   max: readPositiveIntEnv("RATE_LIMIT_POLITICIAN_CREATE_MAX", 40),
   windowMs: RATE_LIMIT_WINDOW_MS
 });
+const proposalClaimLimiter = createRateLimiter({
+  name: "proposal-claim",
+  max: readPositiveIntEnv("RATE_LIMIT_PROPOSAL_CLAIM_MAX", 60),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const proposalReviewLimiter = createRateLimiter({
+  name: "proposal-review",
+  max: readPositiveIntEnv("RATE_LIMIT_PROPOSAL_REVIEW_MAX", 80),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const proposalAssistLimiter = createRateLimiter({
+  name: "proposal-assist",
+  max: readPositiveIntEnv("RATE_LIMIT_PROPOSAL_ASSIST_MAX", 100),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
 const voteLimiter = createRateLimiter({
   name: "vote",
   max: readPositiveIntEnv("RATE_LIMIT_VOTE_MAX", 120),
@@ -125,6 +140,26 @@ type CanonicalPoliticianInput = {
 type CanonicalPoliticianResult =
   | { ok: true; id: number }
   | { ok: false; status: 400 | 409 | 500; error: string };
+
+const proposalStatuses = ["pending", "approved", "rejected", "duplicate"] as const;
+type ProposalStatus = (typeof proposalStatuses)[number];
+
+const rejectReasonCodes = ["insufficient_evidence", "invalid_identity", "not_public_figure", "out_of_scope"] as const;
+const duplicateReasonCodes = ["duplicate_canonical", "duplicate_pending", "already_tracked"] as const;
+type RejectReasonCode = (typeof rejectReasonCodes)[number];
+type DuplicateReasonCode = (typeof duplicateReasonCodes)[number];
+
+const isProposalStatus = (value: string): value is ProposalStatus => {
+  return proposalStatuses.includes(value as ProposalStatus);
+};
+
+const isRejectReasonCode = (value: string): value is RejectReasonCode => {
+  return rejectReasonCodes.includes(value as RejectReasonCode);
+};
+
+const isDuplicateReasonCode = (value: string): value is DuplicateReasonCode => {
+  return duplicateReasonCodes.includes(value as DuplicateReasonCode);
+};
 
 const createCanonicalPolitician = (input: CanonicalPoliticianInput, actorId: string): CanonicalPoliticianResult => {
   const trimmedName = input.name.trim();
@@ -244,11 +279,6 @@ app.post("/politicians", politicianCreateLimiter, requireRole("moderator"), (req
   res.status(201).json({ id: created.id });
 });
 
-type ProposalStatus = "pending" | "approved" | "rejected" | "duplicate";
-const isProposalStatus = (value: string): value is ProposalStatus => {
-  return ["pending", "approved", "rejected", "duplicate"].includes(value);
-};
-
 app.post("/politician-proposals", proposalSubmitLimiter, requireRole("user"), (req, res) => {
   const { name, region, office, externalId, sourceNote } = req.body as {
     name?: string;
@@ -309,6 +339,34 @@ app.post("/politician-proposals", proposalSubmitLimiter, requireRole("user"), (r
   }
 });
 
+const parsePageValue = (value: string | undefined, fallback: number, max: number): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) {
+    return fallback;
+  }
+  return Math.min(Math.floor(parsed), max);
+};
+
+type ProposalTxError = {
+  status: 400 | 403 | 404 | 409 | 500;
+  error: string;
+};
+
+const throwProposalTxError = (status: ProposalTxError["status"], error: string): never => {
+  throw { status, error } satisfies ProposalTxError;
+};
+
+const isProposalTxError = (value: unknown): value is ProposalTxError => {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "status" in value &&
+    "error" in value &&
+    typeof (value as { status: unknown }).status === "number" &&
+    typeof (value as { error: unknown }).error === "string"
+  );
+};
+
 app.get("/politician-proposals", requireRole("user"), (req, res) => {
   const statusRaw = (req.query.status as string | undefined)?.trim().toLowerCase();
   const statusFilter = statusRaw && statusRaw !== "all" ? statusRaw : null;
@@ -318,37 +376,249 @@ app.get("/politician-proposals", requireRole("user"), (req, res) => {
   }
 
   const isModerator = req.auth.role === "moderator" || req.auth.role === "admin";
-  const items = isModerator
-    ? db
-        .prepare(
-          `SELECT id, submitted_by AS submittedBy, name, region, office, external_id AS externalId,
-            source_note AS sourceNote, status, decision_by AS decisionBy, decision_reason AS decisionReason,
-            linked_politician_id AS linkedPoliticianId, created_at AS createdAt, decided_at AS decidedAt
-           FROM politician_proposals
-           WHERE (? IS NULL OR status = ?)
-           ORDER BY created_at DESC`
-        )
-        .all(statusFilter, statusFilter)
-    : db
-        .prepare(
-          `SELECT id, submitted_by AS submittedBy, name, region, office, external_id AS externalId,
-            source_note AS sourceNote, status, decision_by AS decisionBy, decision_reason AS decisionReason,
-            linked_politician_id AS linkedPoliticianId, created_at AS createdAt, decided_at AS decidedAt
-           FROM politician_proposals
-           WHERE submitted_by = ? AND (? IS NULL OR status = ?)
-           ORDER BY created_at DESC`
-        )
-        .all(req.auth.userId ?? "unknown", statusFilter, statusFilter);
+  const assigneeRaw = (req.query.assignee as string | undefined)?.trim();
+  const ageBucket = (req.query.ageBucket as string | undefined)?.trim().toLowerCase();
+  const sort = (req.query.sort as string | undefined)?.trim().toLowerCase();
+  const page = parsePageValue(req.query.page as string | undefined, 1, 10_000);
+  const pageSize = parsePageValue(req.query.pageSize as string | undefined, 20, 100);
+  const offset = (page - 1) * pageSize;
 
-  res.json({ items });
+  if (ageBucket && !["lt1h", "1to24h", "gt24h"].includes(ageBucket)) {
+    res.status(400).json({ error: "invalid ageBucket filter" });
+    return;
+  }
+
+  if (sort && sort !== "asc" && sort !== "desc") {
+    res.status(400).json({ error: "sort must be asc or desc" });
+    return;
+  }
+
+  const whereClauses: string[] = [];
+  const params: Array<string | number> = [];
+
+  if (!isModerator) {
+    whereClauses.push("submitted_by = ?");
+    params.push(req.auth.userId ?? "unknown");
+  }
+
+  if (statusFilter) {
+    whereClauses.push("status = ?");
+    params.push(statusFilter);
+  }
+
+  if (assigneeRaw) {
+    if (!isModerator) {
+      res.status(400).json({ error: "assignee filter requires moderator role" });
+      return;
+    }
+
+    if (assigneeRaw.toLowerCase() === "unassigned") {
+      whereClauses.push("assignee_id IS NULL");
+    } else if (assigneeRaw.toLowerCase() === "me") {
+      whereClauses.push("assignee_id = ?");
+      params.push(req.auth.userId ?? "moderation");
+    } else {
+      whereClauses.push("assignee_id = ?");
+      params.push(assigneeRaw);
+    }
+  }
+
+  if (ageBucket === "lt1h") {
+    whereClauses.push("created_at >= datetime('now', '-1 hour')");
+  } else if (ageBucket === "1to24h") {
+    whereClauses.push("created_at < datetime('now', '-1 hour') AND created_at >= datetime('now', '-24 hours')");
+  } else if (ageBucket === "gt24h") {
+    whereClauses.push("created_at < datetime('now', '-24 hours')");
+  }
+
+  const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
+  const sortDirection = sort === "asc" ? "ASC" : "DESC";
+
+  const totalRow = db
+    .prepare(`SELECT COUNT(*) AS total FROM politician_proposals ${whereSql}`)
+    .get(...params) as { total: number };
+
+  const items = db
+    .prepare(
+      `SELECT id, submitted_by AS submittedBy, assignee_id AS assigneeId, assigned_at AS assignedAt,
+        name, region, office, external_id AS externalId, source_note AS sourceNote,
+        status, decision_by AS decisionBy, decision_reason AS decisionReason,
+        decision_code AS decisionCode, linked_politician_id AS linkedPoliticianId,
+        review_version AS reviewVersion, created_at AS createdAt, decided_at AS decidedAt
+       FROM politician_proposals
+       ${whereSql}
+       ORDER BY created_at ${sortDirection}, id ${sortDirection}
+       LIMIT ? OFFSET ?`
+    )
+    .all(...params, pageSize, offset);
+
+  res.json({ items, page, pageSize, total: totalRow.total });
 });
 
-app.patch("/politician-proposals/:id/review", requireRole("moderator"), (req, res) => {
+app.get("/politician-proposals/metrics", requireRole("moderator"), (_req, res) => {
+  const pending = db
+    .prepare(
+      `SELECT
+        COUNT(*) AS total,
+        COALESCE(SUM(CASE WHEN assignee_id IS NULL THEN 1 ELSE 0 END), 0) AS unassigned,
+        COALESCE(SUM(CASE WHEN assignee_id IS NOT NULL THEN 1 ELSE 0 END), 0) AS assigned
+       FROM politician_proposals
+       WHERE status = 'pending'`
+    )
+    .get() as { total: number; unassigned: number; assigned: number };
+
+  const buckets = db
+    .prepare(
+      `SELECT
+        COALESCE(SUM(CASE WHEN created_at >= datetime('now', '-1 hour') THEN 1 ELSE 0 END), 0) AS lt1h,
+        COALESCE(SUM(CASE WHEN created_at < datetime('now', '-1 hour') AND created_at >= datetime('now', '-24 hours') THEN 1 ELSE 0 END), 0) AS oneTo24h,
+        COALESCE(SUM(CASE WHEN created_at < datetime('now', '-24 hours') THEN 1 ELSE 0 END), 0) AS gt24h
+       FROM politician_proposals
+       WHERE status = 'pending'`
+    )
+    .get() as { lt1h: number; oneTo24h: number; gt24h: number };
+
+  res.json({
+    pending: {
+      total: Number(pending.total ?? 0),
+      assigned: Number(pending.assigned ?? 0),
+      unassigned: Number(pending.unassigned ?? 0)
+    },
+    ageBuckets: {
+      lt1h: Number(buckets.lt1h ?? 0),
+      oneTo24h: Number(buckets.oneTo24h ?? 0),
+      gt24h: Number(buckets.gt24h ?? 0)
+    }
+  });
+});
+
+app.post("/politician-proposals/:id/claim", proposalClaimLimiter, requireRole("moderator"), (req, res) => {
   const proposalId = Number(req.params.id);
-  const { decision, reason, linkedPoliticianId } = req.body as {
+  const expectedVersion = (req.body as { expectedVersion?: number }).expectedVersion;
+
+  if (!Number.isInteger(proposalId) || proposalId <= 0) {
+    res.status(400).json({ error: "invalid proposal id" });
+    return;
+  }
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    res.status(400).json({ error: "expectedVersion must be a non-negative integer" });
+    return;
+  }
+
+  const actorId = req.auth.userId ?? "moderation";
+  const claimTx = db.transaction(() => {
+    const proposal = db
+      .prepare("SELECT status, assignee_id AS assigneeId, review_version AS reviewVersion FROM politician_proposals WHERE id = ?")
+      .get(proposalId) as { status: ProposalStatus; assigneeId: string | null; reviewVersion: number } | undefined;
+    if (!proposal) {
+      throwProposalTxError(404, "proposal not found");
+    }
+    const proposalRow = proposal!;
+    if (proposalRow.status !== "pending") {
+      throwProposalTxError(409, "proposal is not pending");
+    }
+    if (expectedVersion !== undefined && expectedVersion !== proposalRow.reviewVersion) {
+      throwProposalTxError(409, "proposal version conflict");
+    }
+    if (proposalRow.assigneeId && proposalRow.assigneeId !== actorId) {
+      throwProposalTxError(409, "proposal already claimed by another moderator");
+    }
+    if (proposalRow.assigneeId === actorId) {
+      return { assigneeId: actorId, reviewVersion: proposalRow.reviewVersion };
+    }
+
+    const write = db
+      .prepare(
+        "UPDATE politician_proposals SET assignee_id = ?, assigned_at = datetime('now'), updated_at = datetime('now'), review_version = review_version + 1 WHERE id = ? AND status = 'pending' AND review_version = ?"
+      )
+      .run(actorId, proposalId, proposalRow.reviewVersion);
+    if (write.changes === 0) {
+      throwProposalTxError(409, "proposal version conflict");
+    }
+
+    return { assigneeId: actorId, reviewVersion: proposalRow.reviewVersion + 1 };
+  });
+
+  try {
+    const result = claimTx();
+    res.json({ ok: true, assigneeId: result.assigneeId, reviewVersion: result.reviewVersion });
+  } catch (err) {
+    if (isProposalTxError(err)) {
+      res.status(err.status).json({ error: err.error });
+      return;
+    }
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.post("/politician-proposals/:id/release", proposalClaimLimiter, requireRole("moderator"), (req, res) => {
+  const proposalId = Number(req.params.id);
+  const expectedVersion = (req.body as { expectedVersion?: number }).expectedVersion;
+
+  if (!Number.isInteger(proposalId) || proposalId <= 0) {
+    res.status(400).json({ error: "invalid proposal id" });
+    return;
+  }
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    res.status(400).json({ error: "expectedVersion must be a non-negative integer" });
+    return;
+  }
+
+  const actorId = req.auth.userId ?? "moderation";
+  const isAdmin = req.auth.role === "admin";
+  const releaseTx = db.transaction(() => {
+    const proposal = db
+      .prepare("SELECT status, assignee_id AS assigneeId, review_version AS reviewVersion FROM politician_proposals WHERE id = ?")
+      .get(proposalId) as { status: ProposalStatus; assigneeId: string | null; reviewVersion: number } | undefined;
+    if (!proposal) {
+      throwProposalTxError(404, "proposal not found");
+    }
+    const proposalRow = proposal!;
+    if (proposalRow.status !== "pending") {
+      throwProposalTxError(409, "proposal is not pending");
+    }
+    if (!proposalRow.assigneeId) {
+      throwProposalTxError(409, "proposal is not claimed");
+    }
+    if (!isAdmin && proposalRow.assigneeId !== actorId) {
+      throwProposalTxError(403, "only assignee or admin can release this claim");
+    }
+    if (expectedVersion !== undefined && expectedVersion !== proposalRow.reviewVersion) {
+      throwProposalTxError(409, "proposal version conflict");
+    }
+
+    const write = db
+      .prepare(
+        "UPDATE politician_proposals SET assignee_id = NULL, assigned_at = NULL, updated_at = datetime('now'), review_version = review_version + 1 WHERE id = ? AND status = 'pending' AND review_version = ?"
+      )
+      .run(proposalId, proposalRow.reviewVersion);
+    if (write.changes === 0) {
+      throwProposalTxError(409, "proposal version conflict");
+    }
+
+    return { reviewVersion: proposalRow.reviewVersion + 1 };
+  });
+
+  try {
+    const result = releaseTx();
+    res.json({ ok: true, reviewVersion: result.reviewVersion });
+  } catch (err) {
+    if (isProposalTxError(err)) {
+      res.status(err.status).json({ error: err.error });
+      return;
+    }
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.patch("/politician-proposals/:id/review", proposalReviewLimiter, requireRole("moderator"), (req, res) => {
+  const proposalId = Number(req.params.id);
+  const { decision, reason, reasonCode, linkedPoliticianId, expectedVersion } = req.body as {
     decision?: string;
     reason?: string;
+    reasonCode?: string;
     linkedPoliticianId?: number;
+    expectedVersion?: number;
   };
 
   if (decision !== "approve" && decision !== "reject" && decision !== "duplicate") {
@@ -356,17 +626,34 @@ app.patch("/politician-proposals/:id/review", requireRole("moderator"), (req, re
     return;
   }
 
-  if ((decision === "reject" || decision === "duplicate") && !reason?.trim()) {
-    res.status(400).json({ error: "reason is required for reject or duplicate" });
+  const normalizedReasonCode = reasonCode?.trim().toLowerCase();
+  if (decision === "reject" && (!normalizedReasonCode || !isRejectReasonCode(normalizedReasonCode))) {
+    res.status(400).json({ error: "invalid reasonCode for reject decision" });
+    return;
+  }
+  if (decision === "duplicate" && (!normalizedReasonCode || !isDuplicateReasonCode(normalizedReasonCode))) {
+    res.status(400).json({ error: "invalid reasonCode for duplicate decision" });
+    return;
+  }
+  if (decision === "approve" && normalizedReasonCode) {
+    res.status(400).json({ error: "reasonCode is not allowed for approve decision" });
+    return;
+  }
+
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    res.status(400).json({ error: "expectedVersion must be a non-negative integer" });
     return;
   }
 
   const actorId = req.auth.userId ?? "moderation";
+  const isAdmin = req.auth.role === "admin";
+  const reasonNote = reason?.trim() || null;
+
   const reviewTx = db.transaction(() => {
     const proposal = db
       .prepare(
         `SELECT id, submitted_by AS submittedBy, name, region, office, external_id AS externalId,
-         status, linked_politician_id AS linkedPoliticianId
+         status, assignee_id AS assigneeId, linked_politician_id AS linkedPoliticianId, review_version AS reviewVersion
          FROM politician_proposals WHERE id = ?`
       )
       .get(proposalId) as
@@ -378,40 +665,57 @@ app.patch("/politician-proposals/:id/review", requireRole("moderator"), (req, re
           office: string | null;
           externalId: string | null;
           status: ProposalStatus;
+          assigneeId: string | null;
           linkedPoliticianId: number | null;
+          reviewVersion: number;
         }
       | undefined;
 
     if (!proposal) {
-      return { ok: false as const, status: 404 as const, error: "proposal not found" };
+      throwProposalTxError(404, "proposal not found");
     }
-    if (proposal.status !== "pending") {
-      return { ok: false as const, status: 409 as const, error: "proposal is not pending" };
+    const proposalRow = proposal!;
+    if (proposalRow.status !== "pending") {
+      throwProposalTxError(409, "proposal is not pending");
     }
+    if (proposalRow.assigneeId && proposalRow.assigneeId !== actorId && !isAdmin) {
+      throwProposalTxError(409, "proposal is claimed by another moderator");
+    }
+    if (expectedVersion !== undefined && expectedVersion !== proposalRow.reviewVersion) {
+      throwProposalTxError(409, "proposal version conflict");
+    }
+
+    const currentVersion = proposalRow.reviewVersion;
 
     if (decision === "approve") {
       const created = createCanonicalPolitician(
         {
-          name: proposal.name,
-          region: proposal.region ?? undefined,
-          office: proposal.office ?? undefined,
-          externalId: proposal.externalId ?? undefined
+          name: proposalRow.name,
+          region: proposalRow.region ?? undefined,
+          office: proposalRow.office ?? undefined,
+          externalId: proposalRow.externalId ?? undefined
         },
         actorId
       );
-
       if (!created.ok) {
-        return { ok: false as const, status: created.status, error: created.error };
+        throwProposalTxError(created.status, created.error);
+      }
+      const createdId = (created as { ok: true; id: number }).id;
+
+      const write = db
+        .prepare(
+          "UPDATE politician_proposals SET status = 'approved', decision_by = ?, decision_reason = ?, decision_code = NULL, linked_politician_id = ?, assignee_id = COALESCE(assignee_id, ?), assigned_at = COALESCE(assigned_at, datetime('now')), updated_at = datetime('now'), decided_at = datetime('now'), review_version = review_version + 1 WHERE id = ? AND status = 'pending' AND review_version = ?"
+        )
+        .run(actorId, reasonNote, createdId, actorId, proposalId, currentVersion);
+      if (write.changes === 0) {
+        throwProposalTxError(409, "proposal version conflict");
       }
 
       db.prepare(
-        "UPDATE politician_proposals SET status = 'approved', decision_by = ?, decision_reason = ?, linked_politician_id = ?, updated_at = datetime('now'), decided_at = datetime('now') WHERE id = ?"
-      ).run(actorId, reason?.trim() || null, created.id, proposalId);
-      db.prepare(
-        "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, linked_politician_id) VALUES (?, ?, 'approved', 'pending', 'approved', ?, ?)"
-      ).run(proposalId, actorId, reason?.trim() || null, created.id);
+        "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, reason_code, linked_politician_id) VALUES (?, ?, 'approved', 'pending', 'approved', ?, NULL, ?)"
+      ).run(proposalId, actorId, reasonNote, createdId);
 
-      return { ok: true as const, status: "approved" as const, politicianId: created.id };
+      return { status: "approved" as const, politicianId: createdId, reviewVersion: currentVersion + 1 };
     }
 
     let linkedId: number | null = null;
@@ -422,30 +726,143 @@ app.patch("/politician-proposals/:id/review", requireRole("moderator"), (req, re
           .prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1")
           .get(linkedId) as { "1"?: number } | undefined;
         if (!linked) {
-          return { ok: false as const, status: 404 as const, error: "linked politician not found" };
+          throwProposalTxError(404, "linked politician not found");
         }
       }
     }
 
     const nextStatus = decision === "reject" ? "rejected" : "duplicate";
     const action = decision === "reject" ? "rejected" : "duplicate";
-    db.prepare(
-      "UPDATE politician_proposals SET status = ?, decision_by = ?, decision_reason = ?, linked_politician_id = ?, updated_at = datetime('now'), decided_at = datetime('now') WHERE id = ?"
-    ).run(nextStatus, actorId, reason?.trim() || null, linkedId, proposalId);
-    db.prepare(
-      "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, linked_politician_id) VALUES (?, ?, ?, 'pending', ?, ?, ?)"
-    ).run(proposalId, actorId, action, nextStatus, reason?.trim() || null, linkedId);
+    const write = db
+      .prepare(
+        "UPDATE politician_proposals SET status = ?, decision_by = ?, decision_reason = ?, decision_code = ?, linked_politician_id = ?, assignee_id = COALESCE(assignee_id, ?), assigned_at = COALESCE(assigned_at, datetime('now')), updated_at = datetime('now'), decided_at = datetime('now'), review_version = review_version + 1 WHERE id = ? AND status = 'pending' AND review_version = ?"
+      )
+      .run(nextStatus, actorId, reasonNote, normalizedReasonCode ?? null, linkedId, actorId, proposalId, currentVersion);
+    if (write.changes === 0) {
+      throwProposalTxError(409, "proposal version conflict");
+    }
 
-    return { ok: true as const, status: nextStatus, politicianId: linkedId };
+    db.prepare(
+      "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, reason_code, linked_politician_id) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)"
+    ).run(proposalId, actorId, action, nextStatus, reasonNote, normalizedReasonCode ?? null, linkedId);
+
+    return { status: nextStatus, politicianId: linkedId, reviewVersion: currentVersion + 1 };
   });
 
-  const result = reviewTx();
-  if (!result.ok) {
-    res.status(result.status).json({ error: result.error });
+  try {
+    const result = reviewTx();
+    res.json({ ok: true, status: result.status, politicianId: result.politicianId, reviewVersion: result.reviewVersion });
+  } catch (err) {
+    if (isProposalTxError(err)) {
+      res.status(err.status).json({ error: err.error });
+      return;
+    }
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.get("/politician-proposals/:id/duplicate-assist", proposalAssistLimiter, requireRole("moderator"), (req, res) => {
+  const proposalId = Number(req.params.id);
+  const proposal = db
+    .prepare(
+      `SELECT id, external_id AS externalId, normalized_submission_key AS normalizedKey
+       FROM politician_proposals WHERE id = ?`
+    )
+    .get(proposalId) as { id: number; externalId: string | null; normalizedKey: string } | undefined;
+
+  if (!proposal) {
+    res.status(404).json({ error: "proposal not found" });
     return;
   }
+  const proposalRow = proposal!;
 
-  res.json({ ok: true, status: result.status, politicianId: result.politicianId });
+  const canonicalMap = new Map<number, { id: number; name: string; region: string | null; office: string | null; externalId: string | null; matchOn: Set<string> }>();
+  const pendingMap = new Map<number, { id: number; name: string; region: string | null; office: string | null; externalId: string | null; matchOn: Set<string> }>();
+
+  const addCanonical = (
+    rows: Array<{ id: number; name: string; region: string | null; office: string | null; externalId: string | null }>,
+    matchOn: string
+  ): void => {
+    for (const row of rows) {
+      const existing = canonicalMap.get(row.id);
+      if (existing) {
+        existing.matchOn.add(matchOn);
+      } else {
+        canonicalMap.set(row.id, { ...row, matchOn: new Set([matchOn]) });
+      }
+    }
+  };
+
+  const addPending = (
+    rows: Array<{ id: number; name: string; region: string | null; office: string | null; externalId: string | null }>,
+    matchOn: string
+  ): void => {
+    for (const row of rows) {
+      const existing = pendingMap.get(row.id);
+      if (existing) {
+        existing.matchOn.add(matchOn);
+      } else {
+        pendingMap.set(row.id, { ...row, matchOn: new Set([matchOn]) });
+      }
+    }
+  };
+
+  if (proposalRow.externalId) {
+    addCanonical(
+      db
+        .prepare(
+          "SELECT id, name, region, office, external_id AS externalId FROM politicians WHERE deleted_at IS NULL AND external_id = ? ORDER BY id"
+        )
+        .all(proposalRow.externalId) as Array<{ id: number; name: string; region: string | null; office: string | null; externalId: string | null }>,
+      "externalId"
+    );
+
+    addPending(
+      db
+        .prepare(
+          "SELECT id, name, region, office, external_id AS externalId FROM politician_proposals WHERE id != ? AND status = 'pending' AND external_id = ? ORDER BY id"
+        )
+        .all(proposalId, proposalRow.externalId) as Array<{ id: number; name: string; region: string | null; office: string | null; externalId: string | null }>,
+      "externalId"
+    );
+  }
+
+  addCanonical(
+    db
+      .prepare(
+        "SELECT id, name, region, office, external_id AS externalId FROM politicians WHERE deleted_at IS NULL AND normalized_key = ? ORDER BY id"
+      )
+      .all(proposalRow.normalizedKey) as Array<{ id: number; name: string; region: string | null; office: string | null; externalId: string | null }>,
+    "normalizedKey"
+  );
+
+  addPending(
+    db
+      .prepare(
+        "SELECT id, name, region, office, external_id AS externalId FROM politician_proposals WHERE id != ? AND status = 'pending' AND normalized_submission_key = ? ORDER BY id"
+      )
+      .all(proposalId, proposalRow.normalizedKey) as Array<{ id: number; name: string; region: string | null; office: string | null; externalId: string | null }>,
+    "normalizedKey"
+  );
+
+  const canonicalMatches = [...canonicalMap.values()].map((row) => ({
+    id: row.id,
+    name: row.name,
+    region: row.region,
+    office: row.office,
+    externalId: row.externalId,
+    matchOn: [...row.matchOn]
+  }));
+  const pendingProposalMatches = [...pendingMap.values()].map((row) => ({
+    id: row.id,
+    name: row.name,
+    region: row.region,
+    office: row.office,
+    externalId: row.externalId,
+    matchOn: [...row.matchOn]
+  }));
+
+  res.json({ proposalId, canonicalMatches, pendingProposalMatches });
 });
 
 app.get("/politician-proposals/:id/audits", requireRole("moderator"), (req, res) => {
@@ -456,17 +873,65 @@ app.get("/politician-proposals/:id/audits", requireRole("moderator"), (req, res)
     return;
   }
 
+  const actorIdFilter = (req.query.actorId as string | undefined)?.trim();
+  const actionFilter = (req.query.action as string | undefined)?.trim().toLowerCase();
+  const statusFilter = (req.query.status as string | undefined)?.trim().toLowerCase();
+  const fromDate = (req.query.fromDate as string | undefined)?.trim();
+  const toDate = (req.query.toDate as string | undefined)?.trim();
+  const page = parsePageValue(req.query.page as string | undefined, 1, 10_000);
+  const pageSize = parsePageValue(req.query.pageSize as string | undefined, 20, 100);
+  const offset = (page - 1) * pageSize;
+
+  if (actionFilter && !["submitted", "approved", "rejected", "duplicate", "linked"].includes(actionFilter)) {
+    res.status(400).json({ error: "invalid action filter" });
+    return;
+  }
+  if (statusFilter && !isProposalStatus(statusFilter)) {
+    res.status(400).json({ error: "invalid status filter" });
+    return;
+  }
+
+  const conditions = ["proposal_id = ?"];
+  const params: Array<string | number> = [proposalId];
+
+  if (actorIdFilter) {
+    conditions.push("actor_id = ?");
+    params.push(actorIdFilter);
+  }
+  if (actionFilter) {
+    conditions.push("action = ?");
+    params.push(actionFilter);
+  }
+  if (statusFilter) {
+    conditions.push("to_status = ?");
+    params.push(statusFilter);
+  }
+  if (fromDate) {
+    conditions.push("created_at >= ?");
+    params.push(fromDate);
+  }
+  if (toDate) {
+    conditions.push("created_at <= ?");
+    params.push(toDate);
+  }
+
+  const whereSql = `WHERE ${conditions.join(" AND ")}`;
+  const totalRow = db
+    .prepare(`SELECT COUNT(*) AS total FROM politician_proposal_audits ${whereSql}`)
+    .get(...params) as { total: number };
+
   const items = db
     .prepare(
       `SELECT id, proposal_id AS proposalId, actor_id AS actorId, action, from_status AS fromStatus,
-       to_status AS toStatus, reason, linked_politician_id AS linkedPoliticianId, created_at AS createdAt
+       to_status AS toStatus, reason, reason_code AS reasonCode, linked_politician_id AS linkedPoliticianId, created_at AS createdAt
        FROM politician_proposal_audits
-       WHERE proposal_id = ?
-       ORDER BY id ASC`
+       ${whereSql}
+       ORDER BY id DESC
+       LIMIT ? OFFSET ?`
     )
-    .all(proposalId);
+    .all(...params, pageSize, offset);
 
-  res.json({ items });
+  res.json({ items, page, pageSize, total: totalRow.total });
 });
 
 app.get("/statements", (_req, res) => {

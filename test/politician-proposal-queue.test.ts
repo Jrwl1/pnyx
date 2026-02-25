@@ -52,7 +52,7 @@ describe("politician proposal queue", () => {
     await request(app)
       .patch(`/politician-proposals/${rejectRes.body.id}/review`)
       .set(modHeaders)
-      .send({ decision: "reject", reason: "out of scope" })
+      .send({ decision: "reject", reasonCode: "out_of_scope", reason: "out of scope" })
       .expect(200);
 
     const all = await request(app).get("/politician-proposals").set(modHeaders).expect(200);

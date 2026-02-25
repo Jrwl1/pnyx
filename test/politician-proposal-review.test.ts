@@ -31,7 +31,7 @@ describe("politician proposal review", () => {
     const res = await request(app)
       .patch(`/politician-proposals/${proposalId}/review`)
       .set(modHeaders)
-      .send({ decision: "reject", reason: "insufficient sourcing" })
+      .send({ decision: "reject", reasonCode: "insufficient_evidence", reason: "insufficient sourcing" })
       .expect(200);
     expect(res.body).toMatchObject({ ok: true, status: "rejected" });
   });
@@ -49,7 +49,7 @@ describe("politician proposal review", () => {
     const res = await request(app)
       .patch(`/politician-proposals/${proposalId}/review`)
       .set(adminHeaders)
-      .send({ decision: "duplicate", reason: "already tracked", linkedPoliticianId: create.body.id })
+      .send({ decision: "duplicate", reasonCode: "duplicate_canonical", reason: "already tracked", linkedPoliticianId: create.body.id })
       .expect(200);
     expect(res.body).toMatchObject({ ok: true, status: "duplicate", politicianId: create.body.id });
   });
@@ -67,13 +67,13 @@ describe("politician proposal review", () => {
     await request(app)
       .patch(`/politician-proposals/${proposalId}/review`)
       .set(modHeaders)
-      .send({ decision: "reject", reason: "bad data" })
+      .send({ decision: "reject", reasonCode: "invalid_identity", reason: "bad data" })
       .expect(200);
 
     await request(app)
       .patch(`/politician-proposals/${proposalId}/review`)
       .set(modHeaders)
-      .send({ decision: "reject", reason: "again" })
+      .send({ decision: "reject", reasonCode: "invalid_identity", reason: "again" })
       .expect(409);
   });
 
@@ -83,7 +83,7 @@ describe("politician proposal review", () => {
     await request(app)
       .patch(`/politician-proposals/${proposalId}/review`)
       .set(userHeaders)
-      .send({ decision: "reject", reason: "not allowed" })
+      .send({ decision: "reject", reasonCode: "out_of_scope", reason: "not allowed" })
       .expect(403);
   });
 });

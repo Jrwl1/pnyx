@@ -34,7 +34,7 @@ describe("role matrix", () => {
     await request(app)
       .patch(`/politician-proposals/${submit.body.id}/review`)
       .set(userHeaders)
-      .send({ decision: "reject", reason: "not allowed" })
+      .send({ decision: "reject", reasonCode: "out_of_scope", reason: "not allowed" })
       .expect(403);
 
     const modHeaders = await authHeaders("matrix-mod", "moderator");
@@ -64,7 +64,65 @@ describe("role matrix", () => {
     await request(app)
       .patch(`/politician-proposals/${submit2.body.id}/review`)
       .set(adminHeaders)
-      .send({ decision: "reject", reason: "admin decision" })
+      .send({ decision: "reject", reasonCode: "out_of_scope", reason: "admin decision" })
+      .expect(200);
+  });
+
+  it("applies role access rules across moderation operations surfaces", async () => {
+    const userHeaders = await authHeaders("matrix-user-ops", "user");
+    const submit = await request(app)
+      .post("/politician-proposals")
+      .set(userHeaders)
+      .send({ name: "Ops Matrix Proposal" })
+      .expect(201);
+
+    await request(app)
+      .post(`/politician-proposals/${submit.body.id}/claim`)
+      .set(userHeaders)
+      .send({ expectedVersion: 0 })
+      .expect(403);
+
+    await request(app)
+      .get(`/politician-proposals/${submit.body.id}/duplicate-assist`)
+      .set(userHeaders)
+      .expect(403);
+
+    await request(app)
+      .get(`/politician-proposals/${submit.body.id}/audits`)
+      .set(userHeaders)
+      .expect(403);
+
+    await request(app)
+      .get("/politician-proposals/metrics")
+      .set(userHeaders)
+      .expect(403);
+
+    const modHeaders = await authHeaders("matrix-mod-ops", "moderator");
+    const claim = await request(app)
+      .post(`/politician-proposals/${submit.body.id}/claim`)
+      .set(modHeaders)
+      .send({ expectedVersion: 0 })
+      .expect(200);
+
+    await request(app)
+      .get(`/politician-proposals/${submit.body.id}/duplicate-assist`)
+      .set(modHeaders)
+      .expect(200);
+
+    await request(app)
+      .get(`/politician-proposals/${submit.body.id}/audits`)
+      .set(modHeaders)
+      .expect(200);
+
+    await request(app)
+      .get("/politician-proposals/metrics")
+      .set(modHeaders)
+      .expect(200);
+
+    await request(app)
+      .post(`/politician-proposals/${submit.body.id}/release`)
+      .set(modHeaders)
+      .send({ expectedVersion: claim.body.reviewVersion })
       .expect(200);
   });
 });
