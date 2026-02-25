@@ -1,173 +1,228 @@
 DATA_MODEL.md — Entities, Relationships, Invariants
 
-WHAT IT DO? Defines V1 entities, fields, constraints, status lifecycle, and global invariants used by lock, requirements, flows, and tests.
+WHAT IT DO? Defines the implemented V1 data model from migrations `0001..0003` (tables, columns, constraints, indexes) and maps runtime invariants to DB/app enforcement.
 
-## Enums
+## Migration map
 
-`verificationStatus` (closed set):
+- `migrations/0001_initial.sql`: core entities (`users`, `politicians`, `statements`, `votes`, `revision_audits`) and base indexes.
+- `migrations/0002_politician_proposals.sql`: moderated intake entities (`politician_proposals`, `politician_proposal_audits`) and pending dedupe indexes.
+- `migrations/0003_proposal_ops_hardening.sql`: moderation-ops fields (`assignee_id`, `assigned_at`, `decision_code`, `review_version`, `reason_code`) and queue/audit filter indexes.
+
+## Controlled value sets
+
+Verification status (`statements.verification_status`):
 - `pending`
 - `verified`
 - `disputed`
 - `rejected`
 
-`voteValue` (closed set):
+Vote value (`votes.value`):
 - `support`
 - `oppose`
 
-`revisionChangeType` (closed set):
-- `createStatement`
-- `editStatement`
-- `setVerificationStatus`
-- `withdrawStatement`
-- `proposeDelete`
-- `approveDelete`
+Proposal status (`politician_proposals.status`):
+- `pending`
+- `approved`
+- `rejected`
+- `duplicate`
 
-`statementDeletionState` (derived):
-- Active: `withdrawnAt IS NULL AND pendingDelete=false AND deletedAt IS NULL`
-- Pending delete: `pendingDelete=true AND deletedAt IS NULL`
-- Soft deleted: `deletedAt IS NOT NULL`
+Proposal audit actions (`politician_proposal_audits.action`):
+- `submitted`
+- `approved`
+- `rejected`
+- `duplicate`
+- `linked`
 
-## ENTITY: Politician
+Moderation decision reason-code taxonomy (app-level, `PATCH /politician-proposals/:id/review`):
+- `reject`: `insufficient_evidence`, `invalid_identity`, `not_public_figure`, `out_of_scope`
+- `duplicate`: `duplicate_canonical`, `duplicate_pending`, `already_tracked`
 
-Purpose:
-- Canonical identity record that statements are attributed to.
-
-Fields:
-- `id` (string/uuid, PK, required)
-- `name` (string, required)
-- `region` (string, nullable)
-- `office` (string, nullable)
-- `externalId` (string, nullable)
-- `verified` (boolean, required, default `false`)
-- `createdBy` (string/uuid, FK -> User.id, required)
-- `createdAt` (datetime, required)
-- `updatedAt` (datetime, required)
-- `deletedAt` (datetime, nullable; soft delete marker, not used in normal V1 flows)
-
-Relationships:
-- One-to-many with `Statement` (`Politician.id` -> `Statement.politicianId`).
-
-Index/constraints notes:
-- PK: `id`.
-- Unique: `externalId` where `externalId IS NOT NULL`.
-- Unique canonical tuple: `(normalizedName, normalizedRegion, normalizedOffice)`.
-- Normalization for canonical tuple: trim + lowercase; null `region/office` are treated as empty string in canonical key.
-- Canonical dedupe precedence: if `externalId` is present, dedupe uses `externalId` first; otherwise uses canonical tuple.
-- If create input has both `externalId` and canonical tuple and either collides with a different politician id, reject with conflict.
-
-## ENTITY: Statement
+## Entity: users
 
 Purpose:
-- Time-stamped claim/quote tied to exactly one politician, with moderation and deletion lifecycle.
+- Authenticated actor records used by JWT-backed request context and ownership checks.
 
-Fields:
-- `id` (string/uuid, PK, required)
-- `politicianId` (string/uuid, FK -> Politician.id, required)
-- `sourceUrl` (string/url, required)
-- `body` (string/text, required)
-- `dateSaid` (date or datetime, required)
-- `normalizedBodyHash` (string, required)
-- `statementFingerprint` (string, required)
-- `verificationStatus` (enum, required, default `pending`)
-- `authorId` (string/uuid, FK -> User.id, required)
-- `createdAt` (datetime, required)
-- `updatedAt` (datetime, required)
-- `withdrawnAt` (datetime, nullable)
-- `withdrawnBy` (string/uuid, FK -> User.id, nullable)
-- `pendingDelete` (boolean, required, default `false`)
-- `pendingDeleteSetAt` (datetime, nullable)
-- `pendingDeleteSetBy` (string/uuid, FK -> User.id, nullable)
-- `deletedAt` (datetime, nullable)
-- `deletedBy` (string/uuid, FK -> User.id, nullable)
+Columns:
+- `id` TEXT PRIMARY KEY
+- `email` TEXT NOT NULL UNIQUE
+- `role` TEXT NOT NULL CHECK role in (`user`, `moderator`, `admin`)
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `updated_at` TEXT NOT NULL DEFAULT `datetime('now')`
 
-Relationships:
-- Many-to-one with `Politician`.
-- One-to-many with `Vote`.
-- One-to-many with `RevisionAudit`.
-
-Index/constraints notes:
-- PK: `id`.
-- FK: `politicianId` required and must reference existing politician.
-- FK: `authorId`, `withdrawnBy`, `pendingDeleteSetBy`, `deletedBy` must reference existing users when not null.
-- Statement normalization for duplicate detection:
-  - normalize text by trim, collapse whitespace, lowercase, normalize quotes and dashes.
-  - hash normalized text into `normalizedBodyHash`.
-- V1 duplicate reject key: `(politicianId, normalizedBodyHash, sourceUrl)`.
-- `statementFingerprint` is derived from `(politicianId, normalizedBodyHash, sourceUrl)`.
-- If `sourceUrl` becomes optional in a future version, fallback key can use `dateSaid`.
-- Fuzzy matching is out of scope in V1; V1.1 may add assistive similarity suggestions (for example trigram similarity >= 0.85) but never auto-reject.
-- `deletedAt IS NOT NULL` implies statement is excluded from normal list/read responses.
-
-Verification status transition rules:
-- Allowed transitions by role `moderator|admin` only:
-  - `pending -> verified`
-  - `pending -> disputed`
-  - `pending -> rejected`
-  - `verified -> disputed`
-  - `verified -> rejected`
-  - `disputed -> verified`
-  - `rejected -> disputed`
-- Direct transitions to same status are rejected as conflict.
-- Every successful status transition must create a `RevisionAudit` row with `changeType=setVerificationStatus`.
-- Reason-required downgrade rule:
-  - `verified -> disputed|rejected` requires non-empty reason.
-  - `pending -> rejected` reason is optional in theory but recommended; V1 contract enforces it.
-  - If future aliases (`kept`, `broken`) are introduced, `kept|broken -> disputed` also requires reason.
-
-## ENTITY: Vote
+## Entity: politicians
 
 Purpose:
-- One user opinion on one statement for aggregate display.
+- Canonical politician identities used by statements and proposal approvals.
 
-Fields:
-- `id` (string/uuid, PK, required)
-- `statementId` (string/uuid, FK -> Statement.id, required)
-- `userId` (string/uuid, FK -> User.id, required)
-- `value` (enum `support|oppose`, required)
-- `createdAt` (datetime, required)
-- `updatedAt` (datetime, required)
+Columns:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `name` TEXT NOT NULL
+- `region` TEXT NULL
+- `office` TEXT NULL
+- `external_id` TEXT UNIQUE NULL
+- `verified` INTEGER NOT NULL DEFAULT `0`
+- `created_by` TEXT NOT NULL
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `updated_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `deleted_at` TEXT NULL
+- `normalized_key` TEXT GENERATED ALWAYS AS `lower(trim(name)) || '|' || lower(trim(COALESCE(region, ''))) || '|' || lower(trim(COALESCE(office, '')))` STORED
 
-Relationships:
-- Many-to-one with `Statement`.
-- Many-to-one with `User`.
+Indexes/constraints:
+- Partial unique index `idx_politicians_normalized_key_no_external` on `normalized_key` when `external_id IS NULL AND deleted_at IS NULL`.
+- Canonical create path additionally checks app-level duplicate by `normalized_key` before insert.
 
-Index/constraints notes:
-- PK: `id`.
-- Unique: `(statementId, userId)`.
-- One vote record per `(statementId, userId)` in V1; recast vote updates existing row `value` and `updatedAt`.
-- Votes are not accepted on soft-deleted statements.
-
-## ENTITY: RevisionAudit
+## Entity: statements
 
 Purpose:
-- Immutable history of statement creation/edits/status/delete actions (no silent edits).
+- Time-stamped claims tied to canonical politicians, with verification and delete lifecycle flags.
 
-Fields:
-- `id` (string/uuid, PK, required)
-- `statementId` (string/uuid, FK -> Statement.id, required)
-- `actorId` (string/uuid, FK -> User.id, required)
-- `changeType` (enum, required)
-- `fromValue` (json/text, nullable)
-- `toValue` (json/text, nullable)
-- `reason` (string/text, nullable)
-- `createdAt` (datetime, required)
+Columns:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `politician_id` INTEGER NOT NULL REFERENCES `politicians(id)`
+- `source_url` TEXT NOT NULL
+- `body` TEXT NOT NULL
+- `date_said` TEXT NOT NULL
+- `normalized_body_hash` TEXT NOT NULL
+- `statement_fingerprint` TEXT NOT NULL
+- `verification_status` TEXT NOT NULL CHECK status in (`pending`, `verified`, `disputed`, `rejected`)
+- `author_id` TEXT NOT NULL
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `updated_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `withdrawn_at` TEXT NULL
+- `pending_delete` INTEGER NOT NULL DEFAULT `0`
+- `deleted_at` TEXT NULL
 
-Relationships:
-- Many-to-one with `Statement`.
-- Many-to-one with `User`.
+Indexes/constraints:
+- Partial unique index `idx_statements_fingerprint` on `statement_fingerprint` when `deleted_at IS NULL`.
+- Duplicate detection key is app-computed SHA256 fingerprint of `${politicianId}|${normalizedBodyHash}|${sourceUrl}`.
 
-Index/constraints notes:
-- PK: `id`.
-- FK: `statementId`, `actorId` required.
-- Ordered display index: `(statementId, createdAt DESC, id DESC)`.
-- Rows are append-only in V1 (no update/delete of audit rows).
-- Status downgrade transitions that lower confidence must persist non-empty `reason`.
+Verification transitions implemented in `src/server.ts`:
+- `pending -> verified|disputed|rejected`
+- `verified -> disputed|rejected`
+- `disputed -> verified|rejected`
+- `rejected -> pending`
 
-## Global invariants
+## Entity: votes
 
-- `INV-001`: Every statement references exactly one existing politician (`Statement.politicianId` non-null FK).
-- `INV-002`: Every statement has exactly one `verificationStatus` from `{pending, verified, disputed, rejected}`.
-- `INV-003`: At most one vote exists per `(statementId, userId)`.
-- `INV-004`: No silent statement lifecycle changes: create/edit/status/withdraw/propose-delete/approve-delete each produce at least one `RevisionAudit` record.
-- `INV-005`: Politician canonical identity is unique. Dedupe precedence is `externalId` when present, else normalized `(name, region, office)`.
-- `INV-006`: Public statement reads exclude soft-deleted records by default; moderator/admin reads include pending-delete by default and include soft-deleted only when explicitly requested.
+Purpose:
+- One active vote per `(statement, user)` with overwrite semantics.
+
+Columns:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `statement_id` INTEGER NOT NULL REFERENCES `statements(id)`
+- `user_id` TEXT NOT NULL
+- `value` TEXT NOT NULL CHECK value in (`support`, `oppose`)
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `updated_at` TEXT NOT NULL DEFAULT `datetime('now')`
+
+Indexes/constraints:
+- Unique constraint on `(statement_id, user_id)`.
+- Upsert path updates `value` and `updated_at` for recasts.
+
+## Entity: revision_audits
+
+Purpose:
+- Immutable statement-change history for implemented audited actions.
+
+Columns:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `statement_id` INTEGER NOT NULL REFERENCES `statements(id)`
+- `actor_id` TEXT NOT NULL
+- `change_type` TEXT NOT NULL
+- `from_value` TEXT NULL
+- `to_value` TEXT NULL
+- `reason` TEXT NULL
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+
+Notes:
+- No DB-level enum constraint on `change_type`; values are produced by handlers.
+- Current handlers write `createStatement`, `editStatement`, and `verification_status`.
+
+## Entity: politician_proposals
+
+Purpose:
+- Moderated intake queue for candidate canonical politician records.
+
+Columns:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `submitted_by` TEXT NOT NULL
+- `name` TEXT NOT NULL
+- `region` TEXT NULL
+- `office` TEXT NULL
+- `external_id` TEXT NULL
+- `source_note` TEXT NULL
+- `status` TEXT NOT NULL DEFAULT `pending` CHECK status in (`pending`, `approved`, `rejected`, `duplicate`)
+- `decision_by` TEXT NULL
+- `decision_reason` TEXT NULL
+- `decision_code` TEXT NULL
+- `linked_politician_id` INTEGER NULL
+- `assignee_id` TEXT NULL
+- `assigned_at` TEXT NULL
+- `review_version` INTEGER NOT NULL DEFAULT `0`
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `updated_at` TEXT NOT NULL DEFAULT `datetime('now')`
+- `decided_at` TEXT NULL
+- `normalized_submission_key` TEXT GENERATED ALWAYS AS `lower(trim(name)) || '|' || lower(trim(COALESCE(region, ''))) || '|' || lower(trim(COALESCE(office, '')))` STORED
+
+Indexes/constraints:
+- `idx_politician_proposals_status_created` on `(status, created_at DESC)`.
+- `idx_politician_proposals_submitter` on `(submitted_by, created_at DESC)`.
+- `idx_politician_proposals_pending_external` unique on `external_id` where `status='pending' AND external_id IS NOT NULL`.
+- `idx_politician_proposals_pending_normalized` unique on `normalized_submission_key` where `status='pending' AND external_id IS NULL`.
+- `idx_politician_proposals_status_assignee_created` on `(status, assignee_id, created_at DESC)`.
+- `idx_politician_proposals_assignee_status_created` on `(assignee_id, status, created_at DESC)`.
+
+Operational semantics:
+- `review_version` provides optimistic-lock checks for claim/release/review transitions.
+- Once status leaves `pending`, review handlers reject further decisions with `409`.
+
+## Entity: politician_proposal_audits
+
+Purpose:
+- Immutable audit trail for proposal lifecycle and moderation operations.
+
+Columns:
+- `id` INTEGER PRIMARY KEY AUTOINCREMENT
+- `proposal_id` INTEGER NOT NULL REFERENCES `politician_proposals(id)` ON DELETE CASCADE
+- `actor_id` TEXT NOT NULL
+- `action` TEXT NOT NULL CHECK action in (`submitted`, `approved`, `rejected`, `duplicate`, `linked`)
+- `from_status` TEXT NULL
+- `to_status` TEXT NULL
+- `reason` TEXT NULL
+- `reason_code` TEXT NULL
+- `linked_politician_id` INTEGER NULL
+- `created_at` TEXT NOT NULL DEFAULT `datetime('now')`
+
+Indexes/constraints:
+- `idx_politician_proposal_audits_proposal` on `(proposal_id, id)`.
+- `idx_politician_proposal_audits_actor_created` on `(actor_id, created_at DESC)`.
+- `idx_politician_proposal_audits_action_created` on `(action, created_at DESC)`.
+- `idx_politician_proposal_audits_status_created` on `(to_status, created_at DESC)`.
+
+## Invariant mapping (`INV-001..INV-008`)
+
+- `INV-001` statement-to-politician binding:
+  - Enforced by `statements.politician_id` FK and statement-create existence check.
+- `INV-002` verification status closed set:
+  - Enforced by DB CHECK constraint and verification handler validation.
+- `INV-003` one vote row per `(statement, user)`:
+  - Enforced by UNIQUE `(statement_id, user_id)` and vote upsert.
+- `INV-004` auditable statement lifecycle:
+  - Implemented coverage today is `create`, `edit`, and `verification` transitions via `revision_audits`.
+  - Delete lifecycle routes currently mutate `statements` without writing `revision_audits` rows.
+- `INV-005` canonical politician uniqueness with precedence:
+  - `external_id` uniqueness plus normalized-key uniqueness and create-time duplicate checks.
+- `INV-006` role-aware soft-delete visibility:
+  - `GET /statements` and `GET /statements/:id` include pending-delete rows only for `moderator|admin`; deleted rows are excluded.
+- `INV-007` canonical politician creation role gate:
+  - Enforced by `POST /politicians` `requireRole("moderator")` (admin inherits).
+- `INV-008` proposal decision metadata integrity:
+  - Review path sets `decision_by`, `decision_reason`, `decision_code`, `decided_at`, and blocks re-review once status is not `pending`.
+
+## Relationships at a glance
+
+- `politicians (1) -> (many) statements`
+- `statements (1) -> (many) votes`
+- `statements (1) -> (many) revision_audits`
+- `politician_proposals (1) -> (many) politician_proposal_audits`
+- `politician_proposals (0..1) -> (0..1) politicians` via `linked_politician_id` on approval/duplicate linking
