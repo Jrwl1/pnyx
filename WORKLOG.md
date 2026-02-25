@@ -659,3 +659,18 @@ Evidence (commands + summarized results):
 Commit: fdd85bf
 Files touched: ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Execute S3 in DO mode starting with `S3-T01` (`DATA_MODEL.md` reconciliation).
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T01 (DATA_MODEL reconciliation)
+Summary (1–3 bullets):
+- Rewrote `ai/planning/DATA_MODEL.md` to match migrations `0001..0003`, including proposal-ops hardening columns and index set.
+- Added explicit invariant mapping (`INV-001..INV-008`) with DB-vs-app enforcement notes and implementation-backed lifecycle details.
+- Documented current verification transition map and moderation reason-code taxonomy from runtime handlers.
+Why (link to requirement/milestone/issue): S3-T01 requires planning data-model source-of-truth sync against the live schema before broader release-readiness docs work.
+Evidence (commands + summarized results):
+- `pnpm migrate && pnpm test -- -t "migration"` -> pass (`Migrations applied.`; vitest run green at 25 files / 81 tests).
+Commit: 5d9abd2
+Files touched: ai/planning/DATA_MODEL.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Continue S3-T02..S3-T04 doc reconciliation (`API_CONTRACT`, `ARCHITECTURE`, CAP traceability).
