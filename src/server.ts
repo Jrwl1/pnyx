@@ -129,11 +129,20 @@ app.post("/auth/register", registerLimiter, (req, res) => {
     return;
   }
 
-  const effectiveRole = role ?? "user";
-  if (!["user", "moderator", "admin"].includes(effectiveRole)) {
+  const requestedRole = role?.trim().toLowerCase();
+  if (requestedRole && !["user", "moderator", "admin"].includes(requestedRole)) {
     res.status(400).json({ error: "role must be user, moderator, or admin" });
     return;
   }
+  if (requestedRole === "moderator" || requestedRole === "admin") {
+    res.status(403).json({
+      error: "forbidden",
+      message: "public registration cannot assign privileged roles"
+    });
+    return;
+  }
+
+  const effectiveRole = "user";
 
   try {
     const id = crypto.randomUUID();

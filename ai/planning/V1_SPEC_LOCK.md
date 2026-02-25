@@ -66,6 +66,7 @@ Policy decisions resolved
   - explicit filters: `includeDeleted=true`, `includePendingDelete=true|false`.
 - Canonical politician dedupe precedence: `externalId` when present; otherwise normalized `(name, region, office)`.
 - Politician intake policy: users submit proposals; only moderator/admin can create canonical politician records from approved proposals.
+- Registration role policy: public `/auth/register` may only create `user`; privileged role requests (`moderator|admin`) are rejected.
 - V1 rate limits:
   - login: `5/min` per IP and per account
   - register: `3/min` per IP
