@@ -8,9 +8,9 @@ Planning:
 - [x] Define VISION.md and SCOPE.md
 - [x] Write REQUIREMENTS.md (acceptance criteria for each)
 - [x] Write USER_FLOWS.md (include error cases)
-- [ ] Write DATA_MODEL.md (entities + invariants)
-- [ ] Write API_CONTRACT.md (if applicable)
-- [ ] Write ARCHITECTURE.md (boundaries + folders)
+- [x] Write DATA_MODEL.md (entities + invariants)
+- [x] Write API_CONTRACT.md (if applicable)
+- [x] Write ARCHITECTURE.md (boundaries + folders)
 - [x] Write TEST_STRATEGY.md
 - [x] Run LOCK_CHECKLIST.md and lock V1_SPEC_LOCK.md
 
