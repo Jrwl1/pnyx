@@ -797,3 +797,20 @@ Evidence (commands + summarized results):
 Commit: 7f8edaf
 Files touched: TASKS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: Post-S3 lifecycle audit hardening (INV-004 gap closure)
+Summary (1–3 bullets):
+- Added revision audit writes for `POST /statements/:id/pending-delete`, `POST /statements/:id/withdraw`, and `POST /statements/:id/approve-delete`.
+- Extended delete lifecycle regression assertions to verify lifecycle routes append revision audit rows with expected actors/change types.
+- Synced planning docs to reflect full lifecycle audit coverage and removed the documented delete-lifecycle audit gap.
+Why (link to requirement/milestone/issue): Align implementation with locked lifecycle-audit intent (`INV-004`) so all statement lifecycle actions are auditable.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "delete lifecycle visibility" && pnpm test -- -t "revision history" && pnpm typecheck` -> pass (all commands green; each vitest run reported 25 files / 81 tests passing).
+- Implementation commit -> `bf8a256` (`src/server.ts`, `test/delete-lifecycle-visibility.test.ts`).
+- Documentation sync commit -> `5d12178` (`ai/planning/DATA_MODEL.md`, `ai/planning/API_CONTRACT.md`).
+Commit: bf8a256, 5d12178
+Files touched: src/server.ts, test/delete-lifecycle-visibility.test.ts, ai/planning/DATA_MODEL.md, ai/planning/API_CONTRACT.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): None.
