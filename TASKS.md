@@ -21,20 +21,21 @@ Roadmap:
 
 DO (after lock):
 
-- [x] Execute sprint via ai/workflows/DO_MODE.md
+- [ ] Execute sprint via ai/workflows/DO_MODE.md
 
 ---
 
 V1 backlog (from REQUIREMENTS + USER_FLOWS; implement after lock)
 
-- REQ-001: Politician identity — create/list, canonical id (FLOW-001 dependency).
-- REQ-002: Statement capture — create statement (politician, timestamp, body); list by politician (FLOW-002).
+- REQ-001: Politician identity — proposal intake + moderated canonical create/list, canonical id (FLOW-001/FLOW-002/FLOW-009 dependency).
+- REQ-002: Statement capture — create statement (politician, timestamp, body); list by politician (FLOW-003).
 - REQ-003: Verification status — set/update status; store in history (FLOW-003).
 - REQ-004: Voting — submit vote; aggregate visible; one per user per statement (FLOW-004).
-- REQ-005: Revision history — store and expose edit/status history (FLOW-002, FLOW-003, FLOW-005).
+- REQ-005: Revision history — store and expose edit/status history (FLOW-003, FLOW-004, FLOW-005).
 - REQ-006: View politicians and statements — list politicians; list statements; statement detail + history + votes (FLOW-001, FLOW-005).
 - FLOW-001: View politician and statements (read-only).
-- FLOW-002: Add statement (actor TBD).
+- FLOW-002: Submit politician proposal (registered user).
 - FLOW-003: Set verification status (actor TBD).
 - FLOW-004: Vote on statement.
 - FLOW-005: View revision history.
+- FLOW-009: Review politician proposal queue (moderator/admin).

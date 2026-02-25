@@ -48,3 +48,43 @@ Out-of-scope for M0:
 - Public API (V1 has no external API).
 - Fuzzy duplicate matching (V1.1).
 - CAPTCHA hardening (V1.1).
+
+---
+
+M1: Governance hardening + moderated politician intake
+
+Goal:
+Deliver governance hardening after M0 by enforcing moderator/admin-only canonical politician creation, introducing user proposal intake, and closing privilege/abuse paths around role assignment and intake workflows.
+
+Maps to V1 CAPs:
+- CAP-002: Politician proposal intake + moderated canonical create.
+- CAP-001: Read surfaces updated for proposal queue and moderation visibility where applicable.
+- CAP-003/CAP-006: Existing write paths remain stable while intake controls are tightened.
+- Rate limits: proposal submit, politician create, and global fallback coverage.
+
+Acceptance criteria:
+- Canonical politician create endpoint is restricted to `moderator|admin`; `user|anonymous` are denied (`403`).
+- Registered users can submit politician proposals; proposal queue supports `approve|reject|duplicate` decisions by moderator/admin.
+- Proposal approval creates or links canonical politician records atomically and preserves dedupe guarantees (`externalId` precedence else normalized tuple).
+- Public register path cannot self-assign privileged roles (`moderator|admin`).
+- Proposal lifecycle decisions are audit-visible and include actor, timestamp, and optional reason.
+- Rate limits cover proposal submit and moderated create with clear `429` responses.
+- Regression proof is green and includes proposal/create role matrix and abuse-path checks.
+
+Proof commands required:
+- `pnpm lint && pnpm typecheck && pnpm build`
+- `pnpm test -- -t "politician proposal"`
+- `pnpm test -- -t "politician dedupe"`
+- `pnpm test -- -t "register role hardening"`
+- `pnpm test -- -t "rate limit 429"`
+- `pnpm test && pnpm test:e2e`
+- `git status --short` (clean at closeout)
+
+Dependencies:
+- CR-002 accepted and reflected in `ai/planning/V1_SPEC_LOCK.md`.
+- Existing M0 behaviors remain passing (no regressions in CAP-001..CAP-008).
+
+Out-of-scope for M1:
+- Automated fuzzy candidate matching and ranking for proposal review.
+- CAPTCHA or external anti-bot vendors.
+- Public external API exposure.

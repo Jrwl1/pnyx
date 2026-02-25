@@ -43,3 +43,25 @@ Testing/migration implications: None.
 Decision: proposed
 
 If accepted: Spec unchanged. Docs updated: ai/planning/VISION.md. After update, Coordinator may set V1_SPEC_LOCK status to LOCKED and add locked-at timestamp.
+
+---
+
+CR-002: Politician creation governance hardening (moderated queue)
+
+Proposed change: Restrict canonical politician creation to moderator/admin only. Replace open user create flow with a moderated proposal queue where registered users can submit politician proposals and moderators/admins approve/reject/mark-duplicate.
+
+Motivation: Reduce duplicate politician records and abuse potential while preserving community input.
+
+Impacted V1 sections (CAP IDs): CAP-002, auth summary, role matrix, FLOW-002, data model, policy decisions, proof coverage.
+
+Risks: Increased moderator workload; queue backlog risk; migration complexity for existing clients expecting direct create.
+
+Testing/migration implications: Add proposal lifecycle endpoints/tests, update politician authorization tests, add register-role hardening tests, add migration for proposal tables/audit, and update rate-limit coverage for proposal/create paths.
+
+Decision: accepted
+
+If accepted:
+
+Spec updated in commit: <pending>
+
+Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md.

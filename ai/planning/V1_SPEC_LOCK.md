@@ -13,7 +13,7 @@ Lock rules:
 
 In scope (V1)
 
-- Politicians as canonical identities (manual add; optional `externalId`; `verified` flag).
+- Politicians as canonical identities (moderator/admin create only; optional `externalId`; `verified` flag).
 - Statements tied to one politician with required `sourceUrl`, `body`, `dateSaid`; statement starts `pending`.
 - Verification status lifecycle managed only by moderator/admin.
 - One vote row per user per statement with visible aggregate and vote overwrite on recast.
@@ -22,8 +22,8 @@ In scope (V1)
 - Lightweight rate limits on auth and write operations.
 - Roles:
   - Anonymous: read-only.
-  - Registered user: add politician, add statement, vote, edit own within grace window, withdraw own.
-  - Moderator: edit any, set verification status, propose delete.
+  - Registered user: submit politician proposals, add statement, vote, edit own within grace window, withdraw own.
+  - Moderator: approve/reject/mark-duplicate politician proposals; create canonical politicians; edit any statement; set verification status; propose delete.
   - Admin: moderator abilities + approve delete.
 
 Out of scope (V1)
@@ -65,9 +65,12 @@ Policy decisions resolved
   - moderator/admin lists include pending-delete by default and exclude `isDeleted=true` by default.
   - explicit filters: `includeDeleted=true`, `includePendingDelete=true|false`.
 - Canonical politician dedupe precedence: `externalId` when present; otherwise normalized `(name, region, office)`.
+- Politician intake policy: users submit proposals; only moderator/admin can create canonical politician records from approved proposals.
 - V1 rate limits:
   - login: `5/min` per IP and per account
   - register: `3/min` per IP
+  - submit politician proposal: `5/hour` per user
+  - create politician (moderator/admin): `30/hour` per actor
   - add statement: `10/hour` per user
   - vote: `30/min` per user
   - global fallback: `100/5min` per IP
@@ -78,13 +81,14 @@ Policy decisions resolved
 Key user flows
 
 - FLOW-001: View politicians and statements (CAP-001).
-- FLOW-002: Add politician (CAP-002).
+- FLOW-002: Submit politician proposal (CAP-002 intake).
 - FLOW-003: Add statement (CAP-003).
 - FLOW-004: Set verification status (CAP-005).
 - FLOW-005: Vote on statement (CAP-006).
 - FLOW-006: Edit statement (CAP-004).
 - FLOW-007: Withdraw / pending delete / approve delete (CAP-007).
 - FLOW-008: View revision history (CAP-008).
+- FLOW-009: Moderator/admin review of politician proposal queue.
 
 ---
 
@@ -92,6 +96,7 @@ Data model (minimal)
 
 - Politician: `id`, `name`, `region?`, `office?`, `externalId?`, `verified`, `createdBy`, `createdAt`, `updatedAt`, `deletedAt?`.
   - Uniqueness: `externalId` unique when present; canonical tuple unique when no externalId.
+- PoliticianProposal: `id`, `submittedBy`, `name`, `region?`, `office?`, `externalId?`, `sourceNote?`, `status(pending|approved|rejected|duplicate)`, `decisionBy?`, `decisionReason?`, `linkedPoliticianId?`, `createdAt`, `updatedAt`, `decidedAt?`.
 - Statement: `id`, `politicianId`, `sourceUrl`, `body`, `dateSaid`, `normalizedBodyHash`, `statementFingerprint`, `verificationStatus`, `authorId`, `createdAt`, `updatedAt`, `withdrawnAt?`, `pendingDelete`, `deletedAt?`.
 - Vote: `id`, `statementId`, `userId`, `value(support|oppose)`, `createdAt`, `updatedAt`.
   - Uniqueness: one vote row per `(statementId,userId)`.
@@ -105,6 +110,8 @@ Global invariants
 - INV-004: No silent statement lifecycle edits; audited via immutable revision records.
 - INV-005: Politician canonical identity uniqueness with dedupe precedence (`externalId` first).
 - INV-006: Soft-delete and pending-delete list defaults are role-aware and explicit.
+- INV-007: Canonical politician rows are only created by moderator/admin actions.
+- INV-008: Every politician proposal has immutable decision metadata when status != `pending`.
 
 ---
 
@@ -116,7 +123,9 @@ API contract (V1)
 Auth summary:
 
 - Read endpoints: anonymous and authenticated users.
-- Write endpoints (add/edit/vote/withdraw): authenticated users.
+- Write endpoints (statement/vote/edit/withdraw): authenticated users.
+- Politician proposal submit: authenticated users.
+- Politician canonical create + proposal review: moderator/admin only.
 - Verification status + pending delete: moderator/admin.
 - Approve delete: admin only.
 
@@ -138,11 +147,11 @@ CAP-001: List and view politicians and statements
 - Edge cases: Invalid id -> 404; no statements -> empty list.
 - References: REQ-006, FLOW-001, INV-001, INV-002, INV-006.
 
-CAP-002: Add politician
-- Behavior: Authenticated user manually adds politician under canonical dedupe rules.
-- Inputs/outputs: Input `name`, optional `region`, `office`, `externalId`; output new politician id.
-- Edge cases: Anonymous -> 403; duplicate canonical identity -> 409.
-- References: REQ-001, REQ-007, FLOW-002, INV-005.
+CAP-002: Politician proposal intake + moderated canonical create
+- Behavior: Registered users submit politician proposals; moderator/admin review queue and create canonical politician records under dedupe rules.
+- Inputs/outputs: Proposal input `name`, optional `region`, `office`, `externalId`, optional note; review action `approve|reject|duplicate` with optional decision reason; approval outputs linked canonical politician id.
+- Edge cases: Anonymous submit/review -> 403; user direct canonical create -> 403; duplicate canonical identity on approve/create -> 409; unknown proposal -> 404.
+- References: REQ-001, REQ-007, FLOW-002, FLOW-009, INV-005, INV-007, INV-008.
 
 CAP-003: Add statement
 - Behavior: Authenticated user submits statement; system creates with `pending` status and initial revision.

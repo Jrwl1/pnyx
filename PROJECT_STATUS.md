@@ -4,21 +4,21 @@ WHAT IT DO? Single source of current repo state, mode, and next action. Keep sho
 
 State:
 
-Repo: V1 spec locked. M0 implementation delivered; S0 closeout is complete.
+Repo: V1 spec locked (amended by CR-002). M0 delivered and closed; S1 planning activated for moderated politician intake + governance hardening.
 
-Current mode: Roadmap (S0 Done)
+Current mode: Roadmap (S1 Active)
 
 What is true now:
 
 - ai/planning/V1_SPEC_LOCK.md is LOCKED (Locked at: 2025-02-15).
-- ai/roadmap/MILESTONES.md defines M0 (V1 core implementation) mapped to CAP-001..CAP-008 and rate limits.
-- ai/roadmap/SPRINT.md S0 is Done; S0-T01..S0-T12 implementation/proof/review-closeout are complete with commit-anchored WORKLOG evidence.
-- S0 review gate has 2x PASS reviewer verdicts with WORKLOG references.
+- ai/memory/CHANGE_REQUESTS.md includes accepted CR-002 for moderated politician intake policy.
+- ai/roadmap/MILESTONES.md includes M1 (governance hardening + moderated intake) after completed M0.
+- ai/roadmap/SPRINT.md defines S1 Active with S1-T01..S1-T14 execution plan.
 
 Next action:
 
-- Plan and activate the next milestone/sprint after M0 (roadmap follow-on work).
+- Execute S1 in DO mode per `ai/workflows/DO_MODE.md` and `ai/roadmap/SPRINT.md` (S1-T01..S1-T14).
 
 Notes:
 
-- Product implementation for M0 is complete and closed out.
+- Policy update: only `moderator|admin` can create canonical politicians; registered users submit proposals for moderated approval.
