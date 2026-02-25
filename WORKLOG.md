@@ -106,6 +106,22 @@ Follow-ups / deferred issues (IDs): Run S1-T13 full regression and execute S1-T1
 
 ---
 
+Date: 2026-02-25
+Milestone/Sprint: S1-T13 (full regression + evidence aggregation)
+Summary (1–3 bullets):
+- Ran full sprint regression chain after moderated intake implementation and role hardening.
+- Verified all unit/integration suites and e2e smoke pass with current S1 changes.
+- Captured clean-tree status before review gate execution.
+Why (link to requirement/milestone/issue): S1-T13 requires full green proof before independent review and closeout.
+Evidence (commands + summarized results):
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build` -> pass (`19` test files / `66` tests + e2e `1` test).
+- `git status --short` -> clean.
+Commit: <pending>
+Files touched: WORKLOG.md.
+Follow-ups / deferred issues (IDs): Execute S1-T14 reviewer gate and coordinator closeout.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
