@@ -21,7 +21,6 @@ Roadmap:
 
 DO (after lock):
 
-- [ ] Execute sprint via ai/workflows/DO_MODE.md
 - [x] Execute sprint via ai/workflows/DO_MODE.md
 
 ---
