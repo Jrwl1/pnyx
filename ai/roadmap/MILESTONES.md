@@ -88,3 +88,45 @@ Out-of-scope for M1:
 - Automated fuzzy candidate matching and ranking for proposal review.
 - CAPTCHA or external anti-bot vendors.
 - Public external API exposure.
+
+---
+
+M2: Moderation operations hardening
+
+Goal:
+Harden the moderated politician intake workflow for reliability and scale: faster triage, safer review transitions, stronger moderation telemetry, and clearer operator controls without changing locked V1 scope.
+
+Maps to V1 CAPs:
+- CAP-002: proposal intake/review lifecycle operational hardening.
+- CAP-001: moderator read surfaces for queue management and audit visibility.
+- Rate limits: moderation-path controls and abuse resistance for queue operations.
+
+Acceptance criteria:
+- Proposal queue supports moderator assignment/claim + release, with status and assignee filters.
+- Queue views support deterministic ordering, pagination, and age-based triage for pending backlog.
+- Review actions enforce reason policy (required reason with normalized reason code taxonomy for reject/duplicate decisions).
+- Review transitions are race-safe (no double-review writes; deterministic 409/idempotent behavior under concurrent attempts).
+- Duplicate-assist surfaces provide deterministic canonical match hints using exact keys (`externalId`, normalized tuple), never auto-merge.
+- Moderator audit views expose decision/activity filters (actor/action/status/date window) for operational review.
+- Moderation-focused rate limits return clear `429` responses and are independently configurable.
+- Existing S1 flows remain green (proposal submit/review/create/link, canonical create gate, register role hardening).
+
+Proof commands required:
+- `pnpm lint && pnpm typecheck && pnpm build`
+- `pnpm test -- -t "proposal queue ops"`
+- `pnpm test -- -t "proposal reason policy"`
+- `pnpm test -- -t "proposal review race"`
+- `pnpm test -- -t "proposal duplicate assist"`
+- `pnpm test -- -t "proposal audit filters"`
+- `pnpm test -- -t "role matrix"`
+- `pnpm test && pnpm test:e2e`
+- `git status --short` (clean at closeout)
+
+Dependencies:
+- M1 completed and closed with moderated intake baseline in production code.
+- No V1 spec expansion required; roadmap remains lock-safe.
+
+Out-of-scope for M2:
+- Fuzzy/ML matching, auto-approval, or external identity APIs.
+- Public external API exposure.
+- CAPTCHA or external bot-vendor integrations.
