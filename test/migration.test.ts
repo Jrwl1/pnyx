@@ -21,5 +21,22 @@ describe("migration", () => {
     expect(indexNames.has("idx_politician_proposals_pending_external")).toBe(true);
     expect(indexNames.has("idx_politician_proposals_pending_normalized")).toBe(true);
     expect(indexNames.has("idx_politician_proposal_audits_proposal")).toBe(true);
+    expect(indexNames.has("idx_politician_proposals_status_assignee_created")).toBe(true);
+    expect(indexNames.has("idx_politician_proposal_audits_actor_created")).toBe(true);
+
+    const proposalColumns = db
+      .prepare("PRAGMA table_info(politician_proposals)")
+      .all() as { name: string }[];
+    const proposalColumnNames = new Set(proposalColumns.map((column) => column.name));
+    expect(proposalColumnNames.has("assignee_id")).toBe(true);
+    expect(proposalColumnNames.has("assigned_at")).toBe(true);
+    expect(proposalColumnNames.has("decision_code")).toBe(true);
+    expect(proposalColumnNames.has("review_version")).toBe(true);
+
+    const proposalAuditColumns = db
+      .prepare("PRAGMA table_info(politician_proposal_audits)")
+      .all() as { name: string }[];
+    const proposalAuditColumnNames = new Set(proposalAuditColumns.map((column) => column.name));
+    expect(proposalAuditColumnNames.has("reason_code")).toBe(true);
   });
 });
