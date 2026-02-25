@@ -84,6 +84,6 @@ Decision: accepted
 
 If accepted:
 
-Spec updated in commit: pending (set during S5-T01 lock sync commit)
+Spec updated in commit: ba995d3
 
 Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md.
