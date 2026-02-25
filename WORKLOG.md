@@ -704,3 +704,33 @@ Evidence (commands + summarized results):
 Commit: 3ab0d85, 037254c
 Files touched: docs/SUCCESS_METRICS_PLAN.md, docs/RELEASE_READINESS_RUNBOOK.md, .github/workflows/ci-proof.yml, docs/security/audit-s3-ci-proof.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): Run S3-T08/S3-T09 targeted invariants/lifecycle regression checks before sprint-level closeout proof.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T08/S3-T09 (invariant and lifecycle/read stability regressions)
+Summary (1–3 bullets):
+- Re-ran canonical create/proposal role hardening suites to confirm governance invariants remain intact after S3 planning/tooling updates.
+- Re-ran read surfaces, statement capture, and delete lifecycle suites to confirm CAP-001/CAP-003/CAP-007 stability.
+- All targeted regression runs remained green with no behavior drift.
+Why (link to requirement/milestone/issue): S3-T08/S3-T09 require explicit compatibility proof that lock-critical moderation and lifecycle behavior is unchanged.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "politician dedupe" && pnpm test -- -t "politician proposal review" && pnpm test -- -t "register role hardening" && pnpm test -- -t "read surfaces" && pnpm test -- -t "statement capture" && pnpm test -- -t "delete lifecycle visibility"` -> pass (all invocations green; each vitest invocation reported 25 files / 81 tests passing).
+Commit: 3ab0d85, 037254c
+Files touched: WORKLOG.md.
+Follow-ups / deferred issues (IDs): Run S3-T10 full sprint proof and aggregate closeout evidence.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T10 (full regression + sprint evidence aggregation)
+Summary (1–3 bullets):
+- Ran full release proof chain after completing S3 documentation and CI/runbook deliverables.
+- Verified unit/integration suites and e2e smoke remain green with current S3 state.
+- Confirmed clean working tree prior to reviewer gate execution.
+Why (link to requirement/milestone/issue): S3-T10 requires full green proof before independent review and coordinator closeout.
+Evidence (commands + summarized results):
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && git status --short` -> pass (`25` test files / `81` tests + e2e `1` test; `git status --short` clean).
+Commit: 037254c
+Files touched: WORKLOG.md.
+Follow-ups / deferred issues (IDs): Execute S3-T11 review gate (Reviewer A/B independent verdicts).
