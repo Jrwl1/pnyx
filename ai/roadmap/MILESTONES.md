@@ -130,3 +130,38 @@ Out-of-scope for M2:
 - Fuzzy/ML matching, auto-approval, or external identity APIs.
 - Public external API exposure.
 - CAPTCHA or external bot-vendor integrations.
+
+---
+
+M3: V1 release readiness + planning source-of-truth sync
+
+Goal:
+Consolidate delivered V1 behavior into authoritative planning docs and repeatable release-proof automation so the locked scope is ship-ready without adding new product features.
+
+Maps to V1 CAPs:
+- CAP-001..CAP-008: contract/invariant verification across all read/write/lifecycle flows.
+- CAP-002 (S1/S2): moderated intake and moderation-ops controls documented as operational source-of-truth.
+- V1 success criteria in `ai/planning/V1_SPEC_LOCK.md`: baseline measurement surfaces for tracked entities, verification coverage, and engagement.
+
+Acceptance criteria:
+- `ai/planning/DATA_MODEL.md` matches live schema (`0001..0003`) with constraints/indexes and invariant mapping.
+- `ai/planning/API_CONTRACT.md` matches implemented endpoints, auth rules, status/error semantics (`403/404/409/429`), and rate-limit buckets.
+- `ai/planning/ARCHITECTURE.md` reflects current module boundaries and request lifecycle paths.
+- Success-criteria measurement plan is documented with deterministic query/script commands and expected output schema.
+- CI proof automation exists for `lint`, `typecheck`, `test`, `test:e2e`, `build` on PR/push, and passes.
+- Full regression + closeout evidence is commit-anchored in `WORKLOG.md` per protocol.
+
+Proof commands required:
+- `pnpm lint && pnpm typecheck && pnpm build`
+- `pnpm test -- -t "migration"`
+- `pnpm test -- -t "role matrix"`
+- `pnpm test && pnpm test:e2e`
+- `git status --short` (clean at closeout)
+
+Dependencies:
+- M2 completed and closed.
+- No V1 spec expansion; any scope increase requires accepted CR before implementation.
+
+Out-of-scope for M3:
+- New end-user feature scope beyond locked V1.
+- Fuzzy duplicate auto-rejection, CAPTCHA hardening, or public external API work.
