@@ -1,0 +1,18 @@
+<!-- WHAT IT DO? Browser favicon mark for the PNYX V3 frontend app. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">PNYX favicon</title>
+  <desc id="desc">A compact hill and check icon for promise accountability pages.</desc>
+  <defs>
+    <linearGradient id="bg" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1f5fbf" />
+      <stop offset="1" stop-color="#1f2a44" />
+    </linearGradient>
+    <linearGradient id="hill" x1="18" y1="18" x2="44" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d4a63f" />
+      <stop offset="1" stop-color="#a36c00" />
+    </linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#bg)" />
+  <path d="M16 45 32 19 48 45Z" fill="url(#hill)" />
+  <path d="M22 34 30 41 43 28" fill="none" stroke="#e8f0ff" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

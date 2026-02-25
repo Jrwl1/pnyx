@@ -11,7 +11,11 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "build": "tsc -p tsconfig.build.json",
     "test": "vitest run",
-    "test:e2e": "vitest run -c vitest.e2e.config.ts"
+    "test:e2e": "vitest run -c vitest.e2e.config.ts",
+    "frontend:dev": "pnpm --filter pnyx-frontend-v3 dev",
+    "frontend:typecheck": "pnpm --filter pnyx-frontend-v3 typecheck",
+    "frontend:build": "pnpm --filter pnyx-frontend-v3 build",
+    "frontend:preview": "pnpm --filter pnyx-frontend-v3 preview"
   },
   "dependencies": {
     "better-sqlite3": "^11.7.0",
