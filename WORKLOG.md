@@ -932,6 +932,27 @@ Follow-ups / deferred issues (IDs): None.
 ---
 
 Date: 2026-02-25
+Milestone/Sprint: User-requested Frontend V3 implementation + local UI audit
+Summary (1–3 bullets):
+- Implemented a real React + Vite frontend app in `frontend/` aligned to `docs/FRONTEND_V3_SPEC.md` with required public routes (`/`, `/politicians`, `/politicians/:id`, `/promises/:id`, `/methodology`) and optional `/ops`.
+- Grounded UI data usage in existing backend endpoints (`GET /politicians`, `GET /statements`, `GET /statements/:id`, `GET /statements/:id/revisions`) while enforcing explicit `Unknown` states for missing fulfillment/alignment data.
+- Launched local site and audited desktop/mobile UX, navigation, keyboard flow, network behavior, and console issues.
+Why (link to requirement/milestone/issue): User requested a production-style frontend implementation (not docs mockup), then asked for a local launch and full UI audit report.
+Evidence (commands + summarized results):
+- `pnpm install` -> workspace dependencies installed for root + `frontend` package.
+- `pnpm frontend:typecheck && pnpm frontend:build` -> pass (frontend TS build + Vite production build green).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass after excluding nested `dist`/`node_modules` in ESLint ignore patterns.
+- `node -e "fetch('http://localhost:3000/health')..."` -> backend reachable for API-backed UI runs.
+- Chrome DevTools audit on `http://localhost:5173/` and route checks (`/`, `/politicians`, `/methodology`, `/promises/1`, `/politicians/1`, `/ops`, `/does-not-exist`) across desktop + mobile snapshots -> route shell, exact nav labels, and responsive behaviors verified.
+- `node -e "Promise.all([fetch('http://localhost:3000/politicians')...])"` -> dataset context for audit confirmed empty (`politicians 0`, `statements 0`).
+- Audit findings captured: (1) non-blocking React Router future-flag console warnings, (2) accessibility issue `A form field element should have an id or name attribute` affecting directory filter controls.
+Commit: 690e297
+Files touched: .gitignore, eslint.config.mjs, package.json, pnpm-lock.yaml, pnpm-workspace.yaml, frontend/*, WORKLOG.md.
+Follow-ups / deferred issues (IDs): Add `id`/`name` attributes for directory form controls; optionally enable React Router future flags to silence migration warnings.
+
+---
+
+Date: 2026-02-25
 Milestone/Sprint: User-requested frontend branding pack (post-S5)
 Summary (1–3 bullets):
 - Created a full PNYX frontend branding pack (`logo mark`, `wordmark`, `favicon`, `OG card`, and `brand tokens`) under `docs/frontend-assets/`.
