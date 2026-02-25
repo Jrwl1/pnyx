@@ -75,6 +75,21 @@ Follow-ups / deferred issues (IDs): Continue S1-T02..S1-T06 and S1-T08..S1-T14 i
 
 ---
 
+Date: 2026-02-25
+Milestone/Sprint: S1-T02 (proposal schema migration)
+Summary (1–3 bullets):
+- Added migration `0002_politician_proposals.sql` with `politician_proposals` queue table and `politician_proposal_audits` lifecycle audit table.
+- Added proposal queue indexes for status/submitter lookup and pending dedupe keys (external and normalized tuple).
+- Added `test/migration.test.ts` to assert schema artifacts are present after migrations.
+Why (link to requirement/milestone/issue): S1-T02 requires proposal data model/migration readiness before endpoint implementation.
+Evidence (commands + summarized results):
+- `pnpm migrate && pnpm test -- -t "migration"` -> pass (`Migrations applied.`; 12 files / 47 tests passed, migration suite green).
+Commit: 5be3676
+Files touched: migrations/0002_politician_proposals.sql, test/migration.test.ts.
+Follow-ups / deferred issues (IDs): Implement proposal submit/review/create endpoints (S1-T03/S1-T04/S1-T06).
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
