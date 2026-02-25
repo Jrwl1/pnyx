@@ -769,3 +769,17 @@ Evidence (commands + summarized results):
 Commit: 4b3b99b
 Files touched: ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S3-T12 (closeout docs correction)
+Summary (1–3 bullets):
+- Removed an accidental duplicate DO checkbox line in `TASKS.md` introduced during closeout doc sync.
+- Preserved final state as a single completed sprint execution checkbox.
+Why (link to requirement/milestone/issue): Keep closeout artifacts internally consistent and avoid ambiguous backlog state.
+Evidence (commands + summarized results):
+- `git commit -m "docs(S3-T12): remove duplicate sprint execution checkbox"` -> 1 file changed, duplicate line removed.
+Commit: 6d87351
+Files touched: TASKS.md, WORKLOG.md.
+Follow-ups / deferred issues (IDs): None.
