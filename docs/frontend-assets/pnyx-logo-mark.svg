@@ -1,0 +1,30 @@
+<!-- WHAT IT DO? Primary PNYX icon mark representing the assembly hill, civic signal arcs, and verification check. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">PNYX civic mark</title>
+  <desc id="desc">A stylized hill with a verification check and concentric assembly arcs.</desc>
+  <defs>
+    <linearGradient id="bgGradient" x1="64" y1="64" x2="448" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#162447" />
+      <stop offset="1" stop-color="#0b132b" />
+    </linearGradient>
+    <linearGradient id="hillGradient" x1="142" y1="162" x2="364" y2="362" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f59e0b" />
+      <stop offset="1" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="checkGradient" x1="184" y1="220" x2="342" y2="332" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7dd3fc" />
+      <stop offset="1" stop-color="#22d3ee" />
+    </linearGradient>
+  </defs>
+
+  <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bgGradient)" />
+  <path d="M88 372c24-67 88-112 168-112s144 45 168 112" fill="none" stroke="#2ec4b6" stroke-width="14" stroke-linecap="round" opacity="0.34" />
+  <path d="M116 372c23-52 75-86 140-86s117 34 140 86" fill="none" stroke="#2ec4b6" stroke-width="12" stroke-linecap="round" opacity="0.36" />
+  <path d="M146 372c22-38 60-62 110-62s88 24 110 62" fill="none" stroke="#2ec4b6" stroke-width="10" stroke-linecap="round" opacity="0.44" />
+
+  <path d="M128 342 256 152 384 342Z" fill="url(#hillGradient)" />
+  <path d="M155 304h202M169 328h174" stroke="#fff8e7" stroke-width="8" stroke-linecap="round" opacity="0.52" />
+
+  <path d="M188 268 244 323 336 218" fill="none" stroke="url(#checkGradient)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="256" cy="131" r="16" fill="#fbbf24" />
+</svg>

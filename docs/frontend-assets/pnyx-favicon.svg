@@ -1,0 +1,20 @@
+<!-- WHAT IT DO? Simplified PNYX favicon mark for browser tabs and app icons. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">PNYX favicon</title>
+  <desc id="desc">A compact hill and checkmark icon for PNYX.</desc>
+  <defs>
+    <linearGradient id="bg" x1="8" y1="8" x2="56" y2="56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#162447" />
+      <stop offset="1" stop-color="#0b132b" />
+    </linearGradient>
+    <linearGradient id="hill" x1="18" y1="18" x2="44" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f59e0b" />
+      <stop offset="1" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#bg)" />
+  <path d="M16 45 32 19 48 45Z" fill="url(#hill)" />
+  <path d="M22 34 30 41 43 28" fill="none" stroke="#67e8f9" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M12 49c3-7 10-12 20-12s17 5 20 12" fill="none" stroke="#2ec4b6" stroke-width="3.2" stroke-linecap="round" opacity="0.7" />
+</svg>

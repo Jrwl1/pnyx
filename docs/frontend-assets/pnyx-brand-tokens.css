@@ -1,0 +1,54 @@
+/* WHAT IT DO? Brand design tokens and utility classes for PNYX frontend screens and marketing pages. */
+
+:root {
+  --pnyx-bg-deep: #0b132b;
+  --pnyx-bg-mid: #162447;
+  --pnyx-bg-paper: #f2efe7;
+  --pnyx-ink: #0f172a;
+  --pnyx-ink-soft: #475569;
+  --pnyx-brand-teal: #0ea5a4;
+  --pnyx-brand-cyan: #22d3ee;
+  --pnyx-brand-gold: #f59e0b;
+  --pnyx-success: #0f766e;
+  --pnyx-warning: #b45309;
+  --pnyx-danger: #b91c1c;
+  --pnyx-line: rgba(15, 23, 42, 0.16);
+  --pnyx-shadow-lg: 0 18px 45px rgba(11, 19, 43, 0.18);
+  --pnyx-brand-gradient: linear-gradient(120deg, #0ea5a4, #22d3ee 45%, #f59e0b);
+  --pnyx-page-gradient: radial-gradient(circle at 12% 8%, #2a3d75 0, transparent 28%),
+    radial-gradient(circle at 90% 14%, #0f766e 0, transparent 30%),
+    linear-gradient(160deg, #0b132b 0%, #162447 46%, #0e203f 100%);
+}
+
+.pnyx-brand-title {
+  font-family: "Fraunces", Cambria, Georgia, serif;
+  letter-spacing: 0.02em;
+}
+
+.pnyx-ui-text {
+  font-family: "Space Grotesk", "Segoe UI", Helvetica, sans-serif;
+}
+
+.pnyx-surface {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--pnyx-line);
+  box-shadow: var(--pnyx-shadow-lg);
+}
+
+.pnyx-badge-verified {
+  color: #065f46;
+  background: #ecfdf5;
+  border: 1px solid #34d399;
+}
+
+.pnyx-badge-pending {
+  color: #7c2d12;
+  background: #fff7ed;
+  border: 1px solid #f6ad55;
+}
+
+.pnyx-badge-disputed {
+  color: #7f1d1d;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+}

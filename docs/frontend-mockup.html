@@ -1,0 +1,859 @@
+<!-- WHAT IT DO? Moderator-first control-room frontend mockup for Pnyx, with proposal triage as the dominant workflow and operationally semantic status signals. -->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pnyx - Moderator Control Room Mockup</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
+
+      :root {
+        --bg: #070b14;
+        --bg-edge: #0b1220;
+        --panel: #111a2c;
+        --panel-2: #172338;
+        --panel-3: #1d2d47;
+        --ink: #f4f8ff;
+        --ink-soft: #c5d2ea;
+        --ink-muted: #8ea0c1;
+        --ink-faint: #6f82a6;
+        --line: #263957;
+        --line-strong: #38547d;
+        --focus: #6ec1ff;
+
+        --ok: #30c08d;
+        --pending: #ffb12b;
+        --inreview: #67b8ff;
+        --reject: #ff6e6e;
+        --duplicate: #a78bfa;
+
+        --radius-lg: 18px;
+        --radius-md: 12px;
+        --radius-sm: 9px;
+
+        --space-1: 0.35rem;
+        --space-2: 0.55rem;
+        --space-3: 0.8rem;
+        --space-4: 1.05rem;
+        --space-5: 1.35rem;
+        --space-6: 1.8rem;
+
+        --display: clamp(1.75rem, 2.4vw, 2.2rem);
+        --h2: clamp(1.15rem, 1.6vw, 1.35rem);
+        --h3: 1rem;
+        --body: 0.94rem;
+        --meta: 0.79rem;
+
+        --shadow-panel: 0 20px 42px rgba(0, 0, 0, 0.42);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+      }
+
+      body {
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        font-size: var(--body);
+        color: var(--ink);
+        line-height: 1.45;
+        background:
+          radial-gradient(80rem 40rem at 6% -10%, rgba(110, 193, 255, 0.08), transparent 50%),
+          radial-gradient(58rem 28rem at 110% 0%, rgba(167, 139, 250, 0.08), transparent 52%),
+          linear-gradient(160deg, var(--bg) 0%, var(--bg-edge) 56%, #060a12 100%);
+        min-height: 100vh;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+          repeating-linear-gradient(
+            180deg,
+            rgba(167, 186, 219, 0.028),
+            rgba(167, 186, 219, 0.028) 1px,
+            transparent 1px,
+            transparent 4px
+          );
+        opacity: 0.35;
+      }
+
+      .app {
+        width: min(1320px, calc(100% - 1.4rem));
+        margin: 0.75rem auto 1.6rem;
+        position: relative;
+        z-index: 1;
+      }
+
+      .topbar {
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(17, 26, 44, 0.97), rgba(13, 21, 36, 0.96));
+        box-shadow: var(--shadow-panel);
+        border-radius: 14px;
+        padding: var(--space-3) var(--space-4);
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: var(--space-4);
+      }
+
+      .brand {
+        display: grid;
+        gap: 0.15rem;
+      }
+
+      .brand strong {
+        font-size: 1.12rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .brand span {
+        font-size: var(--meta);
+        color: var(--ink-muted);
+      }
+
+      .nav {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .tab {
+        border: 1px solid var(--line);
+        color: var(--ink-soft);
+        border-radius: 999px;
+        padding: 0.3rem 0.7rem;
+        font-size: var(--meta);
+        background: rgba(12, 19, 33, 0.86);
+      }
+
+      .tab.active {
+        color: var(--ink);
+        border-color: var(--focus);
+        background: rgba(52, 91, 143, 0.34);
+      }
+
+      .session {
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        font-size: 0.78rem;
+        color: #dff0ff;
+        border: 1px solid #3f6ea1;
+        border-radius: 999px;
+        padding: 0.36rem 0.72rem;
+        background: rgba(21, 47, 82, 0.45);
+      }
+
+      .hero {
+        margin-top: var(--space-4);
+        display: grid;
+        grid-template-columns: 1.35fr 1fr;
+        gap: var(--space-4);
+      }
+
+      .headline {
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-lg);
+        background: linear-gradient(160deg, rgba(21, 34, 56, 0.94), rgba(16, 27, 45, 0.96));
+        padding: var(--space-5);
+        box-shadow: var(--shadow-panel);
+      }
+
+      .headline p.kicker {
+        margin: 0;
+        color: #9ec4ee;
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        letter-spacing: 0.08em;
+        font-size: 0.73rem;
+        text-transform: uppercase;
+      }
+
+      .headline h1 {
+        margin: 0.35rem 0 0.45rem;
+        font-size: var(--display);
+        line-height: 1.08;
+        letter-spacing: 0.01em;
+      }
+
+      .headline p.lede {
+        margin: 0;
+        color: var(--ink-soft);
+        max-width: 64ch;
+      }
+
+      .workflow {
+        margin-top: var(--space-4);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .step {
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        font-size: 0.74rem;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: #d3e4ff;
+        background: rgba(12, 19, 33, 0.8);
+        padding: 0.22rem 0.52rem;
+      }
+
+      .ops-signal {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: linear-gradient(180deg, rgba(22, 34, 56, 0.9), rgba(15, 24, 40, 0.95));
+        padding: var(--space-4);
+        box-shadow: var(--shadow-panel);
+      }
+
+      .ops-signal h2 {
+        margin: 0;
+        font-size: var(--h2);
+      }
+
+      .signal-grid {
+        margin-top: 0.7rem;
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .signal-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #2e4365;
+        border-radius: var(--radius-sm);
+        padding: 0.45rem 0.58rem;
+        background: rgba(10, 17, 29, 0.86);
+      }
+
+      .signal-row span {
+        color: var(--ink-soft);
+      }
+
+      .signal-row strong {
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        letter-spacing: 0.02em;
+      }
+
+      .layout {
+        margin-top: var(--space-4);
+        display: grid;
+        grid-template-columns: 1.65fr 1fr;
+        gap: var(--space-4);
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: var(--radius-lg);
+        background: linear-gradient(180deg, rgba(18, 28, 46, 0.95), rgba(13, 22, 36, 0.95));
+        box-shadow: var(--shadow-panel);
+      }
+
+      .panel > .head {
+        padding: var(--space-4) var(--space-4) var(--space-3);
+        border-bottom: 1px solid #273a59;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: var(--space-3);
+      }
+
+      .panel h2,
+      .panel h3 {
+        margin: 0;
+      }
+
+      .panel h2 {
+        font-size: var(--h2);
+      }
+
+      .panel .sub {
+        margin-top: 0.2rem;
+        color: var(--ink-muted);
+        font-size: var(--meta);
+      }
+
+      .dominant {
+        border-color: #35517a;
+      }
+
+      .dominant .head {
+        background: linear-gradient(180deg, rgba(29, 45, 72, 0.5), rgba(18, 29, 47, 0.15));
+      }
+
+      .queue {
+        padding: var(--space-4);
+        display: grid;
+        gap: 0.65rem;
+      }
+
+      .item {
+        border: 1px solid #304869;
+        border-left: 5px solid var(--pending);
+        border-radius: var(--radius-md);
+        background: linear-gradient(180deg, rgba(17, 28, 46, 0.95), rgba(14, 23, 38, 0.96));
+        padding: 0.72rem 0.75rem;
+      }
+
+      .item.selected {
+        border-color: #5c8fca;
+        box-shadow: inset 0 0 0 1px rgba(110, 193, 255, 0.25);
+      }
+
+      .item.pending {
+        border-left-color: var(--pending);
+      }
+
+      .item.inreview {
+        border-left-color: var(--inreview);
+      }
+
+      .item.reject {
+        border-left-color: var(--reject);
+      }
+
+      .item.duplicate {
+        border-left-color: var(--duplicate);
+      }
+
+      .item-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: var(--space-3);
+      }
+
+      .item-title {
+        font-size: 1.01rem;
+        font-weight: 600;
+      }
+
+      .item-meta {
+        margin-top: 0.24rem;
+        color: var(--ink-muted);
+        font-size: var(--meta);
+      }
+
+      .status {
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .status.pending {
+        color: var(--pending);
+      }
+
+      .status.inreview {
+        color: var(--inreview);
+      }
+
+      .status.approved {
+        color: var(--ok);
+      }
+
+      .status.reject {
+        color: var(--reject);
+      }
+
+      .status.duplicate {
+        color: var(--duplicate);
+      }
+
+      .item-flags {
+        margin-top: 0.42rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.33rem;
+      }
+
+      .flag {
+        border: 1px solid #324a6b;
+        color: #d9e7fd;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        padding: 0.14rem 0.48rem;
+      }
+
+      .workbench {
+        border-top: 1px solid #273a59;
+        padding: var(--space-4);
+        background: linear-gradient(180deg, rgba(22, 35, 56, 0.84), rgba(14, 24, 40, 0.84));
+      }
+
+      .workbench h3 {
+        font-size: var(--h3);
+      }
+
+      .workbench-grid {
+        margin-top: 0.65rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.85rem;
+      }
+
+      .kv {
+        border: 1px solid #344f75;
+        border-radius: var(--radius-sm);
+        background: rgba(12, 20, 34, 0.85);
+        padding: 0.55rem;
+      }
+
+      .kv dt {
+        color: var(--ink-muted);
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      .kv dd {
+        margin: 0.16rem 0 0;
+        color: var(--ink);
+      }
+
+      .actions {
+        margin-top: 0.85rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.42rem;
+      }
+
+      .btn {
+        border: 1px solid #3a567f;
+        border-radius: 9px;
+        color: var(--ink);
+        background: rgba(18, 30, 49, 0.9);
+        font-weight: 600;
+        font-family: inherit;
+        padding: 0.48rem 0.72rem;
+      }
+
+      .btn.ok {
+        border-color: #2f886a;
+        background: linear-gradient(180deg, rgba(40, 122, 92, 0.45), rgba(19, 73, 55, 0.44));
+      }
+
+      .btn.warn {
+        border-color: #9b6c22;
+        background: linear-gradient(180deg, rgba(145, 102, 37, 0.44), rgba(90, 62, 22, 0.44));
+      }
+
+      .btn.danger {
+        border-color: #9f4b4b;
+        background: linear-gradient(180deg, rgba(138, 62, 62, 0.44), rgba(92, 42, 42, 0.44));
+      }
+
+      .sidebar {
+        display: grid;
+        gap: var(--space-4);
+      }
+
+      .mini {
+        padding-bottom: 0.25rem;
+      }
+
+      .stats {
+        padding: var(--space-4);
+        display: grid;
+        gap: 0.5rem;
+      }
+
+      .stat {
+        border: 1px solid #2f4668;
+        border-radius: var(--radius-sm);
+        background: rgba(12, 18, 31, 0.84);
+        padding: 0.48rem 0.58rem;
+      }
+
+      .stat b {
+        display: block;
+        font-size: 1.02rem;
+        margin-bottom: 0.12rem;
+      }
+
+      .stat span {
+        color: var(--ink-muted);
+        font-size: var(--meta);
+      }
+
+      .audit {
+        padding: 0.2rem 0;
+      }
+
+      .log {
+        margin: 0;
+        padding: var(--space-3) var(--space-4) var(--space-4);
+        list-style: none;
+        display: grid;
+        gap: 0.48rem;
+      }
+
+      .log li {
+        border-left: 2px solid #3f6294;
+        background: rgba(10, 16, 28, 0.84);
+        border-radius: 0 7px 7px 0;
+        padding: 0.42rem 0.5rem;
+      }
+
+      .log time {
+        display: block;
+        font-family: "IBM Plex Mono", Consolas, monospace;
+        color: var(--ink-faint);
+        font-size: 0.72rem;
+      }
+
+      .log div {
+        margin-top: 0.14rem;
+        color: #dbe7fb;
+        font-size: 0.82rem;
+      }
+
+      .feed {
+        margin-top: var(--space-4);
+      }
+
+      .feed-cards {
+        padding: var(--space-4);
+        display: grid;
+        gap: 0.55rem;
+      }
+
+      .feed-item {
+        border: 1px solid #32496b;
+        border-radius: var(--radius-sm);
+        padding: 0.52rem 0.58rem;
+        background: rgba(12, 19, 33, 0.86);
+      }
+
+      .feed-item .meta {
+        color: var(--ink-muted);
+        font-size: var(--meta);
+      }
+
+      .feed-item .body {
+        margin-top: 0.24rem;
+        color: var(--ink);
+      }
+
+      .reveal {
+        opacity: 0;
+        transform: translateY(10px);
+        animation: rise 440ms ease forwards;
+      }
+
+      .reveal.d1 {
+        animation-delay: 90ms;
+      }
+
+      .reveal.d2 {
+        animation-delay: 180ms;
+      }
+
+      .reveal.d3 {
+        animation-delay: 250ms;
+      }
+
+      @keyframes rise {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 1160px) {
+        .hero,
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .workbench-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .app {
+          width: calc(100% - 0.8rem);
+          margin-top: 0.45rem;
+        }
+
+        .topbar {
+          grid-template-columns: 1fr;
+          justify-items: start;
+        }
+
+        .nav {
+          justify-content: flex-start;
+        }
+
+        .headline,
+        .ops-signal,
+        .panel > .head,
+        .queue,
+        .workbench,
+        .stats,
+        .feed-cards,
+        .log {
+          padding-left: 0.72rem;
+          padding-right: 0.72rem;
+        }
+
+        .headline h1 {
+          font-size: 1.52rem;
+        }
+
+        .item-title {
+          font-size: 0.94rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar reveal" aria-label="Global controls">
+        <div class="brand">
+          <strong>PNYX</strong>
+          <span>Civic Evidence Control Room</span>
+        </div>
+
+        <nav class="nav" aria-label="Primary sections">
+          <span class="tab">Evidence Feed</span>
+          <span class="tab active">Proposal Triage</span>
+          <span class="tab">Statement Review</span>
+          <span class="tab">Audit Trail</span>
+        </nav>
+
+        <div class="session">ROLE MODERATOR | session 11:04 UTC</div>
+      </header>
+
+      <section class="hero reveal d1">
+        <article class="headline">
+          <p class="kicker">Primary workflow</p>
+          <h1>Triage first. Decide fast. Leave an audit trail for every outcome.</h1>
+          <p class="lede">
+            This screen is designed as an operational surface, not a marketing page. The queue is prioritized by age,
+            ownership, and conflict risk, so moderators can clear pending proposals with consistent decision metadata.
+          </p>
+          <div class="workflow" aria-label="Triage sequence">
+            <span class="step">1 Claim</span>
+            <span class="step">2 Verify identity</span>
+            <span class="step">3 Check duplicate assist</span>
+            <span class="step">4 Decide + reasonCode</span>
+            <span class="step">5 Write immutable audit</span>
+          </div>
+        </article>
+
+        <aside class="ops-signal" aria-labelledby="ops-title">
+          <h2 id="ops-title">Live Queue Signals</h2>
+          <div class="signal-grid">
+            <div class="signal-row">
+              <span>Pending proposals</span>
+              <strong>42</strong>
+            </div>
+            <div class="signal-row">
+              <span>Unassigned older than 24h</span>
+              <strong>9</strong>
+            </div>
+            <div class="signal-row">
+              <span>Version conflicts (1h)</span>
+              <strong>3</strong>
+            </div>
+            <div class="signal-row">
+              <span>Claims released by admin</span>
+              <strong>2</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="layout">
+        <article class="panel dominant reveal d2" aria-labelledby="triage-title">
+          <div class="head">
+            <div>
+              <h2 id="triage-title">Proposal Priority Ladder</h2>
+              <div class="sub">Sorted by queue risk: age, ownership, duplicate certainty, and review_version contention.</div>
+            </div>
+            <span class="status pending">pending focus</span>
+          </div>
+
+          <div class="queue">
+            <article class="item pending selected">
+              <div class="item-top">
+                <div class="item-title">#1886 A. Rivera - Metro East - City Council</div>
+                <span class="status pending">pending</span>
+              </div>
+              <div class="item-meta">29h in queue | unassigned | reviewVersion 0 | externalId missing</div>
+              <div class="item-flags">
+                <span class="flag">SLA breach risk</span>
+                <span class="flag">duplicate assist score 0.91</span>
+                <span class="flag">captcha passed</span>
+              </div>
+            </article>
+
+            <article class="item inreview">
+              <div class="item-top">
+                <div class="item-title">#1884 Jordan Lee - District 8 - Assembly</div>
+                <span class="status inreview">claimed</span>
+              </div>
+              <div class="item-meta">3h in queue | assignee moderator:amy | reviewVersion 3</div>
+              <div class="item-flags">
+                <span class="flag">exact normalized key match</span>
+                <span class="flag">duplicate_canonical candidate #214</span>
+              </div>
+            </article>
+
+            <article class="item reject">
+              <div class="item-top">
+                <div class="item-title">#1879 K. Thompson - Harbor Ward - Mayor</div>
+                <span class="status reject">rejected</span>
+              </div>
+              <div class="item-meta">decisionBy moderator:eli | reasonCode not_public_figure</div>
+              <div class="item-flags">
+                <span class="flag">closed state</span>
+                <span class="flag">audits available</span>
+              </div>
+            </article>
+
+            <article class="item duplicate">
+              <div class="item-top">
+                <div class="item-title">#1872 M. Ortega - Central Ward - Council</div>
+                <span class="status duplicate">duplicate</span>
+              </div>
+              <div class="item-meta">linkedPoliticianId 219 | reasonCode duplicate_canonical</div>
+              <div class="item-flags">
+                <span class="flag">canonical link persisted</span>
+                <span class="flag">reviewVersion 2</span>
+              </div>
+            </article>
+          </div>
+
+          <section class="workbench" aria-labelledby="workbench-title">
+            <h3 id="workbench-title">Selected Proposal Workbench - #1886</h3>
+            <div class="workbench-grid">
+              <dl class="kv">
+                <dt>identity</dt>
+                <dd>name: A. Rivera</dd>
+                <dd>region: Metro East</dd>
+                <dd>office: City Council</dd>
+              </dl>
+
+              <dl class="kv">
+                <dt>conflict controls</dt>
+                <dd>expectedVersion: 0</dd>
+                <dd>current reviewVersion: 0</dd>
+                <dd>assignee: unassigned</dd>
+              </dl>
+
+              <dl class="kv">
+                <dt>duplicate assist</dt>
+                <dd>canonical #214 similarity 0.91</dd>
+                <dd>pending #1882 similarity 0.84</dd>
+                <dd>externalId matches: none</dd>
+              </dl>
+
+              <dl class="kv">
+                <dt>decision constraints</dt>
+                <dd>approve: no reasonCode allowed</dd>
+                <dd>reject: reasonCode required</dd>
+                <dd>duplicate: reasonCode + optional linked id</dd>
+              </dl>
+            </div>
+
+            <div class="actions" aria-label="Decision actions">
+              <button class="btn">Claim proposal</button>
+              <button class="btn ok">Approve canonical</button>
+              <button class="btn warn">Mark duplicate</button>
+              <button class="btn danger">Reject proposal</button>
+            </div>
+          </section>
+        </article>
+
+        <aside class="sidebar">
+          <article class="panel mini reveal d2" aria-labelledby="metrics-title">
+            <div class="head">
+              <h2 id="metrics-title">Moderator Metrics</h2>
+            </div>
+            <div class="stats">
+              <div class="stat">
+                <b>17m</b>
+                <span>Median time to decision</span>
+              </div>
+              <div class="stat">
+                <b>94%</b>
+                <span>Decisions with valid reasonCode policy</span>
+              </div>
+              <div class="stat">
+                <b>0.8%</b>
+                <span>Captcha failures on proposal submit</span>
+              </div>
+              <div class="stat">
+                <b>100%</b>
+                <span>Proposal actions with audit event</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel audit reveal d3" aria-labelledby="audit-title">
+            <div class="head">
+              <h2 id="audit-title">Recent Audit Stream</h2>
+            </div>
+            <ol class="log">
+              <li>
+                <time>11:04:22Z</time>
+                <div>moderator:amy reviewed #1884 -> approved, linked politician #219, reviewVersion 3->4</div>
+              </li>
+              <li>
+                <time>10:58:17Z</time>
+                <div>moderator:eli reviewed #1879 -> rejected with reasonCode not_public_figure</div>
+              </li>
+              <li>
+                <time>10:47:03Z</time>
+                <div>admin:sam released claim on #1881 after assignee timeout, reviewVersion 1->2</div>
+              </li>
+              <li>
+                <time>10:41:48Z</time>
+                <div>moderator:noor claimed #1886 with expectedVersion 0</div>
+              </li>
+            </ol>
+          </article>
+        </aside>
+      </section>
+
+      <section class="panel feed reveal d3" aria-labelledby="feed-title">
+        <div class="head">
+          <div>
+            <h2 id="feed-title">Public Evidence Snapshot</h2>
+            <div class="sub">Secondary surface: keeps moderator context without competing against triage.</div>
+          </div>
+          <span class="status approved">verified heavy</span>
+        </div>
+
+        <div class="feed-cards">
+          <article class="feed-item">
+            <div class="meta">Statement #7421 | verification: verified | votes 68 support / 32 oppose</div>
+            <div class="body">"No public funds were spent on this contract."</div>
+          </article>
+          <article class="feed-item">
+            <div class="meta">Statement #7416 | verification: disputed | revisionCount 4</div>
+            <div class="body">"Emergency response time was reduced by half in two years."</div>
+          </article>
+          <article class="feed-item">
+            <div class="meta">Statement #7399 | pending_delete visible to moderator/admin only</div>
+            <div class="body">"This policy passed unanimously."</div>
+          </article>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,41 @@
+<!-- WHAT IT DO? Horizontal PNYX logo combining icon mark, wordmark, and civic accountability tagline. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 320" role="img" aria-labelledby="title desc">
+  <title id="title">PNYX logo wordmark</title>
+  <desc id="desc">PNYX icon with a bold wordmark and the tagline Promises tracked. Proof required.</desc>
+  <defs>
+    <linearGradient id="panelGradient" x1="20" y1="20" x2="280" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#162447" />
+      <stop offset="1" stop-color="#0b132b" />
+    </linearGradient>
+    <linearGradient id="hillGradient" x1="96" y1="106" x2="214" y2="240" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f59e0b" />
+      <stop offset="1" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="checkGradient" x1="116" y1="152" x2="208" y2="222" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7dd3fc" />
+      <stop offset="1" stop-color="#22d3ee" />
+    </linearGradient>
+    <linearGradient id="ruleGradient" x1="324" y1="234" x2="1080" y2="234" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0ea5a4" />
+      <stop offset="1" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1120" height="320" rx="40" fill="#f7f7f2" />
+
+  <g transform="translate(28 32)">
+    <rect width="256" height="256" rx="64" fill="url(#panelGradient)" />
+    <path d="M38 204c13-34 45-58 90-58s77 24 90 58" fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round" opacity="0.42" />
+    <path d="M54 204c13-26 37-44 74-44s61 18 74 44" fill="none" stroke="#2ec4b6" stroke-width="7" stroke-linecap="round" opacity="0.46" />
+    <path d="M68 204c13-18 29-29 60-29s47 11 60 29" fill="none" stroke="#2ec4b6" stroke-width="6" stroke-linecap="round" opacity="0.52" />
+
+    <path d="M64 188 128 92 192 188Z" fill="url(#hillGradient)" />
+    <path d="M78 169h100M86 182h84" stroke="#fff8e7" stroke-width="4" stroke-linecap="round" opacity="0.6" />
+    <path d="M95 151 124 179 173 127" fill="none" stroke="url(#checkGradient)" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="128" cy="82" r="8" fill="#fbbf24" />
+  </g>
+
+  <text x="324" y="152" fill="#0f172a" font-size="124" font-family="Fraunces, Cambria, Georgia, serif" font-weight="700" letter-spacing="9">PNYX</text>
+  <text x="328" y="208" fill="#475569" font-size="34" font-family="Space Grotesk, Segoe UI, Helvetica, sans-serif" font-weight="500" letter-spacing="0.4">Promises tracked. Proof required.</text>
+  <path d="M326 232H1090" stroke="url(#ruleGradient)" stroke-width="8" stroke-linecap="round" />
+</svg>

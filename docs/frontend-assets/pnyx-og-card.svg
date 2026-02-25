@@ -1,0 +1,51 @@
+<!-- WHAT IT DO? Social preview card for PNYX links, hero shares, and community posts. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">PNYX social preview card</title>
+  <desc id="desc">A branded social card with the PNYX mark and accountability-focused message.</desc>
+  <defs>
+    <linearGradient id="bg" x1="100" y1="40" x2="1100" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0b132b" />
+      <stop offset="0.52" stop-color="#162447" />
+      <stop offset="1" stop-color="#0f766e" />
+    </linearGradient>
+    <linearGradient id="accent" x1="76" y1="530" x2="1080" y2="530" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0ea5a4" />
+      <stop offset="1" stop-color="#f59e0b" />
+    </linearGradient>
+    <linearGradient id="markPanel" x1="90" y1="90" x2="390" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1d2f59" />
+      <stop offset="1" stop-color="#0b132b" />
+    </linearGradient>
+    <linearGradient id="hill" x1="174" y1="172" x2="314" y2="320" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f59e0b" />
+      <stop offset="1" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="check" x1="192" y1="222" x2="314" y2="318" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7dd3fc" />
+      <stop offset="1" stop-color="#22d3ee" />
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="1042" cy="84" r="178" fill="#22d3ee" opacity="0.1" />
+  <circle cx="102" cy="28" r="228" fill="#f59e0b" opacity="0.08" />
+  <path d="M76 540H1124" stroke="url(#accent)" stroke-width="12" stroke-linecap="round" />
+
+  <g transform="translate(88 102)">
+    <rect width="320" height="320" rx="74" fill="url(#markPanel)" />
+    <path d="M56 258c17-47 58-79 113-79s96 32 113 79" fill="none" stroke="#2ec4b6" stroke-width="10" stroke-linecap="round" opacity="0.44" />
+    <path d="M78 258c16-35 48-58 91-58s75 23 91 58" fill="none" stroke="#2ec4b6" stroke-width="8" stroke-linecap="round" opacity="0.48" />
+    <path d="M98 258c14-23 34-38 71-38s57 15 71 38" fill="none" stroke="#2ec4b6" stroke-width="7" stroke-linecap="round" opacity="0.55" />
+
+    <path d="M84 238 160 122 236 238Z" fill="url(#hill)" />
+    <path d="M102 215h116M112 230h96" stroke="#fff8e7" stroke-width="5" stroke-linecap="round" opacity="0.64" />
+    <path d="M116 192 151 226 210 163" fill="none" stroke="url(#check)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" />
+    <circle cx="160" cy="109" r="9" fill="#fbbf24" />
+  </g>
+
+  <text x="456" y="220" fill="#f8fafc" font-size="132" font-family="Fraunces, Cambria, Georgia, serif" font-weight="700" letter-spacing="9">PNYX</text>
+  <text x="456" y="286" fill="#cbd5e1" font-size="38" font-family="Space Grotesk, Segoe UI, Helvetica, sans-serif" font-weight="500" letter-spacing="0.4">The civic accountability ledger.</text>
+  <text x="456" y="350" fill="#e2e8f0" font-size="47" font-family="Fraunces, Cambria, Georgia, serif" font-weight="600">Track promises. Verify outcomes.</text>
+
+  <text x="456" y="434" fill="#9ca3af" font-size="29" font-family="Space Grotesk, Segoe UI, Helvetica, sans-serif">Evidence-first records for public statements, revisions, and results.</text>
+</svg>
