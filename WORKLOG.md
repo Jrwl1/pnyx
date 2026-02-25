@@ -186,6 +186,22 @@ Follow-ups / deferred issues (IDs): Run S2-T13 full regression suite and execute
 
 ---
 
+Date: 2026-02-26
+Milestone/Sprint: S2-T13 (full regression + evidence aggregation)
+Summary (1–3 bullets):
+- Ran full S2 regression chain after moderation-ops hardening implementation.
+- Verified complete unit/integration coverage plus e2e smoke remains green.
+- Confirmed clean working tree before review gate execution.
+Why (link to requirement/milestone/issue): S2-T13 requires full green proof before S2-T14 reviewer/coordinator closeout.
+Evidence (commands + summarized results):
+- `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build` -> pass (`25` test files / `81` tests + e2e `1` test).
+- `git status --short` -> clean.
+Commit: 83c7ab0
+Files touched: src/server.ts, test/setup.ts, test/politician-proposal-review.test.ts, test/politician-proposal-queue.test.ts, test/proposal-rate-limit.test.ts, test/role-matrix.test.ts, test/proposal-queue-ops.test.ts, test/proposal-sla-metrics.test.ts, test/proposal-reason-policy.test.ts, test/proposal-duplicate-assist.test.ts, test/proposal-review-race.test.ts, test/proposal-audit-filters.test.ts.
+Follow-ups / deferred issues (IDs): Execute S2-T14 review gate and coordinator closeout.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):
