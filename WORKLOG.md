@@ -928,3 +928,20 @@ Evidence (commands + summarized results):
 Commit: 5fe6233
 Files touched: ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: User-requested frontend branding pack (post-S5)
+Summary (1–3 bullets):
+- Created a full PNYX frontend branding pack (`logo mark`, `wordmark`, `favicon`, `OG card`, and `brand tokens`) under `docs/frontend-assets/`.
+- Added a quick-use asset guide with design rationale tied to the Pnyx hill + public accountability concept.
+- Updated `docs/frontend-mockup.html` to consume the new favicon and topbar logo mark, then verified render behavior in desktop and mobile snapshots.
+Why (link to requirement/milestone/issue): User requested "logo and site assets" for the frontend to support the PNYX promise-tracking product direction.
+Evidence (commands + summarized results):
+- `git status --short` -> showed untracked asset files plus `.dev-server.log`.
+- `git add "docs/frontend-assets" "docs/frontend-mockup.html" && git commit -m "feat(brand): add PNYX logo and frontend asset pack" && git status --short` -> commit `97bc637` created; only `.dev-server.log` remained untracked.
+- Browser check -> loaded `file:///C:/Users/john/aios/Pnyx/docs/frontend-mockup.html`; desktop and mobile snapshots included the `PNYX logo mark` image and updated brand header.
+Commit: 97bc637
+Files touched: docs/frontend-assets/README.md, docs/frontend-assets/pnyx-brand-tokens.css, docs/frontend-assets/pnyx-favicon.svg, docs/frontend-assets/pnyx-logo-mark.svg, docs/frontend-assets/pnyx-logo-wordmark.svg, docs/frontend-assets/pnyx-og-card.svg, docs/frontend-mockup.html, WORKLOG.md.
+Follow-ups / deferred issues (IDs): None.
