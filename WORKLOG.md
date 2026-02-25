@@ -43,6 +43,38 @@ Follow-ups / deferred issues (IDs): None.
 
 ---
 
+Date: 2026-02-25
+Milestone/Sprint: S1-T01 (CR-002 activation + S1 planning)
+Summary (1–3 bullets):
+- Accepted CR-002 and updated locked spec to moderated politician intake policy (users submit proposals; only moderator/admin create canonical politicians).
+- Added M1 milestone and replaced current sprint plan with S1 Active (`S1-T01..S1-T14`) including phased execution, risk mitigations, and proof strategy.
+- Synced status/backlog docs to S1 activation (`PROJECT_STATUS.md`, `TASKS.md`).
+Why (link to requirement/milestone/issue): User decision to move to moderated intake governance model and activate Sprint 01 planning.
+Evidence (commands + summarized results):
+- `git add ai/memory/CHANGE_REQUESTS.md ai/planning/V1_SPEC_LOCK.md ai/roadmap/MILESTONES.md ai/roadmap/SPRINT.md PROJECT_STATUS.md TASKS.md`
+- `git commit -m "docs(roadmap): activate S1 moderated intake plan"` -> 6 files changed.
+Commit: 2088788
+Files touched: ai/memory/CHANGE_REQUESTS.md, ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md, TASKS.md.
+Follow-ups / deferred issues (IDs): Implement S1 tasks in DO mode (starting with role hardening decision and proposal workflow).
+
+---
+
+Date: 2026-02-25
+Milestone/Sprint: S1-T07 (register role hardening)
+Summary (1–3 bullets):
+- Enforced hard rejection of privileged role self-assignment on public `/auth/register` (`moderator|admin` -> `403`).
+- Added dedicated test suite for register role hardening, including omit-role, explicit user role, privileged role rejection, and invalid role validation.
+- Synced policy wording in spec/sprint docs to reflect rejected privileged-role requests (not normalization).
+Why (link to requirement/milestone/issue): User selected strict rejection policy for privileged role assignment on registration.
+Evidence (commands + summarized results):
+- `pnpm test -- -t "register role hardening"` -> pass (11 files, 46 tests total; new suite 4 passed).
+- `pnpm lint && pnpm typecheck && pnpm build` -> pass.
+Commit: dba6147
+Files touched: src/server.ts, test/register-role-hardening.test.ts, ai/planning/V1_SPEC_LOCK.md, ai/roadmap/SPRINT.md.
+Follow-ups / deferred issues (IDs): Continue S1-T02..S1-T06 and S1-T08..S1-T14 implementation batches.
+
+---
+
 Date: 2026-02-24
 Milestone/Sprint: S0-T12 (review gate + closeout docs sync)
 Summary (1–3 bullets):

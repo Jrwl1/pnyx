@@ -62,6 +62,6 @@ Decision: accepted
 
 If accepted:
 
-Spec updated in commit: <pending>
+Spec updated in commit: 2088788, dba6147
 
 Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md.
