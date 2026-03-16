@@ -33,6 +33,9 @@ export const PublicLayout = (): ReactElement => {
             <NavLink to="/politicians" className={navClassName}>
               Politicians
             </NavLink>
+            <NavLink to="/parties" className={navClassName}>
+              Parties
+            </NavLink>
             <NavLink to="/methodology" className={navClassName}>
               Methodology
             </NavLink>

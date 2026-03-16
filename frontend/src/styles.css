@@ -455,6 +455,42 @@ button {
   gap: var(--space-2);
 }
 
+.route-shell-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.placeholder-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  background: var(--accent-civic-soft);
+  color: var(--accent-civic);
+}
+
+.metric-pair {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  align-items: baseline;
+}
+
+.metric-pair strong {
+  font-size: 1.25rem;
+}
+
+.card-link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.placeholder-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
 .scorecard h2 {
   font-size: 1.1rem;
 }
@@ -573,6 +609,10 @@ button {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .route-shell-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .col-span-8,
   .col-span-4 {
     grid-column: span 12;
@@ -611,7 +651,8 @@ button {
 
   .cards-grid-3,
   .scorecards-grid,
-  .split-grid {
+  .split-grid,
+  .route-shell-grid {
     grid-template-columns: 1fr;
   }
 

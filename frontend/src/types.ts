@@ -1,7 +1,9 @@
-/* WHAT IT DO? Defines shared frontend types for politicians, promises, evidence, and derived accountability states. */
+/* WHAT IT DO? Defines shared frontend types for politicians, promises, evidence, party route shells, and derived accountability states. */
 
 export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknown";
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
+export type PartyLineStatus = "aligned" | "broke_party_line" | "unknown";
+export type PlaceholderState = "placeholder";
 
 export interface Politician {
   id: number;
@@ -79,3 +81,165 @@ export interface DirectoryRow {
   lastUpdated: string | null;
   issueTags: string[];
 }
+
+export interface PartyRecord {
+  id: string;
+  name: string;
+  shortName: string;
+  contextLine: string;
+  dataState: PlaceholderState;
+}
+
+export interface PartyStanceRecord {
+  id: string;
+  partyId: string;
+  issue: string | null;
+  stanceText: string;
+  sourceUrl: string | null;
+  dateSaid: string | null;
+  dataState: PlaceholderState;
+}
+
+export interface PartyMemberRecord {
+  politicianId: number | null;
+  name: string;
+  office: string | null;
+  region: string | null;
+  partyLineStatus: PartyLineStatus;
+  dataState: PlaceholderState;
+}
+
+export interface PartyProfileShell {
+  party: PartyRecord;
+  officialStancesTracked: number | null;
+  membersOnPnyx: number | null;
+  partyLineSummary: PartyLineStatus;
+  notes: string[];
+  stances: PartyStanceRecord[];
+  members: PartyMemberRecord[];
+}
+
+export const PARTY_ROUTE_SHELLS: PartyProfileShell[] = [
+  {
+    party: {
+      id: "sdp",
+      name: "Social Democratic Party of Finland",
+      shortName: "SDP",
+      contextLine: "Finland-first route shell. Official stances, membership data, and party-line comparisons are not yet connected to a backend feed.",
+      dataState: "placeholder"
+    },
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Frontend-local placeholder for route-shell verification only.",
+      "No canonical party stance records are connected yet.",
+      "No member-politician mapping is available from the public backend today."
+    ],
+    stances: [],
+    members: []
+  },
+  {
+    party: {
+      id: "kok",
+      name: "National Coalition Party",
+      shortName: "KOK",
+      contextLine: "Finland-first route shell. Official stances, membership data, and party-line comparisons are not yet connected to a backend feed.",
+      dataState: "placeholder"
+    },
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Frontend-local placeholder for route-shell verification only.",
+      "No canonical party stance records are connected yet.",
+      "No member-politician mapping is available from the public backend today."
+    ],
+    stances: [],
+    members: []
+  },
+  {
+    party: {
+      id: "kesk",
+      name: "Centre Party of Finland",
+      shortName: "KESK",
+      contextLine: "Finland-first route shell. Official stances, membership data, and party-line comparisons are not yet connected to a backend feed.",
+      dataState: "placeholder"
+    },
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Frontend-local placeholder for route-shell verification only.",
+      "No canonical party stance records are connected yet.",
+      "No member-politician mapping is available from the public backend today."
+    ],
+    stances: [],
+    members: []
+  },
+  {
+    party: {
+      id: "ps",
+      name: "Finns Party",
+      shortName: "PS",
+      contextLine: "Finland-first route shell. Official stances, membership data, and party-line comparisons are not yet connected to a backend feed.",
+      dataState: "placeholder"
+    },
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Frontend-local placeholder for route-shell verification only.",
+      "No canonical party stance records are connected yet.",
+      "No member-politician mapping is available from the public backend today."
+    ],
+    stances: [],
+    members: []
+  },
+  {
+    party: {
+      id: "vihr",
+      name: "Green League",
+      shortName: "VIHR",
+      contextLine: "Finland-first route shell. Official stances, membership data, and party-line comparisons are not yet connected to a backend feed.",
+      dataState: "placeholder"
+    },
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Frontend-local placeholder for route-shell verification only.",
+      "No canonical party stance records are connected yet.",
+      "No member-politician mapping is available from the public backend today."
+    ],
+    stances: [],
+    members: []
+  },
+  {
+    party: {
+      id: "vas",
+      name: "Left Alliance",
+      shortName: "VAS",
+      contextLine: "Finland-first route shell. Official stances, membership data, and party-line comparisons are not yet connected to a backend feed.",
+      dataState: "placeholder"
+    },
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Frontend-local placeholder for route-shell verification only.",
+      "No canonical party stance records are connected yet.",
+      "No member-politician mapping is available from the public backend today."
+    ],
+    stances: [],
+    members: []
+  }
+];
+
+export const getPartyRouteShell = (id: string | undefined): PartyProfileShell | null => {
+  if (!id) {
+    return null;
+  }
+
+  return PARTY_ROUTE_SHELLS.find((entry) => entry.party.id === id) ?? null;
+};

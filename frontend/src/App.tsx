@@ -7,6 +7,8 @@ import { HomePage } from "./routes/HomePage";
 import { MethodologyPage } from "./routes/MethodologyPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 import { OpsPage } from "./routes/OpsPage";
+import { PartiesPage } from "./routes/PartiesPage";
+import { PartyProfilePage } from "./routes/PartyProfilePage";
 import { PoliticianProfilePage } from "./routes/PoliticianProfilePage";
 import { PoliticiansPage } from "./routes/PoliticiansPage";
 import { PromiseDetailPage } from "./routes/PromiseDetailPage";
@@ -18,6 +20,8 @@ export const App = (): ReactElement => {
         <Route path="/" element={<HomePage />} />
         <Route path="/politicians" element={<PoliticiansPage />} />
         <Route path="/politicians/:id" element={<PoliticianProfilePage />} />
+        <Route path="/parties" element={<PartiesPage />} />
+        <Route path="/parties/:id" element={<PartyProfilePage />} />
         <Route path="/promises/:id" element={<PromiseDetailPage />} />
         <Route path="/methodology" element={<MethodologyPage />} />
         <Route path="/ops" element={<OpsPage />} />
