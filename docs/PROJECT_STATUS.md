@@ -16,18 +16,18 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 - Backend moderation and proposal flows exist in `src/` and `test/`.
 - A public Frontend V3 already exists in `frontend/` with routes for `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, `/methodology`, and optional `/ops`.
 - `docs/FRONTEND_V3_SPEC.md` is now absorbed into the Finland-first, party-aware public discovery target.
-- The active gap is implementation: route-shell, placeholder party pages, and Finland-first home/directory surfaces now exist, while detail-page party context and browser verification remain unfinished.
+- The active gap is verification: route-shell, home/directory refresh, and detail-page party context are now implemented, while final static proof and browser verification remain unfinished.
 
 ## Top blockers
 
-1. Current backend APIs expose politicians/statements only, so party pages must begin with honest unknown states or frontend-local placeholder structures.
-2. Politician and promise detail pages still need party affiliation, party stance, and party-line context surfaces without inventing alignment data.
-3. Frontend verification for the overhaul is not yet wired into focused regression coverage.
+1. Current backend APIs still expose politicians/statements only, so party and party-line surfaces must continue relying on honest unknown states or frontend-local placeholders.
+2. The sprint still needs one clean full-slice static proof pass captured under `S-14`.
+3. Browser verification across the public routes is still outstanding and may expose bounded same-area regressions.
 
 ## Next actions
 
-1. Continue `RUNSPRINT` with `S-13` to add party-context blocks to politician, promise, and methodology pages.
-2. Land `S-14` after the detail refresh to capture static proof plus browser verification.
+1. Continue `RUNSPRINT` with `S-14` to capture the final static proof and browser verification across Home, Politicians, Parties, and Methodology.
+2. Fix any bounded same-area frontend regressions revealed by `S-14` before closing the sprint.
 3. Move to trust hardening work only after `S-14` closes with clean verification evidence.
 
 ## Key links
