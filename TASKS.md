@@ -23,6 +23,12 @@ DO (after lock):
 
 - [x] Execute sprint via ai/workflows/DO_MODE.md
 
+Post-S5 delivered work:
+
+- [x] Write `docs/FRONTEND_V3_SPEC.md` for the citizen-first public Frontend V3.
+- [x] Implement the React + Vite public frontend in `frontend/` with routes `/`, `/politicians`, `/politicians/:id`, `/promises/:id`, `/methodology`, and optional `/ops`.
+- [ ] Fold frontend follow-up work and acceptance-gap fixes into the next milestone/sprint planning cycle.
+
 ---
 
 V1 backlog (from REQUIREMENTS + USER_FLOWS; implement after lock)
