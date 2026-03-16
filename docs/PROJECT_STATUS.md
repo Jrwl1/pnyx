@@ -16,19 +16,19 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 - Backend moderation and proposal flows exist in `src/` and `test/`.
 - A public Frontend V3 already exists in `frontend/` with routes for `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, `/methodology`, and optional `/ops`.
 - `docs/FRONTEND_V3_SPEC.md` is now absorbed into the Finland-first, party-aware public discovery target.
-- The active gap is verification: route-shell, home/directory refresh, and detail-page party context are now implemented, while final static proof and browser verification remain unfinished.
+- Sprint rows `S-11` through `S-14` are complete: the public discovery slice is implemented, statically proved, and browser-verified across Home, Politicians, Parties, and Methodology.
 
 ## Top blockers
 
-1. Current backend APIs still expose politicians/statements only, so party and party-line surfaces must continue relying on honest unknown states or frontend-local placeholders.
-2. The sprint still needs one clean full-slice static proof pass captured under `S-14`.
-3. Browser verification across the public routes is still outstanding and may expose bounded same-area regressions.
+1. No blockers remain inside the completed public-discovery sprint queue.
+2. Backend party, membership, and stance APIs are still future follow-up work, but they are no longer blocking the shipped honest unknown-state slice.
+3. A future `PLAN` pass is still needed to roll the completed slice into the next milestone queue and close out roadmap/backlog status.
 
 ## Next actions
 
-1. Continue `RUNSPRINT` with `S-14` to capture the final static proof and browser verification across Home, Politicians, Parties, and Methodology.
-2. Fix any bounded same-area frontend regressions revealed by `S-14` before closing the sprint.
-3. Move to trust hardening work only after `S-14` closes with clean verification evidence.
+1. Run `PLAN` to roll the completed public-discovery slice into roadmap/backlog status and open the next executable queue.
+2. Prioritize M3 trust, moderation, and release-readiness work now that the public slice is verified.
+3. Schedule backend-ready follow-up work for canonical parties, memberships, and party stances when that delivery track is ready.
 
 ## Key links
 
