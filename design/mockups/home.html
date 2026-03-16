@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNYX — Home (v2 · Finland-first)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+  :root {
+    --bg-page: #FAF7F2; --bg-surface: #ffffff; --ink-strong: #1B2A4A; --ink-muted: #4f5d78;
+    --accent-civic: #1f5fbf; --accent-civic-soft: #dfe9fb; --accent-amber: #C8963E; --accent-amber-soft: #faf0dd;
+    --line-subtle: #E5E0D8; --status-fulfilled: #2f7a4d; --status-broken: #b13a2f;
+    --status-progress: #a36c00; --status-unknown: #6b7280;
+    --shadow-soft: 0 2px 8px rgba(27,42,74,0.06); --shadow-hover: 0 6px 20px rgba(27,42,74,0.10);
+    --radius-card: 8px; --radius-pill: 999px; --max-content: 1200px;
+    --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 32px;
+  }
+  body { font-family: 'Source Sans 3', sans-serif; color: var(--ink-strong); background: var(--bg-page); line-height: 1.55; }
+  a { color: var(--accent-civic); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  a:hover { text-decoration-thickness: 2px; }
+  h1, h2, h3 { margin: 0; font-family: 'Fraunces', serif; color: var(--ink-strong); }
+  h1 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.12; font-weight: 600; }
+  h2 { font-size: clamp(1.4rem, 3vw, 2rem); line-height: 1.18; font-weight: 600; }
+  h3 { font-size: clamp(1.1rem, 2.2vw, 1.5rem); line-height: 1.25; font-weight: 600; }
+  .content-wrap { width: min(var(--max-content), calc(100% - 32px)); margin: 0 auto; }
+
+  /* Header */
+  .site-header { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid var(--line-subtle); background: rgba(250,247,242,0.94); backdrop-filter: blur(8px); }
+  .site-header-inner { min-height: 72px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding: var(--space-1) 0; }
+  .brand-block { display: inline-flex; align-items: center; gap: var(--space-1); text-decoration: none; }
+  .brand-mark { width: 36px; height: 36px; display: inline-grid; place-items: center; border-radius: 8px; color: #fff; background: linear-gradient(135deg, var(--accent-civic), #243a6b); font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px; }
+  .brand-text { display: flex; flex-direction: column; }
+  .brand-name { font-family: 'Fraunces', serif; font-weight: 700; letter-spacing: 0.08em; font-size: 0.95rem; color: var(--ink-strong); }
+  .brand-subtitle { color: var(--ink-muted); font-size: 0.78rem; }
+  .site-nav { display: inline-flex; align-items: center; gap: var(--space-1); }
+  .site-nav-link { color: var(--ink-strong); text-decoration: none; border-radius: var(--radius-pill); padding: 6px 14px; font-size: 1rem; font-weight: 500; transition: background-color 150ms ease; }
+  .site-nav-link:hover { background: var(--accent-civic-soft); }
+  .site-nav-link.active { background: var(--accent-civic); color: #fff; }
+
+  /* Hero */
+  .hero-panel { border: 1px solid var(--line-subtle); border-radius: var(--radius-card); background: var(--bg-surface); padding: var(--space-4) var(--space-3); box-shadow: var(--shadow-soft); display: grid; grid-template-columns: 1fr 340px; gap: var(--space-4); align-items: start; }
+  .hero-content { display: grid; gap: var(--space-2); }
+  .eyebrow { font-family: 'IBM Plex Mono', monospace; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--accent-civic); }
+  .lede { max-width: 60ch; color: var(--ink-muted); }
+  .search-form { display: flex; gap: var(--space-1); }
+  .search-input { flex: 1; min-height: 52px; border: 2px solid var(--line-subtle); border-radius: var(--radius-card); padding: 0 16px; font-size: 1.125rem; font-family: 'Source Sans 3', sans-serif; color: var(--ink-strong); background: #fff; transition: border-color 150ms; }
+  .search-input::placeholder { color: #9ca3af; }
+  .search-input:focus { outline: none; border-color: var(--accent-civic); box-shadow: 0 0 0 3px rgba(31,95,191,0.12); }
+  .search-btn { min-height: 52px; padding: 0 24px; border: none; border-radius: var(--radius-card); background: var(--accent-civic); color: #fff; font-size: 1.125rem; font-weight: 600; font-family: 'Source Sans 3', sans-serif; cursor: pointer; transition: background-color 150ms, transform 150ms; }
+  .search-btn:hover { background: #1a52a8; transform: translateY(-1px); }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip-row-label { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-muted); width: 100%; }
+  .chip { border: 1px solid #c0ccdf; border-radius: var(--radius-pill); background: #fff; color: var(--ink-strong); padding: 7px 16px; font-size: 0.95rem; cursor: pointer; font-family: 'Source Sans 3', sans-serif; transition: background-color 150ms, border-color 150ms; }
+  .chip:hover { background: var(--accent-civic-soft); border-color: var(--accent-civic); }
+  .chip-party { border-color: var(--accent-amber); background: var(--accent-amber-soft); }
+  .chip-party:hover { background: #f5e4c0; }
+  .hero-sidebar { border-left: 4px solid var(--accent-amber); padding-left: var(--space-2); display: grid; gap: 12px; }
+  .hero-sidebar h2 { font-size: 1.15rem; }
+  .hero-sidebar ul { padding-left: 20px; margin: 0; }
+  .hero-sidebar li { font-size: 0.95rem; color: var(--ink-muted); margin-bottom: 8px; }
+
+  /* Trust strip */
+  .trust-strip { text-align: center; padding: var(--space-2) 0; font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ink-muted); }
+  .trust-strip span { opacity: 0.5; margin: 0 8px; }
+
+  /* Steps */
+  .how-section { display: grid; gap: var(--space-3); }
+  .how-section h2, .how-section .section-lede { text-align: center; }
+  .section-lede { color: var(--ink-muted); max-width: 56ch; margin: 0 auto; }
+  .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .step-card { border: 1px solid var(--line-subtle); border-radius: var(--radius-card); background: var(--bg-surface); padding: var(--space-3); text-align: center; display: grid; gap: 12px; }
+  .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-civic); color: #fff; display: inline-grid; place-items: center; font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.1rem; margin: 0 auto; }
+  .step-card p { font-size: 0.95rem; color: var(--ink-muted); }
+
+  /* Party browse */
+  .party-section { display: grid; gap: var(--space-2); }
+  .party-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-2); }
+  .party-card { border: 1px solid var(--line-subtle); border-left: 4px solid var(--accent-amber); border-radius: var(--radius-card); background: var(--bg-surface); padding: var(--space-2); display: grid; gap: 6px; transition: transform 160ms ease, box-shadow 160ms ease; }
+  .party-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .party-card h3 { font-size: 1.05rem; }
+  .party-card .abbr { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; color: var(--accent-amber); font-weight: 500; }
+  .party-card .meta { font-size: 0.85rem; color: var(--ink-muted); }
+  .party-card-link { font-size: 0.9rem; color: var(--accent-civic); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; font-family: 'Source Sans 3', sans-serif; }
+
+  /* Politician cards */
+  .recent-section { display: grid; gap: var(--space-2); }
+  .section-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: var(--space-2); }
+  .data-note { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--ink-muted); }
+  .cards-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2); }
+  .card { border: 1px solid var(--line-subtle); border-radius: var(--radius-card); background: var(--bg-surface); padding: var(--space-2); display: grid; gap: 6px; transition: transform 160ms ease, box-shadow 160ms ease; }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+  .card .meta { font-size: 0.875rem; color: var(--ink-muted); }
+  .card .stat { font-size: 0.95rem; }
+  .card .stat strong { color: var(--ink-strong); }
+  .card-party-badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; padding: 2px 8px; border-radius: var(--radius-pill); background: var(--accent-amber-soft); color: var(--accent-amber); border: 1px solid rgba(200,150,62,0.3); }
+  .status-chip { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; padding: 2px 10px; border-radius: var(--radius-pill); border: 1px solid; }
+  .status-unknown { color: var(--status-unknown); border-color: rgba(107,114,128,0.4); background: rgba(107,114,128,0.08); }
+  .card-link { font-size: 0.9rem; color: var(--accent-civic); text-decoration: underline; cursor: pointer; background: none; border: none; font-family: 'Source Sans 3', sans-serif; padding: 0; }
+
+  /* What PNYX is */
+  .what-section { display: grid; gap: var(--space-3); }
+  .what-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-2); }
+  .what-card { border: 1px solid var(--line-subtle); border-radius: var(--radius-card); background: var(--bg-surface); padding: var(--space-3); }
+  .what-card h3 { font-size: 1.15rem; margin-bottom: 12px; }
+  .what-card ul { padding-left: 20px; margin: 0; }
+  .what-card li { font-size: 0.95rem; color: var(--ink-muted); margin-bottom: 8px; line-height: 1.5; }
+  .what-card.is-card { border-left: 4px solid var(--status-fulfilled); }
+  .what-card.not-card { border-left: 4px solid var(--status-unknown); }
+
+  /* Methodology callout */
+  .methodology-callout { border: 1px solid var(--accent-amber); border-left: 4px solid var(--accent-amber); border-radius: var(--radius-card); background: var(--accent-amber-soft); padding: var(--space-3); display: grid; gap: 8px; }
+  .methodology-callout p { color: var(--ink-muted); font-size: 0.95rem; max-width: 64ch; }
+  .methodology-callout a { font-weight: 600; }
+
+  /* Footer */
+  .site-footer { border-top: 1px solid var(--line-subtle); margin-top: var(--space-4); padding: var(--space-3) 0; text-align: center; font-size: 0.875rem; color: var(--ink-muted); }
+  .footer-links { display: flex; justify-content: center; gap: var(--space-3); margin-bottom: 8px; }
+  .footer-links a { color: var(--ink-muted); font-size: 0.875rem; }
+  .page-stack { display: grid; gap: 56px; padding: var(--space-4) 0 56px; }
+
+  @media (max-width: 1024px) { .hero-panel { grid-template-columns: 1fr; } .hero-sidebar { border-left: none; border-top: 1px solid var(--line-subtle); padding-left: 0; padding-top: var(--space-2); } .party-grid { grid-template-columns: repeat(2, 1fr); } .cards-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) { .site-header-inner { flex-direction: column; align-items: flex-start; min-height: auto; padding: var(--space-1) 0 var(--space-2); } .hero-panel { padding: var(--space-2); } .search-form { flex-direction: column; } .search-input, .search-btn { width: 100%; } .steps-grid, .cards-grid, .what-grid { grid-template-columns: 1fr; } .party-grid { grid-template-columns: 1fr; } .page-stack { gap: 40px; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="content-wrap">
+    <div class="site-header-inner">
+      <a href="#" class="brand-block">
+        <div class="brand-mark">P</div>
+        <div class="brand-text">
+          <span class="brand-name">PNYX</span>
+          <span class="brand-subtitle">Political accountability</span>
+        </div>
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a class="site-nav-link active" href="#">Home</a>
+        <a class="site-nav-link" href="directory.html">Politicians</a>
+        <a class="site-nav-link" href="parties.html">Parties</a>
+        <a class="site-nav-link" href="methodology.html">Methodology</a>
+      </nav>
+    </div>
+  </div>
+</header>
+
+<main class="content-wrap">
+  <div class="page-stack">
+
+    <!-- HERO -->
+    <section class="hero-panel">
+      <div class="hero-content">
+        <p class="eyebrow">Citizen-first accountability</p>
+        <h1>What did they promise?<br>What does the record show?</h1>
+        <p class="lede">
+          Track what Finnish politicians and parties have promised. See the evidence. Understand what's known — and what isn't.
+        </p>
+
+        <form class="search-form" onsubmit="return false;">
+          <input class="search-input" type="search" placeholder="Search for a politician or party...">
+          <button class="search-btn" type="submit">Search</button>
+        </form>
+
+        <div class="chip-row">
+          <span class="chip-row-label">Browse by issue</span>
+          <button class="chip">Economy</button>
+          <button class="chip">Healthcare</button>
+          <button class="chip">Climate</button>
+          <button class="chip">Education</button>
+          <button class="chip">Public Safety</button>
+        </div>
+
+        <div class="chip-row">
+          <span class="chip-row-label">Browse by party</span>
+          <button class="chip chip-party">Kokoomus</button>
+          <button class="chip chip-party">SDP</button>
+          <button class="chip chip-party">Perussuomalaiset</button>
+          <button class="chip chip-party">Keskusta</button>
+          <button class="chip chip-party">Vihreät</button>
+          <button class="chip chip-party">Vasemmistoliitto</button>
+        </div>
+      </div>
+
+      <aside class="hero-sidebar">
+        <h2>How this works</h2>
+        <ul>
+          <li>Promises are tracked as sourced public statements by individual politicians.</li>
+          <li>Party stances are tracked separately from individual promises.</li>
+          <li>Fulfillment status stays <strong>Unknown</strong> until enough evidence is assessed. Missing data is shown honestly.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <!-- TRUST STRIP -->
+    <div class="trust-strip">
+      Independent &amp; nonpartisan <span>·</span>
+      Every claim linked to sources <span>·</span>
+      Open methodology <span>·</span>
+      Unknown data shown honestly
+    </div>
+
+    <!-- HOW IT WORKS -->
+    <section class="how-section">
+      <h2>How PNYX works</h2>
+      <p class="section-lede">Three steps to understanding what your representatives and their parties have committed to.</p>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <h3>Find</h3>
+          <p>Search for a politician by name, or browse by party, constituency, or issue area.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <h3>Review</h3>
+          <p>Read their promises and their party's official stances. See when each claim was made and where it was documented.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <h3>Inspect</h3>
+          <p>Check original sources. See fulfillment status. Compare a politician's promises against their party line.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BROWSE BY PARTY -->
+    <section class="party-section">
+      <div class="section-header">
+        <h2>Browse by party</h2>
+        <a href="parties.html" style="font-size: 0.95rem;">View all parties →</a>
+      </div>
+      <div class="party-grid">
+        <article class="party-card">
+          <span class="abbr">KOK</span>
+          <h3>Kansallinen Kokoomus</h3>
+          <p class="meta">38 members tracked · 12 stances</p>
+          <button class="party-card-link">View party profile →</button>
+        </article>
+        <article class="party-card">
+          <span class="abbr">SDP</span>
+          <h3>Suomen Sosialidemokraattinen Puolue</h3>
+          <p class="meta">34 members tracked · 10 stances</p>
+          <button class="party-card-link">View party profile →</button>
+        </article>
+        <article class="party-card">
+          <span class="abbr">PS</span>
+          <h3>Perussuomalaiset</h3>
+          <p class="meta">46 members tracked · 8 stances</p>
+          <button class="party-card-link">View party profile →</button>
+        </article>
+        <article class="party-card">
+          <span class="abbr">KESK</span>
+          <h3>Suomen Keskusta</h3>
+          <p class="meta">23 members tracked · 9 stances</p>
+          <button class="party-card-link">View party profile →</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- RECENTLY DOCUMENTED -->
+    <section class="recent-section">
+      <div class="section-header">
+        <h2>Recently documented</h2>
+        <span class="data-note">Profiles with the most recent evidence activity</span>
+      </div>
+      <div class="cards-grid">
+        <article class="card">
+          <h3>Antti Virtanen</h3>
+          <p class="meta">Kansanedustaja · Uusimaa</p>
+          <span class="card-party-badge">KOK</span>
+          <p class="stat"><strong>9</strong> promises tracked</p>
+          <span class="status-chip status-unknown">Fulfillment: unknown</span>
+          <p class="meta">Last updated Mar 14, 2026</p>
+          <button class="card-link">Open profile →</button>
+        </article>
+        <article class="card">
+          <h3>Minna Korhonen</h3>
+          <p class="meta">Kansanedustaja · Pirkanmaa</p>
+          <span class="card-party-badge">SDP</span>
+          <p class="stat"><strong>7</strong> promises tracked</p>
+          <span class="status-chip status-unknown">Fulfillment: unknown</span>
+          <p class="meta">Last updated Mar 12, 2026</p>
+          <button class="card-link">Open profile →</button>
+        </article>
+        <article class="card">
+          <h3>Juha Mäkinen</h3>
+          <p class="meta">Kansanedustaja · Varsinais-Suomi</p>
+          <span class="card-party-badge">PS</span>
+          <p class="stat"><strong>11</strong> promises tracked</p>
+          <span class="status-chip status-unknown">Fulfillment: unknown</span>
+          <p class="meta">Last updated Mar 10, 2026</p>
+          <button class="card-link">Open profile →</button>
+        </article>
+        <article class="card">
+          <h3>Laura Heikkinen</h3>
+          <p class="meta">Kansanedustaja · Helsinki</p>
+          <span class="card-party-badge">VIHR</span>
+          <p class="stat"><strong>6</strong> promises tracked</p>
+          <span class="status-chip status-unknown">Fulfillment: unknown</span>
+          <p class="meta">Last updated Mar 9, 2026</p>
+          <button class="card-link">Open profile →</button>
+        </article>
+        <article class="card">
+          <h3>Markus Laine</h3>
+          <p class="meta">Kansanedustaja · Keski-Suomi</p>
+          <span class="card-party-badge">KESK</span>
+          <p class="stat"><strong>5</strong> promises tracked</p>
+          <span class="status-chip status-unknown">Fulfillment: unknown</span>
+          <p class="meta">Last updated Mar 7, 2026</p>
+          <button class="card-link">Open profile →</button>
+        </article>
+        <article class="card">
+          <h3>Sanna Järvinen</h3>
+          <p class="meta">Kansanedustaja · Häme</p>
+          <span class="card-party-badge">VAS</span>
+          <p class="stat"><strong>4</strong> promises tracked</p>
+          <span class="status-chip status-unknown">Fulfillment: unknown</span>
+          <p class="meta">Last updated Mar 5, 2026</p>
+          <button class="card-link">Open profile →</button>
+        </article>
+      </div>
+    </section>
+
+    <!-- WHAT PNYX IS -->
+    <section class="what-section">
+      <h2>What PNYX is — and isn't</h2>
+      <div class="what-grid">
+        <div class="what-card is-card">
+          <h3>PNYX is...</h3>
+          <ul>
+            <li>A public evidence tracker for political promises and party stances</li>
+            <li>Independent and nonpartisan — no editorial scores or ratings</li>
+            <li>Source-linked — every claim traces back to a public record</li>
+            <li>Party-aware — party stances tracked separately from individual promises, with party-line comparisons</li>
+            <li>Transparent about unknowns — missing data is labeled, not hidden</li>
+          </ul>
+        </div>
+        <div class="what-card not-card">
+          <h3>PNYX is not...</h3>
+          <ul>
+            <li>A partisan scorecard or rating system</li>
+            <li>An opinion or editorial platform</li>
+            <li>A substitute for official parliamentary records</li>
+            <li>A tool that infers fulfillment from incomplete data</li>
+            <li>A social media platform for political debate</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- METHODOLOGY CALLOUT -->
+    <div class="methodology-callout">
+      <h3>Our methodology is public</h3>
+      <p>Read how we define fulfillment status, vote alignment, party stances, and how we handle missing data. We believe the process matters as much as the results.</p>
+      <a href="methodology.html">Read the full methodology →</a>
+    </div>
+
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="content-wrap">
+    <div class="footer-links">
+      <a href="#">Home</a>
+      <a href="directory.html">Politicians</a>
+      <a href="parties.html">Parties</a>
+      <a href="methodology.html">Methodology</a>
+    </div>
+    <p>PNYX · Political accountability through public evidence</p>
+  </div>
+</footer>
+
+</body>
+</html>

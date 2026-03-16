@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PNYX — Visual Direction Spec (v2 · Finland-first + Party Scope)</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Source+Sans+3:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', 'Source Sans 3', sans-serif; color: #1a1a2e; background: #f8f7f4; line-height: 1.6; }
+  .spec-nav { position: sticky; top: 0; z-index: 100; background: #1a1a2e; color: #fff; padding: 12px 32px; display: flex; align-items: center; gap: 24px; font-size: 14px; overflow-x: auto; }
+  .spec-nav a { color: rgba(255,255,255,0.7); text-decoration: none; white-space: nowrap; }
+  .spec-nav a:hover { color: #fff; }
+  .spec-nav .nav-brand { font-weight: 700; color: #fff; font-size: 15px; letter-spacing: 0.05em; margin-right: 16px; }
+  .spec-section { max-width: 1100px; margin: 0 auto; padding: 64px 32px; }
+  .spec-section + .spec-section { border-top: 1px solid #e0ddd6; }
+  .spec-h1 { font-family: 'Fraunces', serif; font-size: 42px; font-weight: 700; line-height: 1.15; margin-bottom: 16px; }
+  .spec-h2 { font-family: 'Fraunces', serif; font-size: 28px; font-weight: 600; line-height: 1.2; margin-bottom: 12px; }
+  .spec-h3 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; line-height: 1.3; margin-bottom: 8px; }
+  .spec-p { max-width: 72ch; color: #3a3a4a; margin-bottom: 16px; }
+  .spec-label { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-bottom: 6px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 16px 0; }
+  .detail-item h4 { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: #1a1a2e; }
+  .detail-item p { font-size: 14px; color: #555; line-height: 1.5; }
+  .token-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  .token-table th { text-align: left; padding: 10px 12px; background: #f5f4f0; border-bottom: 2px solid #ddd; font-weight: 600; }
+  .token-table td { padding: 10px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+  .token-table code { font-family: 'IBM Plex Mono', monospace; font-size: 13px; background: #f5f4f0; padding: 2px 6px; border-radius: 3px; }
+  .callout { padding: 20px 24px; border-radius: 8px; margin: 20px 0; }
+  .callout-decision { background: #fff3cd; border: 2px solid #e0a800; }
+  .callout-canon { background: #1B2A4A; color: #fff; border-radius: 12px; padding: 24px; }
+  .callout-canon h3, .callout-canon h2 { color: #fff; font-family: 'Fraunces', serif; }
+  .callout-canon p { color: rgba(255,255,255,0.85); max-width: 72ch; }
+  .swatch-row { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+  .swatch { width: 48px; height: 48px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.08); }
+  .swatch-label { font-size: 11px; color: #666; text-align: center; margin-top: 4px; }
+  .type-sample { padding: 16px; background: #faf9f6; border-radius: 8px; margin: 12px 0; border: 1px solid #eee; }
+  .tradeoff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .tradeoff { padding: 16px; border-radius: 8px; font-size: 14px; }
+  .tradeoff-good { background: #f0f7f2; border: 1px solid #c8e0cc; }
+  .tradeoff-risk { background: #fef7f0; border: 1px solid #e8d5c0; }
+  .tradeoff strong { display: block; margin-bottom: 6px; }
+  .direction-card { border: 2px solid #e0ddd6; border-radius: 12px; background: #fff; overflow: hidden; margin-bottom: 24px; }
+  .direction-card.selected { border-color: #1f5fbf; box-shadow: 0 0 0 3px rgba(31,95,191,0.15); }
+  .direction-header { padding: 24px 28px; border-bottom: 1px solid #eee; }
+  .direction-body { padding: 24px 28px; }
+  .direction-badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; padding: 3px 10px; border-radius: 4px; margin-bottom: 12px; }
+  .badge-a { background: #1B2A4A; color: #fff; }
+  .badge-selected { background: #1f5fbf; color: #fff; font-weight: 600; }
+  @media (max-width: 768px) { .spec-section { padding: 40px 20px; } .spec-h1 { font-size: 30px; } .detail-grid, .tradeoff-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="spec-nav">
+  <span class="nav-brand">PNYX VISUAL SPEC v2</span>
+  <a href="#scope">Scope</a>
+  <a href="#decision">Open Decision</a>
+  <a href="#direction">Direction A</a>
+  <a href="#ia">IA + Routes</a>
+  <a href="#tokens">Tokens</a>
+  <a href="#landing">Landing</a>
+  <a href="#pages">Page Specs</a>
+  <a href="#impl">Implementation</a>
+</nav>
+
+<!-- ============================================================ -->
+<!-- SCOPE & ALIGNMENT -->
+<!-- ============================================================ -->
+<section class="spec-section" id="scope">
+  <p class="spec-label">v2 · Canon-aligned · March 2026</p>
+  <h1 class="spec-h1">PNYX Visual Direction — Finland-first + Party Scope</h1>
+
+  <p class="spec-p">
+    This is a revision of the initial visual direction spec. It retains <strong>Direction A ("The Public Record")</strong> — the editorial visual system, Fraunces + Source Sans 3 + warm parchment palette — and regenerates all information architecture, page specs, and mockups to align with the locked canon.
+  </p>
+
+  <div class="callout callout-canon">
+    <h3>What changed from v1</h3>
+    <p style="margin-top: 8px;">
+      <strong>1. Finland-first scope.</strong> All placeholder content is now Finnish: Eduskunta members, Finnish parties (Kokoomus, SDP, Perussuomalaiset, etc.), Finnish constituencies. No U.S. offices or regions.
+    </p>
+    <p style="margin-top: 8px;">
+      <strong>2. Party as a first-class entity.</strong> New routes: <code style="background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:3px;">/parties</code> and <code style="background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:3px;">/parties/:id</code>. Nav updated: Home | Politicians | Parties | Methodology.
+    </p>
+    <p style="margin-top: 8px;">
+      <strong>3. Party stance records.</strong> Party-level stances are tracked separately from politician promises. Party profiles show official positions; politician profiles show where an individual aligns or breaks from their party line.
+    </p>
+    <p style="margin-top: 8px;">
+      <strong>4. Fulfillment + vote-alignment framing restored.</strong> The v1 spec introduced "evidence confidence" framing that conflicted with <code style="background:rgba(255,255,255,0.15);padding:2px 6px;border-radius:3px;">FRONTEND_V3_SPEC.md</code>. This version uses the spec's fulfillment/vote-alignment semantics. See the open decision below.
+    </p>
+    <p style="margin-top: 8px;">
+      <strong>5. Methodology updated.</strong> No longer claims PNYX "does not categorize politicians by party." Party context is now central to the product.
+    </p>
+  </div>
+
+  <h2 class="spec-h2" style="margin-top: 40px;">Product summary</h2>
+  <p class="spec-p">
+    PNYX is a public-interest tool for political accountability, launching first in Finland. Named after the hill in Athens where citizens assembled to hold leaders accountable, PNYX lets ordinary people find a politician or party, review public promises and official stances, inspect source evidence, compare a politician's record against their party line, and understand what is known vs. unknown.
+  </p>
+  <p class="spec-p">
+    Finland's multi-party parliamentary system makes party context essential. A politician's promises exist in relation to their party's official stances — and where a politician breaks from party line is often the most interesting signal for voters.
+  </p>
+
+  <div class="detail-grid" style="margin-top: 24px;">
+    <div class="detail-item">
+      <h4>Primary audience</h4>
+      <p>Finnish citizens. Ordinary voters who want to see what their representatives and parties have committed to, and what the evidence says.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Core entities</h4>
+      <p>Politicians, parties, promises (politician-level), stances (party-level), evidence items. Party and politician are separate first-class entities with their own pages.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Key relationships</h4>
+      <p>A politician belongs to a party. A promise belongs to a politician. A stance belongs to a party. A politician's promise can align with, contradict, or be unrelated to their party's stance on the same issue.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Data honesty</h4>
+      <p>Fulfillment and vote alignment default to "Unknown / Data not yet available" where backend data is missing. Community sentiment is clearly labeled as user votes, not official record.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- OPEN DECISION -->
+<!-- ============================================================ -->
+<section class="spec-section" id="decision">
+  <p class="spec-label">Open decision — needs canon ruling</p>
+  <h1 class="spec-h1">Fulfillment framing vs. evidence-confidence framing</h1>
+
+  <div class="callout callout-decision">
+    <h4 style="margin-bottom: 8px;">⚠ This requires an explicit decision before implementation</h4>
+    <p style="font-size: 14px; color: #555;">
+      The V3 frontend spec (<code>FRONTEND_V3_SPEC.md</code>) defines fulfillment status (fulfilled / broken / in_progress / unknown) and vote alignment (aligned / contradicted / mixed / unknown) as the primary status dimensions. This is what the shipped frontend implements.
+    </p>
+    <p style="font-size: 14px; color: #555; margin-top: 8px;">
+      However, the reality is that <strong>all fulfillment and vote-alignment data is currently "unknown"</strong> because the backend provides neither fulfillment assessments nor roll-call vote data. The v1 design spec proposed reframing these as "evidence confidence" (well-documented / partially documented / insufficient evidence / contradicted) which maps to what the backend <em>actually</em> provides (verification status).
+    </p>
+    <p style="font-size: 14px; color: #555; margin-top: 8px;">
+      <strong>This v2 spec follows the current canon</strong> (fulfillment + vote-alignment framing) and renders those surfaces with "Unknown / Data not yet available" where data is missing. But the design includes a note on every affected surface marking where the evidence-confidence framing might better serve users once this decision is made.
+    </p>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-item">
+      <h4>Option A: Keep fulfillment framing (current canon)</h4>
+      <p>Show "Fulfilled / Broken / In progress / Unknown" on profiles and promises. Most will read "Unknown" at launch. Ship empty surfaces now; populate as data arrives. This is honest but might feel sparse.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Option B: Use evidence-confidence framing</h4>
+      <p>Show "Well-documented / Partially documented / Insufficient evidence / Contradicted" based on verification status, which the backend already provides. This gives users useful signal from day one, but changes the product semantics.</p>
+    </div>
+  </div>
+  <p class="spec-p" style="margin-top: 16px;">
+    <strong>This spec does not resolve this question.</strong> It flags it and follows current canon (Option A) throughout. If Option B is chosen, the mockups would change the status chips and methodology definitions but not the layout, typography, or visual system.
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<!-- DIRECTION A (retained) -->
+<!-- ============================================================ -->
+<section class="spec-section" id="direction">
+  <p class="spec-label">Visual direction (retained from v1)</p>
+  <h1 class="spec-h1">Direction A: "The Public Record"</h1>
+
+  <div class="direction-card selected">
+    <div class="direction-header">
+      <span class="direction-badge badge-a">Direction A</span>
+      <span class="direction-badge badge-selected">★ Selected</span>
+      <p class="spec-p" style="margin-top: 12px; margin-bottom: 0;">
+        PNYX should feel like a modern, digital incarnation of the public record — authoritative yet accessible, editorial yet transparent. The emotional register of investigative journalism: serious without being austere, credible without being cold.
+      </p>
+    </div>
+    <div class="direction-body">
+      <h4>Typography</h4>
+      <p style="font-size: 14px; color: #555; margin-bottom: 8px;">Fraunces (serif headlines) + Source Sans 3 (body) + IBM Plex Mono (data labels). Already in the codebase.</p>
+      <div class="type-sample">
+        <p style="font-family: 'Fraunces', serif; font-size: 36px; font-weight: 600; line-height: 1.15; color: #1B2A4A;">Mitä he lupasivat?</p>
+        <p style="font-family: 'Fraunces', serif; font-size: 36px; font-weight: 600; line-height: 1.15; color: #1B2A4A;">Mitä todisteet kertovat?</p>
+        <p style="font-family: 'Source Sans 3', sans-serif; font-size: 18px; color: #4f5d78; margin-top: 12px;">PNYX tracks political promises against public evidence. See what Finnish politicians and parties have committed to — and what the record shows.</p>
+        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: #6b7280; margin-top: 8px;">FULFILLMENT: UNKNOWN · VOTE ALIGNMENT: UNKNOWN · 3 EVIDENCE ITEMS</p>
+      </div>
+
+      <h4 style="margin-top: 20px;">Color direction</h4>
+      <div class="swatch-row">
+        <div><div class="swatch" style="background: #FAF7F2;"></div><div class="swatch-label">Parchment</div></div>
+        <div><div class="swatch" style="background: #FFFFFF;"></div><div class="swatch-label">Surface</div></div>
+        <div><div class="swatch" style="background: #1B2A4A;"></div><div class="swatch-label">Navy</div></div>
+        <div><div class="swatch" style="background: #1f5fbf;"></div><div class="swatch-label">Civic Blue</div></div>
+        <div><div class="swatch" style="background: #C8963E;"></div><div class="swatch-label">Amber</div></div>
+        <div><div class="swatch" style="background: #2f7a4d;"></div><div class="swatch-label">Fulfilled</div></div>
+        <div><div class="swatch" style="background: #b13a2f;"></div><div class="swatch-label">Broken</div></div>
+        <div><div class="swatch" style="background: #a36c00;"></div><div class="swatch-label">In Progress</div></div>
+        <div><div class="swatch" style="background: #6b7280;"></div><div class="swatch-label">Unknown</div></div>
+      </div>
+
+      <div class="tradeoff-grid">
+        <div class="tradeoff tradeoff-good">
+          <strong>Strengths</strong>
+          Editorial gravitas without being cold. Already implemented in the V3 codebase. Works for both politician-focused and party-focused pages. Warm palette avoids partisan color associations. Scales well from data-sparse (launch) to data-rich (mature).
+        </div>
+        <div class="tradeoff tradeoff-risk">
+          <strong>Risks</strong>
+          Finnish language is longer than English — headline sizes may need adjustment. Multi-party context adds complexity; need to avoid the pages feeling like a coalition dashboard. Status colors (fulfilled/broken) may feel judgmental before enough data exists.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- INFORMATION ARCHITECTURE -->
+<!-- ============================================================ -->
+<section class="spec-section" id="ia">
+  <p class="spec-label">Information architecture</p>
+  <h1 class="spec-h1">Routes and navigation (Finland-first + party scope)</h1>
+
+  <h3 class="spec-h3">Public routes</h3>
+  <table class="token-table">
+    <thead><tr><th>Route</th><th>Page</th><th>Purpose</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td><code>/</code></td><td>Home</td><td>Search + discover politicians and parties</td><td>Existing (update)</td></tr>
+      <tr><td><code>/politicians</code></td><td>Politician Directory</td><td>Browse/filter/sort politicians</td><td>Existing (update)</td></tr>
+      <tr><td><code>/politicians/:id</code></td><td>Politician Profile</td><td>Promises, fulfillment, vote alignment, party-line comparison</td><td>Existing (update)</td></tr>
+      <tr><td><code>/parties</code></td><td>Party Directory</td><td>Browse Finnish parties, see stance coverage</td><td><strong>New</strong></td></tr>
+      <tr><td><code>/parties/:id</code></td><td>Party Profile</td><td>Official stances, member list, party-line alignment summary</td><td><strong>New</strong></td></tr>
+      <tr><td><code>/promises/:id</code></td><td>Promise Detail</td><td>Claim, fulfillment, vote alignment, evidence, party stance context</td><td>Existing (update)</td></tr>
+      <tr><td><code>/methodology</code></td><td>Methodology</td><td>Definitions, evidence rules, party-context explanation</td><td>Existing (update)</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="spec-h3" style="margin-top: 32px;">Public navigation</h3>
+  <p class="spec-p">Four items: <strong>Home | Politicians | Parties | Methodology</strong></p>
+  <p class="spec-p" style="font-size: 14px;">Adding "Parties" to the nav reflects party as a first-class entity. This is a change from the V3 spec's three-item nav. The four-item nav remains clean at desktop and mobile widths.</p>
+
+  <h3 class="spec-h3" style="margin-top: 32px;">Entity relationships</h3>
+  <pre style="background: #1B2A4A; color: #C8963E; padding: 24px; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; overflow-x: auto; line-height: 1.6;">
+Party (e.g. Kokoomus)
+├── has many: Party Stances (official policy positions)
+├── has many: Politicians (members)
+│   └── has many: Promises (individual commitments)
+│       ├── has: Fulfillment Status (fulfilled/broken/in_progress/unknown)
+│       ├── has: Vote Alignment (aligned/contradicted/mixed/unknown)
+│       ├── has many: Evidence Items (sources)
+│       └── may relate to: Party Stance (same policy area → party-line comparison)
+└── aggregate: Party-line alignment (how often members vote with party)
+  </pre>
+</section>
+
+<!-- ============================================================ -->
+<!-- DESIGN TOKENS -->
+<!-- ============================================================ -->
+<section class="spec-section" id="tokens">
+  <p class="spec-label">Design system</p>
+  <h1 class="spec-h1">Design tokens (unchanged from v1)</h1>
+
+  <h3 class="spec-h3">Color tokens</h3>
+  <table class="token-table">
+    <thead><tr><th>Token</th><th>Value</th><th>Usage</th></tr></thead>
+    <tbody>
+      <tr><td><code>--bg-page</code></td><td><code>#FAF7F2</code></td><td>Page background</td></tr>
+      <tr><td><code>--bg-surface</code></td><td><code>#FFFFFF</code></td><td>Cards, panels</td></tr>
+      <tr><td><code>--ink-strong</code></td><td><code>#1B2A4A</code></td><td>Headlines, primary text</td></tr>
+      <tr><td><code>--ink-muted</code></td><td><code>#4f5d78</code></td><td>Secondary text</td></tr>
+      <tr><td><code>--accent-civic</code></td><td><code>#1f5fbf</code></td><td>Links, buttons, interactive</td></tr>
+      <tr><td><code>--accent-amber</code></td><td><code>#C8963E</code></td><td>Editorial accents, callouts</td></tr>
+      <tr><td><code>--line-subtle</code></td><td><code>#E5E0D8</code></td><td>Borders, dividers</td></tr>
+      <tr><td><code>--status-fulfilled</code></td><td><code>#2f7a4d</code></td><td>Fulfilled promises</td></tr>
+      <tr><td><code>--status-broken</code></td><td><code>#b13a2f</code></td><td>Broken promises</td></tr>
+      <tr><td><code>--status-progress</code></td><td><code>#a36c00</code></td><td>In-progress promises</td></tr>
+      <tr><td><code>--status-unknown</code></td><td><code>#6b7280</code></td><td>Unknown / insufficient data</td></tr>
+    </tbody>
+  </table>
+  <p class="spec-p" style="font-size: 13px; margin-top: 12px;">Status colors match <code>FRONTEND_V3_SPEC.md</code> Section 5.2 exactly.</p>
+
+  <h3 class="spec-h3" style="margin-top: 32px;">Typography tokens</h3>
+  <table class="token-table">
+    <thead><tr><th>Role</th><th>Family</th><th>Size/Weight</th></tr></thead>
+    <tbody>
+      <tr><td>H1</td><td><code>Fraunces</code>, serif</td><td>48/54 semibold (clamp for responsive)</td></tr>
+      <tr><td>H2</td><td><code>Fraunces</code>, serif</td><td>34/40 semibold</td></tr>
+      <tr><td>H3</td><td><code>Fraunces</code>, serif</td><td>26/32 semibold</td></tr>
+      <tr><td>Body</td><td><code>Source Sans 3</code>, sans-serif</td><td>18/28 regular</td></tr>
+      <tr><td>Meta/data</td><td><code>IBM Plex Mono</code>, monospace</td><td>14/20 medium</td></tr>
+      <tr><td>Eyebrow</td><td><code>IBM Plex Mono</code>, monospace</td><td>12/16 500, uppercase, 0.1em tracking</td></tr>
+    </tbody>
+  </table>
+  <p class="spec-p" style="font-size: 13px; margin-top: 12px;">Scale matches <code>FRONTEND_V3_SPEC.md</code> Section 5.1. Note: Finnish text is typically 15-25% longer than English equivalents — responsive clamp values on H1/H2 are important.</p>
+
+  <h3 class="spec-h3" style="margin-top: 32px;">Layout tokens</h3>
+  <table class="token-table">
+    <thead><tr><th>Token</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Max content width</td><td>1200px</td></tr>
+      <tr><td>Card radius</td><td>8px (reduced from V3's 12px for editorial feel)</td></tr>
+      <tr><td>Grid</td><td>12-column, 16px gap</td></tr>
+      <tr><td>Breakpoints</td><td>1024px (tablet), 768px (mobile)</td></tr>
+      <tr><td>Spacing system</td><td>8pt base</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- LANDING PAGE DEEP-DIVE -->
+<!-- ============================================================ -->
+<section class="spec-section" id="landing">
+  <p class="spec-label">Landing page deep-dive</p>
+  <h1 class="spec-h1">Home: Finland-first, politician + party discovery</h1>
+
+  <div style="padding: 24px; background: #1B2A4A; color: #fff; border-radius: 8px;">
+    <h3 style="font-family: 'Fraunces', serif; font-size: 20px; color: #C8963E; margin-bottom: 12px;">First screen (above the fold)</h3>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+      <div>
+        <h4 style="color: #C8963E; font-size: 14px; margin-bottom: 8px;">Hero headline</h4>
+        <p style="font-family: 'Fraunces', serif; font-size: 28px; line-height: 1.15; font-weight: 600;">What did they promise?<br>What does the record show?</p>
+        <p style="color: rgba(255,255,255,0.7); margin-top: 12px; font-size: 14px;">English-first for now (localization is a separate concern). The headline frames the user as someone who deserves answers from both politicians and parties.</p>
+      </div>
+      <div>
+        <h4 style="color: #C8963E; font-size: 14px; margin-bottom: 8px;">Sub-headline</h4>
+        <p style="font-size: 16px; color: rgba(255,255,255,0.85);">"Track what Finnish politicians and parties have promised. See the evidence. Understand what's known — and what isn't."</p>
+        <p style="color: rgba(255,255,255,0.7); margin-top: 12px; font-size: 14px;">Explicitly mentions both politicians and parties. Finland-specific without being exclusionary.</p>
+      </div>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <h4 style="color: #C8963E; font-size: 14px; margin-bottom: 8px;">Primary CTA: search bar</h4>
+      <p style="color: rgba(255,255,255,0.85);">"Search for a politician or party..." — the search targets both entity types. Below the search: issue chips (Economy, Healthcare, Climate, Education, Public Safety) plus a secondary row of Finnish party chips for direct browsing.</p>
+    </div>
+
+    <div style="margin-top: 24px;">
+      <h4 style="color: #C8963E; font-size: 14px; margin-bottom: 8px;">Trust strip</h4>
+      <p style="color: rgba(255,255,255,0.85);">"Independent & nonpartisan · Every claim linked to sources · Open methodology · Unknown data shown honestly"</p>
+    </div>
+  </div>
+
+  <h3 class="spec-h3" style="margin-top: 32px;">Below the fold</h3>
+  <table class="token-table">
+    <thead><tr><th>#</th><th>Section</th><th>Content</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>How PNYX works</td><td>Three steps: Find → Review → Inspect. Same as v1 but copy references parties alongside politicians.</td></tr>
+      <tr><td>2</td><td>Browse by party</td><td><strong>New section.</strong> Row of party cards (one per major Finnish party). Each card: party name, stance count, member count. Links to /parties/:id. This gives users who think party-first a direct entry point.</td></tr>
+      <tr><td>3</td><td>Recently documented</td><td>3-6 politician cards with Finnish politicians. Same layout as v1 but with Finnish names, Eduskunta offices, party affiliation shown on cards.</td></tr>
+      <tr><td>4</td><td>What PNYX is — and isn't</td><td>Two-column is/isn't section. Updated to include party context in "is" column.</td></tr>
+      <tr><td>5</td><td>Methodology callout</td><td>Link to /methodology.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="spec-h3" style="margin-top: 32px;">Component hierarchy</h3>
+  <pre style="background: #1B2A4A; color: #C8963E; padding: 24px; border-radius: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; overflow-x: auto; line-height: 1.6;">
+&lt;HomePage&gt;
+  &lt;HeroPanel&gt;
+    &lt;HeroContent&gt;                       // 8-col desktop, full mobile
+      &lt;Eyebrow /&gt;                       // "CITIZEN-FIRST ACCOUNTABILITY"
+      &lt;H1 /&gt;                            // "What did they promise?..."
+      &lt;Lede /&gt;
+      &lt;SearchForm /&gt;                    // Targets politicians + parties
+      &lt;IssueChipRow /&gt;                  // 5 issue categories
+      &lt;PartyChipRow /&gt;                  // Finnish parties as quick links (NEW)
+    &lt;/HeroContent&gt;
+    &lt;HeroSidebar /&gt;                     // "How this works" (collapsible mobile)
+  &lt;/HeroPanel&gt;
+
+  &lt;TrustStrip /&gt;
+
+  &lt;HowItWorks&gt;                         // 3-step cards
+  &lt;BrowseByParty /&gt;                    // Party card row (NEW)
+  &lt;RecentlyDocumented /&gt;               // Politician cards (Finnish content)
+  &lt;WhatPnyxIs /&gt;                       // Is / isn't comparison
+  &lt;MethodologyCallout /&gt;
+&lt;/HomePage&gt;
+  </pre>
+</section>
+
+<!-- ============================================================ -->
+<!-- PAGE SPECS -->
+<!-- ============================================================ -->
+<section class="spec-section" id="pages">
+  <p class="spec-label">Page specifications (Finland-first + party scope)</p>
+  <h1 class="spec-h1">Page-by-page specs</h1>
+
+  <!-- POLITICIAN DIRECTORY -->
+  <div style="margin-top: 32px; padding: 32px; background: #fff; border: 1px solid #E5E0D8; border-radius: 8px;">
+    <span class="spec-label">Updated page</span>
+    <h2 class="spec-h2">/politicians — Politician Directory</h2>
+    <table class="token-table">
+      <thead><tr><th>#</th><th>Section</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Page header</td><td>Eyebrow: "POLITICIAN DIRECTORY". H1: "Browse the record". Finnish-contextualized lede.</td></tr>
+        <tr><td>2</td><td>Filter bar</td><td>Search, Region/Constituency, Office, <strong>Party</strong> (now active, not disabled), Issue, Sort.</td></tr>
+        <tr><td>3</td><td>Results</td><td>Desktop: data table. Columns: Name, Party, Office/Region, Promises tracked, Fulfillment summary, Last updated. Mobile: card stack.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 14px; color: #555; margin-top: 12px;"><strong>Key change:</strong> Party filter is active. Each row shows party affiliation. Fulfillment summary per spec: "X fulfilled, Y broken, Z in progress, W unknown" — most will show "14 unknown" at launch.</p>
+  </div>
+
+  <!-- POLITICIAN PROFILE -->
+  <div style="margin-top: 24px; padding: 32px; background: #fff; border: 1px solid #E5E0D8; border-radius: 8px;">
+    <span class="spec-label">Updated page</span>
+    <h2 class="spec-h2">/politicians/:id — Politician Profile</h2>
+    <table class="token-table">
+      <thead><tr><th>#</th><th>Section</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Profile hero</td><td>Name, office, constituency, <strong>party affiliation</strong> (linked to party profile). Party shown as a chip/badge.</td></tr>
+        <tr><td>2</td><td>Scorecards (6)</td><td>Per spec: Total promises, Fulfilled, Broken, In progress, Unknown, Vote alignment summary. All show "Unknown / Data not yet available" where data is missing.</td></tr>
+        <tr><td>3</td><td>Party-line alignment</td><td><strong>New section.</strong> Shows how this politician's promises relate to their party's stances. "Aligns with party on X issues, breaks from party on Y." Links to party profile. If no party stance data: "Party stance data not yet available."</td></tr>
+        <tr><td>4</td><td>Tabs: Promises | Voting record | Evidence</td><td>Per spec. Promises tab shows fulfillment + alignment columns. Voting record tab shows vote events (empty at launch). Evidence tab shows all linked sources.</td></tr>
+        <tr><td>5</td><td>Unknown data callout</td><td>"X promises do not yet have fulfillment data. This means the data isn't available yet — not that promises are unfulfilled."</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PARTY DIRECTORY (NEW) -->
+  <div style="margin-top: 24px; padding: 32px; background: #fff; border: 2px solid #1f5fbf; border-radius: 8px;">
+    <span class="spec-label" style="color: #1f5fbf;">New page</span>
+    <h2 class="spec-h2">/parties — Party Directory</h2>
+    <p class="spec-p">A simple, browsable directory of Finnish political parties. Designed to be useful even when data is sparse.</p>
+    <table class="token-table">
+      <thead><tr><th>#</th><th>Section</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Page header</td><td>Eyebrow: "PARTY DIRECTORY". H1: "Finnish political parties". Lede: "Browse party stances, see how members vote, and compare party positions."</td></tr>
+        <tr><td>2</td><td>Party cards grid</td><td>One card per party. Card contents: Party name, abbreviation, member count (politicians tracked on PNYX), stance count, data coverage indicator. Link to /parties/:id.</td></tr>
+        <tr><td>3</td><td>Empty state</td><td>If no party data: "Party data is being collected. Check back soon."</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 14px; color: #555; margin-top: 12px;"><strong>Layout:</strong> Card grid (3-column desktop, 2-column tablet, 1-column mobile). No table view — parties are few enough that cards work better than rows.</p>
+  </div>
+
+  <!-- PARTY PROFILE (NEW) -->
+  <div style="margin-top: 24px; padding: 32px; background: #fff; border: 2px solid #1f5fbf; border-radius: 8px;">
+    <span class="spec-label" style="color: #1f5fbf;">New page</span>
+    <h2 class="spec-h2">/parties/:id — Party Profile</h2>
+    <p class="spec-p">The party profile is the counterpart to the politician profile. It shows official party stances (separate from individual promises) and aggregates member alignment data.</p>
+    <table class="token-table">
+      <thead><tr><th>#</th><th>Section</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Party hero</td><td>Party name, abbreviation, description. No logo (avoid visual partisanship in the PNYX UI).</td></tr>
+        <tr><td>2</td><td>Summary cards</td><td>"Official stances tracked" (count), "Members on PNYX" (count of linked politicians), "Party-line alignment" (aggregate % of members whose promises align with party stances — or "Data not yet available").</td></tr>
+        <tr><td>3</td><td>Tabs: Stances | Members | History</td><td>Stances tab: list of official party positions (sourced, dated, linked). Members tab: linked politicians with their individual alignment status. History: revision trail.</td></tr>
+        <tr><td>4</td><td>Stance cards</td><td>Each card: stance text, policy area tag, date, source URL, number of members whose promises align/contradict/are unrelated.</td></tr>
+        <tr><td>5</td><td>Member alignment callout</td><td>If any members break from party line: "X members have promises that contradict this party's official stance on Y." Linked to individual profiles.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PROMISE DETAIL -->
+  <div style="margin-top: 24px; padding: 32px; background: #fff; border: 1px solid #E5E0D8; border-radius: 8px;">
+    <span class="spec-label">Updated page</span>
+    <h2 class="spec-h2">/promises/:id — Promise Detail</h2>
+    <table class="token-table">
+      <thead><tr><th>#</th><th>Section</th><th>Notes (changes from v1)</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>Breadcrumb</td><td>Home → Politicians → [Name] → [Promise excerpt]</td></tr>
+        <tr><td>2</td><td>Promise claim</td><td>Blockquote card. Full text, date, source, politician (linked), <strong>party</strong> (linked).</td></tr>
+        <tr><td>3</td><td>Fulfillment verdict</td><td><strong>Restored per spec.</strong> Shows: Fulfilled / Broken / In progress / Unknown. Short explanation. "Data not yet available" when unknown.</td></tr>
+        <tr><td>4</td><td>Vote alignment</td><td><strong>Restored per spec.</strong> Shows: Aligned / Contradicted / Mixed / Unknown. Key vote events with dates. "No vote data available" when unknown.</td></tr>
+        <tr><td>5</td><td>Party stance comparison</td><td><strong>New section.</strong> "Party position on this issue: [stance text]." Shows whether this promise aligns with, contradicts, or is unrelated to the party's official stance. If no party stance exists: "No official party stance on this topic has been recorded."</td></tr>
+        <tr><td>6</td><td>Community sentiment</td><td>Support/oppose aggregate. Explicitly labeled as user votes.</td></tr>
+        <tr><td>7</td><td>Evidence list</td><td>Timeline-style, newest first.</td></tr>
+        <tr><td>8</td><td>Revision history</td><td>Collapsible.</td></tr>
+        <tr><td>9</td><td>Methodology link</td><td>Footer callout.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- METHODOLOGY -->
+  <div style="margin-top: 24px; padding: 32px; background: #fff; border: 1px solid #E5E0D8; border-radius: 8px;">
+    <span class="spec-label">Updated page</span>
+    <h2 class="spec-h2">/methodology — Methodology</h2>
+    <table class="token-table">
+      <thead><tr><th>#</th><th>Section</th><th>Changes from v1</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>How PNYX works</td><td>Now mentions parties alongside politicians.</td></tr>
+        <tr><td>2</td><td>What we track</td><td>Defines both "promise" (politician-level) and "stance" (party-level). Explains how they differ.</td></tr>
+        <tr><td>3</td><td>Fulfillment status</td><td><strong>Restored.</strong> Defines fulfilled, broken, in_progress, unknown per spec.</td></tr>
+        <tr><td>4</td><td>Vote alignment</td><td><strong>Restored.</strong> Defines aligned, contradicted, mixed, unknown per spec.</td></tr>
+        <tr><td>5</td><td>Party context</td><td><strong>New section.</strong> What party stances are. How politician-vs-party alignment is assessed. What party-line breaks mean. Why party context matters in Finnish multi-party democracy.</td></tr>
+        <tr><td>6</td><td>Community sentiment</td><td>Unchanged: user votes ≠ official record.</td></tr>
+        <tr><td>7</td><td>Handling uncertainty</td><td>Unchanged: missing data shown honestly.</td></tr>
+        <tr><td>8</td><td>Change log</td><td>Dated entries.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 14px; color: #555; margin-top: 12px;"><strong>Removed from v1:</strong> "PNYX does not categorize politicians by party or use party affiliation in the assessment framework." This directly contradicted the party scope.</p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- IMPLEMENTATION -->
+<!-- ============================================================ -->
+<section class="spec-section" id="impl">
+  <p class="spec-label">Implementation notes</p>
+  <h1 class="spec-h1">Implementation guidance</h1>
+
+  <div class="detail-grid">
+    <div class="detail-item">
+      <h4>New components needed</h4>
+      <p>PartyChipRow (home), BrowseByParty (home), PartyCard (party directory + home), PartyStanceCard (party profile), PartyLineComparison (politician profile), PartyStanceContext (promise detail). Plus TrustStrip, MethodologyCallout, StepCard from v1.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Data model implications</h4>
+      <p>Requires: party table, party_stances table, politician-party foreign key, and potentially a politician_party_alignment junction. API needs /parties and /parties/:id endpoints. These are identified in backlog items B-102 through B-105.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Migration from V3</h4>
+      <p>Visual system (fonts, colors, grid) stays identical. Nav adds one item. Politician pages add party-context sections but keep existing structure. Two new routes added. Methodology page adds sections. Estimated: medium effort — the visual work is minimal, the IA work is the bulk.</p>
+    </div>
+    <div class="detail-item">
+      <h4>Launch-state honesty</h4>
+      <p>At launch, most fulfillment/alignment/party-alignment data will be "Unknown." Design every surface to look intentional and informative in that state, not broken. The "Unknown / Data not yet available" pattern must feel like a feature of transparency, not a bug.</p>
+    </div>
+  </div>
+</section>
+
+<footer style="text-align: center; padding: 32px; color: #888; font-size: 13px; font-family: 'IBM Plex Mono', monospace;">
+  PNYX Visual Direction Spec v2 · Finland-first + Party Scope · March 2026
+</footer>
+
+</body>
+</html>
