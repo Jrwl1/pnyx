@@ -3,11 +3,13 @@
 import type {
   AlignmentStats,
   DirectoryRow,
+  PartyProfileShell,
   Politician,
   PromiseRecord,
   PromiseStats,
   StatementSummary
 } from "../types";
+import { PARTY_ROUTE_SHELLS } from "../types";
 import { DATA_NOT_AVAILABLE, normalizeForSearch } from "./format";
 
 export const ISSUE_OPTIONS = ["Economy", "Healthcare", "Climate", "Education", "Public Safety"] as const;
@@ -23,7 +25,6 @@ const ISSUE_KEYWORDS: Record<(typeof ISSUE_OPTIONS)[number], string[]> = {
 export const SORT_OPTIONS = {
   mostPromises: "most_promises",
   fulfillmentRate: "fulfillment_rate",
-  mostViewed: "most_viewed",
   recentlyUpdated: "recently_updated"
 } as const;
 
@@ -40,6 +41,46 @@ export const toPromiseRecord = (statement: StatementSummary): PromiseRecord => {
     voteAlignment: "unknown",
     evidenceCount: statement.sourceUrl ? 1 : 0
   };
+};
+
+export const getTerritoryLabel = (politician: Politician): string | null => {
+  const constituency = politician.constituency?.trim();
+  if (constituency) {
+    return constituency;
+  }
+
+  const region = politician.region?.trim();
+  return region || null;
+};
+
+export const getPartyAffiliationLabel = (politician: Politician): string => {
+  const shortName = politician.partyShortName?.trim();
+  const name = politician.partyName?.trim();
+
+  if (shortName && name && normalizeForSearch(shortName) !== normalizeForSearch(name)) {
+    return `${shortName} - ${name}`;
+  }
+
+  return shortName || name || DATA_NOT_AVAILABLE;
+};
+
+export const hasPartyAffiliationData = (politicians: Politician[]): boolean => {
+  return politicians.some((politician) => Boolean(politician.partyId || politician.partyName || politician.partyShortName));
+};
+
+export const findPartyShellByQuery = (query: string): PartyProfileShell | null => {
+  const normalizedQuery = normalizeForSearch(query);
+  if (!normalizedQuery) {
+    return null;
+  }
+
+  return (
+    PARTY_ROUTE_SHELLS.find((entry) => {
+      return [entry.party.name, entry.party.shortName]
+        .map((value) => normalizeForSearch(value))
+        .some((candidate) => candidate === normalizedQuery);
+    }) ?? null
+  );
 };
 
 export const getIssueTagsForStatement = (statement: StatementSummary): string[] => {
@@ -139,7 +180,15 @@ export const buildDirectoryRows = (politicians: Politician[], statements: Statem
 };
 
 export const buildSearchText = (row: DirectoryRow): string => {
-  return [row.politician.name, row.politician.office, row.politician.region, row.politician.externalId, ...row.issueTags]
+  return [
+    row.politician.name,
+    row.politician.office,
+    getTerritoryLabel(row.politician),
+    row.politician.partyName,
+    row.politician.partyShortName,
+    row.politician.externalId,
+    ...row.issueTags
+  ]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();

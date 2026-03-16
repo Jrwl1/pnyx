@@ -342,6 +342,34 @@ button {
   gap: 10px;
 }
 
+.shortcut-cluster {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.shortcut-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.shortcut-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c0ccdf;
+  border-radius: var(--radius-pill);
+  background: #fff;
+  color: var(--ink-strong);
+  padding: 7px 14px;
+  text-decoration: none;
+  transition: background-color 150ms ease;
+}
+
+.shortcut-link:hover {
+  background: var(--accent-civic-soft);
+}
+
 .issue-chip {
   border: 1px solid #c0ccdf;
   border-radius: var(--radius-pill);
@@ -580,6 +608,12 @@ button {
   gap: var(--space-2);
 }
 
+.panel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
 .page-state {
   border: 1px solid var(--line-subtle);
   border-radius: var(--radius-card);
@@ -605,7 +639,8 @@ button {
 
 @media (max-width: 1024px) {
   .cards-grid-3,
-  .scorecards-grid {
+  .scorecards-grid,
+  .panel-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -652,7 +687,8 @@ button {
   .cards-grid-3,
   .scorecards-grid,
   .split-grid,
-  .route-shell-grid {
+  .route-shell-grid,
+  .panel-grid {
     grid-template-columns: 1fr;
   }
 

@@ -9,7 +9,11 @@ export interface Politician {
   id: number;
   name: string;
   region: string | null;
+  constituency?: string | null;
   office: string | null;
+  partyId?: string | null;
+  partyName?: string | null;
+  partyShortName?: string | null;
   externalId: string | null;
   verified: number;
   createdAt: string;

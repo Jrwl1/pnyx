@@ -1,16 +1,25 @@
-/* WHAT IT DO? Implements the V3 politician directory with search, filters, required sort modes, and responsive listing. */
+/* WHAT IT DO? Implements the Finland-first politician directory with explicit party-affiliation unknown states and public-discovery filters. */
 
 import { useMemo, type ChangeEvent, type ReactElement } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
-import { buildDirectoryRows, buildSearchText, ISSUE_OPTIONS, SORT_OPTIONS, type DirectorySort } from "../lib/domain";
+import {
+  buildDirectoryRows,
+  buildSearchText,
+  getPartyAffiliationLabel,
+  getTerritoryLabel,
+  hasPartyAffiliationData,
+  ISSUE_OPTIONS,
+  SORT_OPTIONS,
+  type DirectorySort
+} from "../lib/domain";
 import { formatDateTime, formatIdentityLine } from "../lib/format";
 import { usePublicData } from "../context/PublicDataContext";
+import { getPartyRouteShell, PARTY_ROUTE_SHELLS } from "../types";
 
 const SORT_LABELS: Record<DirectorySort, string> = {
   most_promises: "Most promises",
   fulfillment_rate: "Fulfillment rate",
-  most_viewed: "Most viewed",
   recently_updated: "Recently updated"
 };
 
@@ -19,15 +28,18 @@ export const PoliticiansPage = (): ReactElement => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const query = searchParams.get("q") ?? "";
-  const region = searchParams.get("region") ?? "";
+  const territory = searchParams.get("territory") ?? "";
   const office = searchParams.get("office") ?? "";
+  const party = searchParams.get("party") ?? "";
   const issue = searchParams.get("issue") ?? "";
   const sort = (searchParams.get("sort") as DirectorySort) ?? SORT_OPTIONS.recentlyUpdated;
 
   const rows = useMemo(() => buildDirectoryRows(politicians, statements), [politicians, statements]);
+  const hasPartyData = useMemo(() => hasPartyAffiliationData(politicians), [politicians]);
+  const selectedPartyShell = useMemo(() => getPartyRouteShell(party), [party]);
 
-  const regions = useMemo(() => {
-    return [...new Set(rows.map((row) => row.politician.region).filter((value): value is string => Boolean(value)))].sort((a, b) =>
+  const territories = useMemo(() => {
+    return [...new Set(rows.map((row) => getTerritoryLabel(row.politician)).filter((value): value is string => Boolean(value)))].sort((a, b) =>
       a.localeCompare(b)
     );
   }, [rows]);
@@ -38,6 +50,36 @@ export const PoliticiansPage = (): ReactElement => {
     );
   }, [rows]);
 
+  const partyOptions = useMemo(() => {
+    if (!hasPartyData) {
+      return PARTY_ROUTE_SHELLS.map((entry) => ({
+        value: entry.party.id,
+        label: `${entry.party.shortName} - ${entry.party.name}`
+      }));
+    }
+
+    return [
+      ...new Map(
+        politicians
+          .filter((politician) => politician.partyId || politician.partyName || politician.partyShortName)
+          .map((politician) => {
+            const value = politician.partyId || politician.partyShortName || politician.partyName || "";
+            return [
+              value,
+              {
+                value,
+                label: getPartyAffiliationLabel(politician)
+              }
+            ];
+          })
+      ).values()
+    ].sort((left, right) => left.label.localeCompare(right.label));
+  }, [hasPartyData, politicians]);
+
+  const hasKnownFulfillmentData = useMemo(() => {
+    return rows.some((row) => row.promiseStats.fulfilled > 0 || row.promiseStats.broken > 0 || row.promiseStats.inProgress > 0);
+  }, [rows]);
+
   const filteredRows = useMemo(() => {
     const loweredQuery = query.trim().toLowerCase();
 
@@ -46,12 +88,21 @@ export const PoliticiansPage = (): ReactElement => {
         return false;
       }
 
-      if (region && row.politician.region !== region) {
+      if (territory && getTerritoryLabel(row.politician) !== territory) {
         return false;
       }
 
       if (office && row.politician.office !== office) {
         return false;
+      }
+
+      if (party && hasPartyData) {
+        const partyCandidates = [row.politician.partyId, row.politician.partyShortName, row.politician.partyName].filter(
+          (value): value is string => Boolean(value)
+        );
+        if (!partyCandidates.includes(party)) {
+          return false;
+        }
       }
 
       if (issue && !row.issueTags.includes(issue)) {
@@ -62,7 +113,22 @@ export const PoliticiansPage = (): ReactElement => {
     });
 
     return filtered.sort((left, right) => {
-      if (sort === SORT_OPTIONS.mostPromises || sort === SORT_OPTIONS.mostViewed) {
+      if (sort === SORT_OPTIONS.mostPromises) {
+        if (right.promiseStats.total !== left.promiseStats.total) {
+          return right.promiseStats.total - left.promiseStats.total;
+        }
+      }
+
+      if (sort === SORT_OPTIONS.fulfillmentRate) {
+        const rightRatio =
+          right.promiseStats.total > 0 ? right.promiseStats.fulfilled / right.promiseStats.total : -1;
+        const leftRatio =
+          left.promiseStats.total > 0 ? left.promiseStats.fulfilled / left.promiseStats.total : -1;
+
+        if (rightRatio !== leftRatio) {
+          return rightRatio - leftRatio;
+        }
+
         if (right.promiseStats.total !== left.promiseStats.total) {
           return right.promiseStats.total - left.promiseStats.total;
         }
@@ -78,7 +144,7 @@ export const PoliticiansPage = (): ReactElement => {
 
       return left.politician.name.localeCompare(right.politician.name);
     });
-  }, [issue, office, query, region, rows, sort]);
+  }, [hasPartyData, issue, office, party, query, rows, sort, territory]);
 
   const updateParam = (key: string, value: string): void => {
     const next = new URLSearchParams(searchParams);
@@ -107,32 +173,37 @@ export const PoliticiansPage = (): ReactElement => {
     return <ErrorState message={error} onRetry={() => void refresh()} />;
   }
 
-  const sortNotice =
-    sort === SORT_OPTIONS.mostViewed
-      ? "Most viewed data is not yet available, so this view falls back to most promises."
-      : sort === SORT_OPTIONS.fulfillmentRate
-        ? "Fulfillment-rate sorting remains unavailable while fulfillment data is Unknown."
-        : null;
+  const sortNotice = sort === SORT_OPTIONS.fulfillmentRate && !hasKnownFulfillmentData
+    ? "Fulfillment-rate sorting remains provisional because every current promise record is still Unknown."
+    : null;
 
   return (
     <div className="stack-lg">
       <section className="stack-sm">
-        <h1>Politicians directory</h1>
-        <p className="lede">Browse public figures, compare promise coverage, and open a full accountability profile.</p>
+        <h1>Finnish politician directory</h1>
+        <p className="lede">
+          Browse documented politicians, filter by constituency or region, and keep party affiliation gaps explicit until the backend exposes real membership mappings.
+        </p>
       </section>
 
       <section className="directory-controls stack-sm" aria-label="Directory filters">
         <div className="controls-grid">
           <label className="field-group">
             <span>Search</span>
-            <input className="text-input" type="search" value={query} onChange={onTextFilterChange} placeholder="Name, office, state" />
+            <input
+              className="text-input"
+              type="search"
+              value={query}
+              onChange={onTextFilterChange}
+              placeholder="Name, party, office, constituency, or region"
+            />
           </label>
 
           <label className="field-group">
-            <span>State or region</span>
-            <select className="select-input" value={region} onChange={onSelectFilterChange("region")}>
-              <option value="">All regions</option>
-              {regions.map((option) => (
+            <span>Constituency or region</span>
+            <select className="select-input" value={territory} onChange={onSelectFilterChange("territory")}>
+              <option value="">All constituencies or regions</option>
+              {territories.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
@@ -154,8 +225,13 @@ export const PoliticiansPage = (): ReactElement => {
 
           <label className="field-group">
             <span>Party</span>
-            <select className="select-input" value="" disabled aria-describedby="party-unavailable">
-              <option value="">Data not yet available</option>
+            <select className="select-input" value={party} onChange={onSelectFilterChange("party")} aria-describedby="party-filter-note">
+              <option value="">All parties</option>
+              {partyOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -183,10 +259,19 @@ export const PoliticiansPage = (): ReactElement => {
           </label>
         </div>
 
-        <p id="party-unavailable" className="data-note">
-          Party metadata is not currently provided by the backend endpoint.
+        <p id="party-filter-note" className="data-note">
+          {hasPartyData
+            ? "Party filters use connected affiliation fields when the dataset provides them."
+            : "Party filter state is wired for Finland-first discovery, but politician-to-party mappings are not available from the backend yet."}
         </p>
         <p className="data-note">Issue filtering is keyword-based until backend issue tagging becomes available.</p>
+        {party && !hasPartyData ? (
+          <p className="data-note">
+            {selectedPartyShell
+              ? `Party filter selected: ${selectedPartyShell.party.shortName}. Results stay unfiltered until politician-party mappings exist. Open ${selectedPartyShell.party.name} at /parties/${selectedPartyShell.party.id}.`
+              : `Party filter selected: ${party}. Results stay unfiltered until politician-party mappings exist.`}
+          </p>
+        ) : null}
         {sortNotice ? <p className="data-note">{sortNotice}</p> : null}
       </section>
 
@@ -198,7 +283,8 @@ export const PoliticiansPage = (): ReactElement => {
             <thead>
               <tr>
                 <th scope="col">Politician</th>
-                <th scope="col">Office + region</th>
+                <th scope="col">Office + constituency/region</th>
+                <th scope="col">Party affiliation</th>
                 <th scope="col">Promise counts</th>
                 <th scope="col">Fulfillment ratio</th>
                 <th scope="col">Last updated</th>
@@ -210,7 +296,11 @@ export const PoliticiansPage = (): ReactElement => {
                   <td>
                     <Link to={`/politicians/${row.politician.id}`}>{row.politician.name}</Link>
                   </td>
-                  <td>{formatIdentityLine(row.politician.office, row.politician.region)}</td>
+                  <td>{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</td>
+                  <td>
+                    <span>{getPartyAffiliationLabel(row.politician)}</span>
+                    {!hasPartyData ? <span className="meta-line">Frontend shows Unknown until affiliations ship.</span> : null}
+                  </td>
                   <td>
                     F {row.promiseStats.fulfilled} / B {row.promiseStats.broken} / P {row.promiseStats.inProgress} / U {row.promiseStats.unknown}
                   </td>
@@ -231,7 +321,8 @@ export const PoliticiansPage = (): ReactElement => {
               <h3>
                 <Link to={`/politicians/${row.politician.id}`}>{row.politician.name}</Link>
               </h3>
-              <p className="meta-line">{formatIdentityLine(row.politician.office, row.politician.region)}</p>
+              <p className="meta-line">{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</p>
+              <p>Party affiliation: {getPartyAffiliationLabel(row.politician)}</p>
               <p>
                 Promise counts: F {row.promiseStats.fulfilled}, B {row.promiseStats.broken}, P {row.promiseStats.inProgress}, U {row.promiseStats.unknown}
               </p>
@@ -246,7 +337,7 @@ export const PoliticiansPage = (): ReactElement => {
         {filteredRows.length === 0 ? (
           <article className="card">
             <h3>No matches found</h3>
-            <p>Try clearing filters or searching with a broader name, office, or region term.</p>
+            <p>Try clearing filters or searching with a broader name, office, constituency, or region term.</p>
           </article>
         ) : null}
       </section>
