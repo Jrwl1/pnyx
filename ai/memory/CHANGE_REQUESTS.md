@@ -106,6 +106,6 @@ Decision: accepted
 
 If accepted:
 
-Spec updated in commit: TBD
+Spec updated in commit: 3f39f50
 
 Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/planning/API_CONTRACT.md, ai/planning/DATA_MODEL.md, docs/TRACEABILITY_V1.md, PROJECT_STATUS.md.

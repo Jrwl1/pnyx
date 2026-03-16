@@ -986,3 +986,38 @@ Evidence (commands + summarized results):
 Commit: 7aeeaa6
 Files touched: PROJECT_STATUS.md, TASKS.md, docs/FRONTEND_V3_SPEC.md.
 Follow-ups / deferred issues (IDs): ISS-002; plan a small frontend follow-up batch for heading order, meta description, and populated-data QA.
+
+---
+
+Date: 2026-03-16
+Milestone/Sprint: Post-S5 admin-only canonical create implementation
+Summary (1–3 bullets):
+- Restricted `POST /politicians` to `admin` only and updated the affected regression suites that used canonical-create setup.
+- Added `pnpm bootstrap:local-admin`, which seeds a predictable local admin row and prints a ready-to-use JWT for development.
+- Kept statement creation unchanged (`requireRole("user")`) while proving that the bootstrapped admin token can create canonical politicians.
+Why (link to requirement/milestone/issue): User requested current policy change from moderator/admin canonical create to admin-only, plus a local admin bootstrap path with simple local credentials.
+Evidence (commands + summarized results):
+- Delegation attempt -> `delegate_autopilot` run `2026-03-16_141836843_2ffb8393a918` failed immediately with `codex exec exited with code 1`; continued locally per `ai/workflows/DO_MODE.md`.
+- `pnpm test -- role-matrix politician-dedupe read-surfaces proposal-rate-limit politician-proposal-review proposal-duplicate-assist proposal-approval-create-link proposal-duplicate-assist-fuzzy politician-proposal-submit local-admin-bootstrap` -> pass (`10` files, `31` tests).
+- `pnpm typecheck` -> pass.
+- `pnpm lint` -> pass.
+- `pnpm bootstrap:local-admin` -> created local admin row `local-admin` / `admin@local.test` and emitted a JWT plus Authorization header for local use.
+Commit: 8b5df4f
+Files touched: package.json, src/server.ts, src/dev/bootstrap-local-admin.ts, test/role-matrix.test.ts, test/politician-dedupe.test.ts, test/read-surfaces.test.ts, test/proposal-rate-limit.test.ts, test/politician-proposal-review.test.ts, test/proposal-duplicate-assist.test.ts, test/proposal-approval-create-link.test.ts, test/proposal-duplicate-assist-fuzzy.test.ts, test/politician-proposal-submit.test.ts, test/local-admin-bootstrap.test.ts.
+Follow-ups / deferred issues (IDs): Sync lock/traceability docs to the new admin-only policy.
+
+---
+
+Date: 2026-03-16
+Milestone/Sprint: Post-S5 admin-only canonical create docs sync
+Summary (1–3 bullets):
+- Accepted CR-004 and updated the locked V1/spec-traceability docs to reflect admin-only canonical politician creation.
+- Synced project status note and governance/contract docs so repo truth matches the implementation commit.
+- Preserved moderated proposal review as-is while narrowing only the canonical create gate.
+Why (link to requirement/milestone/issue): The role-policy change touches the locked spec and dependent canonical docs, so source-of-truth sync was required after implementation.
+Evidence (commands + summarized results):
+- `rg -n "moderator/admin create only|moderator/admin-only canonical politician creation|only \`moderator\\|admin\` can create canonical politicians|requires \`moderator\\|admin\`|restricted to \`moderator\\|admin\`|Canonical politician rows are only created by moderator/admin|create politician \\(moderator/admin\\)|Politician canonical create \\+ proposal review: moderator/admin only" ai docs PROJECT_STATUS.md -g "*.md"` -> no remaining stale policy matches after doc sync.
+- Docs updated in `ai/memory/CHANGE_REQUESTS.md`, `ai/planning/V1_SPEC_LOCK.md`, `ai/roadmap/MILESTONES.md`, `ai/planning/API_CONTRACT.md`, `ai/planning/DATA_MODEL.md`, `docs/TRACEABILITY_V1.md`, and `PROJECT_STATUS.md`.
+Commit: 3f39f50
+Files touched: PROJECT_STATUS.md, ai/memory/CHANGE_REQUESTS.md, ai/planning/API_CONTRACT.md, ai/planning/DATA_MODEL.md, ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, docs/TRACEABILITY_V1.md.
+Follow-ups / deferred issues (IDs): None.
