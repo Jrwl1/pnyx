@@ -13,12 +13,17 @@ Lock rules:
 
 In scope (V1)
 
+- Finland-first launch boundary: public product coverage starts with Finnish politicians, Finnish parties, and Finland-specific political context only.
 - Politicians as canonical identities (admin create only; optional `externalId`; `verified` flag).
+- Parties as canonical public entities with dedicated party pages and visible member-politician relationships.
+- Party stance records are first-class and separate from politician statements/promises.
+- Public read surfaces include explicit politician-vs-party comparisons where mapped party stance exists, including politician breaks from party stance.
 - Statements tied to one politician with required `sourceUrl`, `body`, `dateSaid`; statement starts `pending`.
 - Verification status lifecycle managed only by moderator/admin.
 - One vote row per user per statement with visible aggregate and vote overwrite on recast.
 - Community review by status + votes only (no comments in V1).
 - Transparent statement lifecycle history (revision/audit records visible to users).
+- Search-first public discovery with latest politician promises and latest party stances.
 - Lightweight rate limits on auth and write operations.
 - CAPTCHA validation on abuse-prone intake paths (`/auth/register`, `/politician-proposals`) in enforced environments.
 - Moderation duplicate-assist includes exact-match plus bounded fuzzy candidate hints (assistive-only).
@@ -26,13 +31,15 @@ In scope (V1)
   - Anonymous: read-only.
   - Registered user: submit politician proposals, add statement, vote, edit own within grace window, withdraw own.
   - Moderator: approve/reject/mark-duplicate politician proposals; edit any statement; set verification status; propose delete.
-  - Admin: moderator abilities + create canonical politicians + approve delete.
+  - Admin: moderator abilities + create canonical politicians and parties, publish party stance records, approve delete.
 
 Out of scope (V1)
 
 - Partisan opinion platform features (commentary, threads).
 - Replacing or duplicating investigative journalism workflows.
 - Real-time political news coverage or live feeds.
+- Cross-country rollout before the Finland model and workflow are proven.
+- Public leaderboards/rankings before coverage density and methodology are mature enough to support honest comparisons.
 - Public API for third-party consumers.
 - Import pipelines for politicians (V2).
 - Fuzzy auto-merge/auto-reject moderation decisions.
@@ -47,6 +54,7 @@ Non-goals (from PITCH)
 Success criteria (measurable, V1)
 
 - Number of tracked politicians and statements.
+- Number of tracked Finnish parties, party memberships, and sourced party stance records.
 - Percent of statements with verification status assigned (`!= pending`).
 - Active user engagement (votes, reviews).
 - Retention of returning users.
@@ -67,7 +75,12 @@ Policy decisions resolved
   - moderator/admin lists include pending-delete by default and exclude `isDeleted=true` by default.
   - explicit filters: `includeDeleted=true`, `includePendingDelete=true|false`.
 - Canonical politician dedupe precedence: `externalId` when present; otherwise normalized `(name, region, office)`.
+- Launch geography policy: initial public coverage is Finland only; other countries are explicitly deferred.
 - Politician intake policy: users submit proposals; only admin can create canonical politician records directly or via approved proposals.
+- Stance separation policy: party stance records and politician statements are distinct sources of truth and must never be conflated in public UX or scoring.
+- Party page policy: each canonical party has a public page showing party stance records and associated politicians.
+- Party-line break policy: a politician break from party stance is surfaced only when a mapped party stance source exists; otherwise the UI must show unknown/no mapped party stance.
+- Home discovery policy: the home page stays search-first; latest promises and latest party stances are allowed; leaderboards are deferred.
 - Registration role policy: public `/auth/register` may only create `user`; privileged role requests (`moderator|admin`) are rejected.
 - CAPTCHA policy: `/auth/register` and `/politician-proposals` require valid captcha verification when enforcement is enabled; missing/invalid captcha returns deterministic error responses.
 - V1 rate limits:
@@ -93,11 +106,16 @@ Key user flows
 - FLOW-007: Withdraw / pending delete / approve delete (CAP-007).
 - FLOW-008: View revision history (CAP-008).
 - FLOW-009: Moderator/admin review of politician proposal queue.
+- FLOW-010: View party page, party stance records, and member politicians.
+- FLOW-011: View politician stance alongside party stance and detect mapped breaks from party line.
 
 ---
 
 Data model (minimal)
 
+- Party: `id`, `name`, `shortName?`, `countryCode`, `createdBy`, `createdAt`, `updatedAt`, `deletedAt?`.
+- PartyMembership: `id`, `politicianId`, `partyId`, `startDate?`, `endDate?`, `isCurrent`, `sourceUrl?`, `createdAt`, `updatedAt`.
+- PartyStance: `id`, `partyId`, `issue?`, `sourceUrl`, `body`, `dateSaid`, `verificationStatus`, `createdBy`, `createdAt`, `updatedAt`, `withdrawnAt?`, `deletedAt?`.
 - Politician: `id`, `name`, `region?`, `office?`, `externalId?`, `verified`, `createdBy`, `createdAt`, `updatedAt`, `deletedAt?`.
   - Uniqueness: `externalId` unique when present; canonical tuple unique when no externalId.
 - PoliticianProposal: `id`, `submittedBy`, `name`, `region?`, `office?`, `externalId?`, `sourceNote?`, `status(pending|approved|rejected|duplicate)`, `decisionBy?`, `decisionReason?`, `linkedPoliticianId?`, `createdAt`, `updatedAt`, `decidedAt?`.
@@ -116,6 +134,9 @@ Global invariants
 - INV-006: Soft-delete and pending-delete list defaults are role-aware and explicit.
 - INV-007: Canonical politician rows are only created by admin actions.
 - INV-008: Every politician proposal has immutable decision metadata when status != `pending`.
+- INV-009: Party stance records are distinct from politician statements and public surfaces must preserve that distinction.
+- INV-010: Party-line break surfaces require mapped party stance evidence; otherwise result state is unknown.
+- INV-011: Initial public scope is Finland only until a later accepted change request expands geography.
 
 ---
 
@@ -194,3 +215,9 @@ CAP-008: View revision history
 - Inputs/outputs: Read-only by `statementId`; output revision list.
 - Edge cases: Statement not found -> 404.
 - References: REQ-005, FLOW-008, INV-004.
+
+CAP-009: View parties, party stances, and party-line context
+- Behavior: Any user can browse party pages that show party stance records, associated politicians, and mapped politician breaks from party stance where evidence exists.
+- Inputs/outputs: Read-only list/detail queries for parties and party stance context.
+- Edge cases: Party not found -> 404; no party stance records -> empty state; no mapped politician-party comparison -> unknown/no mapped stance state.
+- References: FLOW-010, FLOW-011, INV-009, INV-010, INV-011.

@@ -203,3 +203,39 @@ Out-of-scope for M4:
 - Auto-merge or auto-reject decisions from fuzzy matching.
 - External/public API rollout.
 - Unrelated UX feature expansion.
+
+---
+
+M5: Finland-first public discovery + party context
+
+Goal:
+Extend the public product from politician-only discovery into Finland-first political context by adding party pages, party stance records, and explicit politician-vs-party alignment surfaces while keeping search-first public UX and honest unknown states.
+
+Maps to V1 CAPs:
+- CAP-001: read surfaces expand from politicians/statements to Finland-first public discovery.
+- CAP-009: party pages, party stance context, and mapped party-line break surfaces.
+- CAP-002: canonical/admin governance expands to include party records and stance-source handling where needed.
+
+Acceptance criteria:
+- Public scope is explicitly Finland-first; non-Finnish coverage remains out of scope in UX, data seeding, and docs.
+- Home discovery remains search-first and can surface latest politician promises plus latest party stances without relying on leaderboard/ranking mechanics.
+- Canonical party records exist with dedicated public pages that show party stance records and associated politicians.
+- Politician stance and party stance are modeled and presented as separate concepts; UI copy and data mapping do not conflate them.
+- Party-line break surfaces appear only when mapped party stance evidence exists; otherwise the UI shows unknown/no mapped party stance.
+- Leaderboards remain deferred until coverage density and methodology are defined well enough to avoid misleading comparisons.
+- Full proof and planning evidence are commit-anchored in `WORKLOG.md`.
+
+Proof commands required:
+- `pnpm lint && pnpm typecheck && pnpm build`
+- `pnpm test` (with focused filters added for party pages, party stance, and party-line alignment once implementation starts)
+- `pnpm test:e2e`
+- `git status --short` (clean at closeout)
+
+Dependencies:
+- CR-005 accepted and reflected in `ai/planning/V1_SPEC_LOCK.md`.
+- Follow-on planning/docs must define party data model, frontend IA, and implementation slices before code execution.
+
+Out-of-scope for M5:
+- Cross-country rollout beyond Finland.
+- Public leaderboards/rankings as a primary discovery mechanic.
+- Fabricated party-line signals when party stance evidence is missing.

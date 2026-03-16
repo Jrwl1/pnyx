@@ -1,6 +1,6 @@
 AGENTS.md — AI OS Router (READ THIS FIRST)
 
-WHAT IT DO? Router + route map. Read first; then LOADOUT, RULES, PROJECT_STATUS; then at most 2 docs from route map. Enforces output discipline and commit evidence.
+WHAT IT DO? Router + route map. Read first; then LOADOUT, RULES, PROJECT_STATUS; then limited docs from route map. Enforces output discipline and commit evidence.
 
 Prime directive (mandatory):
 
@@ -9,6 +9,10 @@ Always read AGENTS.md first.
 Then read: ai/LOADOUT.md, ai/RULES.md, PROJECT_STATUS.md.
 
 Then read at most 2 additional docs selected from the Route Map below.
+
+Exception for lock/spec change work:
+
+If the task changes locked scope, policy, or data model, the Coordinator may read the minimum additional docs needed to patch canon safely, even beyond the default cap. This must include `ai/memory/CHANGE_REQUESTS.md` plus any dependent planning doc that must be updated in the same change.
 
 If more context is needed than allowed, stop and propose which docs to add and why. Do not freestyle.
 

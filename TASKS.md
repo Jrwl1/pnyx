@@ -27,7 +27,7 @@ Post-S5 delivered work:
 
 - [x] Write `docs/FRONTEND_V3_SPEC.md` for the citizen-first public Frontend V3.
 - [x] Implement the React + Vite public frontend in `frontend/` with routes `/`, `/politicians`, `/politicians/:id`, `/promises/:id`, `/methodology`, and optional `/ops`.
-- [ ] Fold frontend follow-up work and acceptance-gap fixes into the next milestone/sprint planning cycle.
+- [ ] Fold frontend follow-up work, Finland-first party scope, and acceptance-gap fixes into the next milestone/sprint planning cycle.
 
 ---
 

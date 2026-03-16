@@ -2,6 +2,39 @@ DATA_MODEL.md — Entities, Relationships, Invariants
 
 WHAT IT DO? Defines the implemented V1 data model from migrations `0001..0003` (tables, columns, constraints, indexes) and maps runtime invariants to DB/app enforcement.
 
+## Locked scope additions pending implementation (CR-005)
+
+These additions are in locked product scope but are not yet present in migrations `0001..0003`.
+
+Planned entity: parties
+- Purpose:
+  - Canonical Finnish party identities for public party pages and stance context.
+- Planned columns:
+  - `id`, `name`, `short_name?`, `country_code`, `created_by`, `created_at`, `updated_at`, `deleted_at?`
+
+Planned entity: party_memberships
+- Purpose:
+  - Link politicians to parties for current/historical affiliation and party-page membership lists.
+- Planned columns:
+  - `id`, `politician_id`, `party_id`, `start_date?`, `end_date?`, `is_current`, `source_url?`, `created_at`, `updated_at`
+
+Planned entity: party_stances
+- Purpose:
+  - Store party-level positions separately from politician statements so public UX can distinguish party stance from politician stance.
+- Planned columns:
+  - `id`, `party_id`, `issue?`, `source_url`, `body`, `date_said`, `verification_status`, `created_by`, `created_at`, `updated_at`, `withdrawn_at?`, `deleted_at?`
+
+Planned derived surface: party_line_alignment
+- Purpose:
+  - Compare politician actions/votes/statements to mapped party stance and surface `aligned`, `broke_party_line`, or `unknown`.
+- Rules:
+  - Must remain derived from sourced politician + party records.
+  - Must not emit a break signal when no mapped party stance source exists.
+  - Must preserve explicit unknown states rather than guessing party alignment.
+
+Finland-first scope rule:
+- Initial public data coverage is limited to Finland (`country_code='FI'` or equivalent Finland-only source boundaries) until a later accepted change request expands geography.
+
 ## Migration map
 
 - `migrations/0001_initial.sql`: core entities (`users`, `politicians`, `statements`, `votes`, `revision_audits`) and base indexes.

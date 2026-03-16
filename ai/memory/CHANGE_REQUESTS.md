@@ -109,3 +109,25 @@ If accepted:
 Spec updated in commit: 3f39f50
 
 Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/planning/API_CONTRACT.md, ai/planning/DATA_MODEL.md, docs/TRACEABILITY_V1.md, PROJECT_STATUS.md.
+
+---
+
+CR-005: Finland-first party scope and stance separation
+
+Proposed change: Expand locked public-product scope so the initial launch is Finland-only and includes party pages, party membership context, party stance records distinct from politician statements, and explicit surfacing of politician breaks from party stance when a mapped party stance exists. Keep home discovery search-first, allow latest promises/latest party stances, and defer public leaderboards until coverage and methodology are mature enough to avoid misleading comparisons.
+
+Motivation: The product is meant to reflect how Finnish politics actually works. Party stance and politician stance are not interchangeable, and party-line discipline is part of the accountability story. A Finland-first rollout also keeps scope grounded before any cross-country expansion.
+
+Impacted V1 sections (CAP IDs): CAP-001, CAP-002, public IA/discovery policy, data model, policy decisions, proof coverage; adds party read-surface capability and Finland launch boundary.
+
+Risks: Scope growth, extra editorial/data-model complexity, historical party-membership edge cases, and misleading UX if party-line breaks are shown without a mapped stance source.
+
+Testing/migration implications: Add planning for party entities, party membership, party stance records, party read surfaces, Finland-only scope guards/content, and party-line break derivation rules. Leaderboard/ranking surfaces remain deferred until later proof/coverage thresholds are defined.
+
+Decision: accepted
+
+If accepted:
+
+Spec updated in commit: TBD
+
+Docs updated: AGENTS.md, ai/planning/V1_SPEC_LOCK.md, ai/planning/DATA_MODEL.md, ai/roadmap/MILESTONES.md, PROJECT_STATUS.md, TASKS.md.
