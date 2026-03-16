@@ -45,16 +45,16 @@ describe("proposal approval create link", () => {
   it("returns deterministic 409 when approval hits canonical duplicate", async () => {
     const proposalId = await submitProposal("Dup Canonical", "CA", "Senator");
 
-    const modHeaders = await authHeaders("mod-existing", "moderator");
+    const adminHeaders = await authHeaders("admin-existing", "admin");
     await request(app)
       .post("/politicians")
-      .set(modHeaders)
+      .set(adminHeaders)
       .send({ name: "Dup Canonical", region: "CA", office: "Senator" })
       .expect(201);
 
     await request(app)
       .patch(`/politician-proposals/${proposalId}/review`)
-      .set(modHeaders)
+      .set(adminHeaders)
       .send({ decision: "approve", reason: "should duplicate" })
       .expect(409);
 

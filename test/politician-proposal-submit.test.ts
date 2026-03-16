@@ -44,10 +44,10 @@ describe("politician proposal submit", () => {
   });
 
   it("returns 409 when proposal matches existing canonical politician", async () => {
-    const modHeaders = await authHeaders("mod-canonical", "moderator");
+    const adminHeaders = await authHeaders("admin-canonical", "admin");
     await request(app)
       .post("/politicians")
-      .set(modHeaders)
+      .set(adminHeaders)
       .send({ name: "Canonical Match", region: "TX", office: "Mayor" })
       .expect(201);
 

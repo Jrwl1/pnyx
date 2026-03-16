@@ -38,10 +38,10 @@ describe("politician proposal review", () => {
 
   it("admin can mark proposal duplicate and link existing politician", async () => {
     const proposalId = await createPendingProposal();
-    const modHeaders = await authHeaders("mod-maker", "moderator");
+    const creatorHeaders = await authHeaders("admin-maker", "admin");
     const create = await request(app)
       .post("/politicians")
-      .set(modHeaders)
+      .set(creatorHeaders)
       .send({ name: "Existing Target", region: "CO", office: "Governor" })
       .expect(201);
 

@@ -12,8 +12,8 @@ describe("politician dedupe", () => {
     db.exec("DELETE FROM politicians");
   });
 
-  it("moderator create works and list returns created records", async () => {
-    const headers = await authHeaders("mod-create", "moderator");
+  it("admin create works and list returns created records", async () => {
+    const headers = await authHeaders("admin-create-list", "admin");
     const res = await request(app)
       .post("/politicians")
       .set(headers)
@@ -66,7 +66,7 @@ describe("politician dedupe", () => {
   });
 
   it("duplicate (name,region,office) returns 409", async () => {
-    const headers = await authHeaders("mod-dup-1", "moderator");
+    const headers = await authHeaders("admin-dup-1", "admin");
     await request(app)
       .post("/politicians")
       .set(headers)
@@ -85,7 +85,7 @@ describe("politician dedupe", () => {
   });
 
   it("duplicate externalId returns 409", async () => {
-    const headers = await authHeaders("mod-dup-2", "moderator");
+    const headers = await authHeaders("admin-dup-2", "admin");
     await request(app)
       .post("/politicians")
       .set(headers)
@@ -100,7 +100,7 @@ describe("politician dedupe", () => {
   });
 
   it("create without externalId when matching normalized record has externalId returns 409", async () => {
-    const headers = await authHeaders("mod-dup-3", "moderator");
+    const headers = await authHeaders("admin-dup-3", "admin");
     await request(app)
       .post("/politicians")
       .set(headers)

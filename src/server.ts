@@ -397,7 +397,7 @@ app.get("/politicians", (_req, res) => {
   res.json({ items: rows });
 });
 
-app.post("/politicians", politicianCreateLimiter, requireRole("moderator"), (req, res) => {
+app.post("/politicians", politicianCreateLimiter, requireRole("admin"), (req, res) => {
   const { name, region, office, externalId } = req.body as {
     name?: string;
     region?: string;

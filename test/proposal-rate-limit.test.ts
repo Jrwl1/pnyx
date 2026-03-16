@@ -35,9 +35,9 @@ describe("proposal rate limit", () => {
     expect(String(limited.body.message)).toContain("politician-proposal");
   });
 
-  it("limits moderated politician create endpoint with clear 429", async () => {
-    const modHeaders = await authHeaders("proposal-rate-mod", "moderator");
-    const headers = { ...modHeaders, ...rateLimitHeaders("politician-create") };
+  it("limits admin-only politician create endpoint with clear 429", async () => {
+    const adminHeaders = await authHeaders("proposal-rate-admin", "admin");
+    const headers = { ...adminHeaders, ...rateLimitHeaders("politician-create") };
 
     await request(app).post("/politicians").set(headers).send({ name: "Create RL 1" }).expect(201);
     await request(app).post("/politicians").set(headers).send({ name: "Create RL 2" }).expect(201);

@@ -15,11 +15,11 @@ describe("duplicate assist fuzzy", () => {
   });
 
   it("returns bounded deterministic fuzzy hints without mutating proposal state", async () => {
-    const mod = await authHeaders("fuzzy-mod", "moderator");
+    const admin = await authHeaders("fuzzy-admin", "admin");
 
     const exactCanonical = await request(app)
       .post("/politicians")
-      .set(mod)
+      .set(admin)
       .send({ name: "Alexandra Johnson", region: "CA", office: "Governor" })
       .expect(201);
 
@@ -34,7 +34,7 @@ describe("duplicate assist fuzzy", () => {
     for (const name of fuzzyCanonicalNames) {
       await request(app)
         .post("/politicians")
-        .set(mod)
+        .set(admin)
         .send({ name, region: "CA", office: "Governor" })
         .expect(201);
     }
@@ -54,7 +54,7 @@ describe("duplicate assist fuzzy", () => {
 
     const res = await request(app)
       .get(`/politician-proposals/${target.lastInsertRowid}/duplicate-assist`)
-      .set(mod)
+      .set(admin)
       .expect(200);
 
     expect(res.body.canonicalMatches).toEqual(

@@ -15,11 +15,11 @@ describe("proposal duplicate assist", () => {
   });
 
   it("returns canonical and pending exact-match hints", async () => {
-    const mod = await authHeaders("assist-mod", "moderator");
+    const admin = await authHeaders("assist-admin", "admin");
 
     const canonicalRes = await request(app)
       .post("/politicians")
-      .set(mod)
+      .set(admin)
       .send({ name: "Assist Canonical", region: "CA", office: "Governor", externalId: "assist-ext-1" })
       .expect(201);
 
@@ -35,7 +35,7 @@ describe("proposal duplicate assist", () => {
 
     const res = await request(app)
       .get(`/politician-proposals/${target.lastInsertRowid}/duplicate-assist`)
-      .set(mod)
+      .set(admin)
       .expect(200);
 
     expect(res.body.canonicalMatches).toHaveLength(1);

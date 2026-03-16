@@ -42,7 +42,7 @@ describe("role matrix", () => {
       .post("/politicians")
       .set(modHeaders)
       .send({ name: "Mod canonical" })
-      .expect(201);
+      .expect(403);
     await request(app)
       .patch(`/politician-proposals/${submit.body.id}/review`)
       .set(modHeaders)
