@@ -966,3 +966,23 @@ Evidence (commands + summarized results):
 Commit: 97bc637
 Files touched: docs/frontend-assets/README.md, docs/frontend-assets/pnyx-brand-tokens.css, docs/frontend-assets/pnyx-favicon.svg, docs/frontend-assets/pnyx-logo-mark.svg, docs/frontend-assets/pnyx-logo-wordmark.svg, docs/frontend-assets/pnyx-og-card.svg, docs/frontend-mockup.html, WORKLOG.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-03-16
+Milestone/Sprint: Post-S5 frontend canon sync + live audit
+Summary (1–3 bullets):
+- Synced canonical docs to reflect the already-implemented Frontend V3 and added `docs/FRONTEND_V3_SPEC.md` to git tracking.
+- Launched and audited the frontend on alternate port `4317` to avoid the existing default-port instance; verified public route shell, nav labels, copy direction, and missing-data honesty behavior against the frontend spec.
+- Recorded remaining audit gaps: heading-order issue in the empty-state directory page, missing HTML meta description, React Router future-flag warnings, and no populated dataset available for full profile/promise UX verification.
+Why (link to requirement/milestone/issue): User requested a current frontend audit plus canonical doc synchronization; `ISS-002` logged the traceability drift.
+Evidence (commands + summarized results):
+- `git ls-files docs/FRONTEND_V3_SPEC.md PROJECT_STATUS.md TASKS.md frontend/README.md` -> canonical status/backlog docs plus frontend spec/README are tracked after sync.
+- `pnpm frontend:typecheck` -> pass.
+- `pnpm frontend:build` -> pass (`vite build` produced a green production bundle).
+- `node -e "Promise.all([fetch('http://127.0.0.1:4317/api/politicians')..., fetch('http://127.0.0.1:4317/api/statements')...])"` -> both endpoints returned `200` with empty `items` arrays, so the live audit ran against an empty dataset.
+- Playwright audit on `http://127.0.0.1:4317/`, `/politicians`, and `/methodology` -> exact public nav labels `Home / Politicians / Methodology`, search-first homepage, required methodology sections, mobile snapshots, and no console errors; remaining console output was limited to two React Router future-flag warnings.
+- Chrome DevTools Lighthouse audit on `http://127.0.0.1:4317/politicians` -> Accessibility `98`, Best Practices `100`, SEO `82`; failed checks were heading order (`No matches found` empty-state card) and missing meta description.
+Commit: 7aeeaa6
+Files touched: PROJECT_STATUS.md, TASKS.md, docs/FRONTEND_V3_SPEC.md.
+Follow-ups / deferred issues (IDs): ISS-002; plan a small frontend follow-up batch for heading order, meta description, and populated-data QA.
