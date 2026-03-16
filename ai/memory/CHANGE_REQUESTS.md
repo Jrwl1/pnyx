@@ -128,6 +128,6 @@ Decision: accepted
 
 If accepted:
 
-Spec updated in commit: TBD
+Spec updated in commit: cdcc3cd
 
 Docs updated: AGENTS.md, ai/planning/V1_SPEC_LOCK.md, ai/planning/DATA_MODEL.md, ai/roadmap/MILESTONES.md, PROJECT_STATUS.md, TASKS.md.

@@ -1021,3 +1021,20 @@ Evidence (commands + summarized results):
 Commit: 3f39f50
 Files touched: PROJECT_STATUS.md, ai/memory/CHANGE_REQUESTS.md, ai/planning/API_CONTRACT.md, ai/planning/DATA_MODEL.md, ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, docs/TRACEABILITY_V1.md.
 Follow-ups / deferred issues (IDs): None.
+
+---
+
+Date: 2026-03-16
+Milestone/Sprint: Post-S5 Finland-first party scope canon update
+Summary (1–3 bullets):
+- Relaxed the AGENTS router for lock/spec changes so dependent canon docs can be read and updated in the same change without fighting the default doc cap.
+- Accepted CR-005 and expanded locked scope to Finland-first public coverage, party pages, separate party stance records, and explicit politician-vs-party / party-line-break surfaces.
+- Derived roadmap/backlog/status docs now point at planned M5 work instead of leaving the new scope only in the lock file.
+Why (link to requirement/milestone/issue): User requested that Finland-first public scope, party pages, party stance separation, and party-line-break tracking be added to canon files for scope planning.
+Evidence (commands + summarized results):
+- Read-path evidence -> `Get-Content AGENTS.md`, `ai/LOADOUT.md`, `ai/RULES.md`, `PROJECT_STATUS.md`, `ai/workflows/ROADMAP_MODE.md`, `ai/planning/V1_SPEC_LOCK.md`, `ai/memory/CHANGE_REQUESTS.md`, `ai/planning/DATA_MODEL.md`, `ai/roadmap/MILESTONES.md`, `TASKS.md`.
+- Scope-anchor proof -> `rg -n "CR-005|Finland-first|party stance|party pages|leaderboards|party-line" AGENTS.md PROJECT_STATUS.md TASKS.md ai docs -g "*.md"` -> confirmed canon files contain the new Finland/party scope anchors.
+- Diff review -> `git diff -- AGENTS.md PROJECT_STATUS.md TASKS.md ai/memory/CHANGE_REQUESTS.md ai/planning/V1_SPEC_LOCK.md ai/planning/DATA_MODEL.md ai/roadmap/MILESTONES.md` -> verified router exception, accepted CR, locked-scope expansion, roadmap M5, and backlog/status sync before commit.
+Commit: cdcc3cd
+Files touched: AGENTS.md, PROJECT_STATUS.md, TASKS.md, ai/memory/CHANGE_REQUESTS.md, ai/planning/DATA_MODEL.md, ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md.
+Follow-ups / deferred issues (IDs): Translate the new scope into frontend IA/page specs and implementation slices for M5 planning.
