@@ -1,121 +1,303 @@
-AGENTS.md — AI OS Router (READ THIS FIRST)
+# Agent contract
 
-WHAT IT DO? Router + route map. Read first; then LOADOUT, RULES, PROJECT_STATUS; then limited docs from route map. Enforces output discipline and commit evidence.
+This file is the repository OS contract.
 
-Prime directive (mandatory):
+## Mode Router (strict)
 
-Always read AGENTS.md first.
+1. Read the user's first non-empty line.
+2. If that line starts with exactly `PLAN`, run the PLAN protocol.
+3. If that line starts with exactly `DO`, run the DO protocol.
+4. If that line starts with exactly `RUNSPRINT`, run the RUNSPRINT entry behavior.
+5. If that line starts with exactly `REVIEW`, run the REVIEW protocol.
+6. Otherwise, treat the message as normal chat (no protocol). Answer normally. Do not edit files and do not run repo actions unless the user explicitly asks.
 
-Then read: ai/LOADOUT.md, ai/RULES.md, PROJECT_STATUS.md.
+## Continuous execution policy (default)
 
-Then read at most 2 additional docs selected from the Route Map below.
+- Do not require extra user prompts between DO and REVIEW.
+- When a run enters via `DO` or `RUNSPRINT`, execute continuous internal cycles as packet-driven DO with row-gated REVIEW: `DO packet -> (REVIEW only when the selected sprint row becomes READY) -> DO packet`.
+- DO owns packet-level implementation, hygiene, and evidence capture. REVIEW owns row-level acceptance verification only.
+- Auto-REVIEW must not run after every substep. It runs only when the selected sprint row has all substeps checked and `Status=READY`.
+- Continue the loop until one of these is true:
+  1. all active sprint rows are `DONE`, or
+  2. a DO/REVIEW stop condition is hit, or
+  3. a blocker is recorded per protocol.
+- Each internal DO/REVIEW cycle must still fully obey its own read/write permissions, commit rules, and `docs/WORKLOG.md` one-line append rule.
+- Standalone `REVIEW` remains valid and runs the REVIEW protocol directly.
 
-Exception for lock/spec change work:
+## RUNSPRINT entry behavior
 
-If the task changes locked scope, policy, or data model, the Coordinator may read the minimum additional docs needed to patch canon safely, even beyond the default cap. This must include `ai/memory/CHANGE_REQUESTS.md` plus any dependent planning doc that must be updated in the same change.
+- `RUNSPRINT` is an explicit whole-sprint execution entry.
+- It uses the DO protocol, the same row-gated DO/REVIEW loop engine, and the same implementation-helper policy.
+- It starts from the first active sprint row with `Status != DONE` and its first unchecked substep.
+- It continues until all active sprint rows are `DONE` or a blocker/stop condition is hit.
+- `DO` remains valid and unchanged.
 
-If more context is needed than allowed, stop and propose which docs to add and why. Do not freestyle.
+## Global rules
 
-Default loop:
-Follow ai/WORKFLOW.md: plan → implement (small batches) → prove (run checks) → log.
+- Preserve each file's current language. Do not translate entire files.
+- Tool and agent instructions must be written in ENGLISH.
+- The parent agent is always responsible for scope control, evidence quality, commits, and stop-condition handling.
+- Use direct MCP tools when they materially help the task:
+  - `filesystem` for repo inspection and precise file reads.
+  - `git` for status, diff, and history evidence.
+  - `github` for remote PR or CI context.
+  - `context7` for current library/framework docs.
+  - `chrome-devtools` or `playwright` for browser verification and UI flows.
+- Do not use delegation or autopilot tooling in this repo.
+- WORKLOG read limit: only the last ~30 lines.
+- Never create parallel planning systems.
+- Do not use helpers to create parallel sprint streams or recursive orchestration trees.
+- Parallel helper work is allowed only inside one active sprint row and only when write scopes do not overlap.
+- `docs/WORKLOG.md` is append-only.
+- `docs/DECISIONS.md` is append-only.
+- Protocol clean-tree checks use `git status --porcelain` as the authority.
+- Ignored local files are outside protocol scope and do not count as dirt.
+- Tracked changes and untracked non-ignored files do count as dirt.
+- Local service lifecycle is conservative: if a needed local app is already reachable, reuse it. Do not kill listeners or restart user-run services unless explicitly asked or blocked without it.
+- Helper lifecycle is strict: before any product commit, docs commit, REVIEW pass, or next-packet selection, wait for every helper launched for the active packet to finish and then re-check `git status --porcelain`.
+- `DO` and `REVIEW` must end with an absolutely clean working tree when their protocol says so.
+- `PLAN` may start from a dirty working tree. Pre-existing dirt does not block PLAN by itself.
+- `PLAN` must not stage or commit unrelated pre-existing changes unless the user explicitly asks for that.
+- Blocker taxonomy is strict: use `HARD BLOCKED:` for scope, forbidden-touch, commit-structure, or clean-tree failures; use `GATE BLOCKED:` for required verification failures that cannot be resolved within the bounded same-area gate-fix rule.
 
-Route Map (pick only what matches the task)
+## React Rules of Hooks
 
-Planning mode (empty repo → locked V1):
-Read:
+When editing React components:
 
-ai/workflows/PLANNING_MODE.md
+- Hooks must run in the same order every render. Do not place hooks after conditional early returns.
+- Violation symptom: white screen, "Rendered fewer hooks than expected", or "Rendered more hooks than during the previous render".
+- Fix: move every hook above the first conditional return.
 
-ai/planning/PITCH.md
-Optional (pick 1):
+## File caps and schema
 
-ai/planning/SCOPE.md
+| File | Hard rule |
+| --- | --- |
+| `docs/SPRINT.md` | Variable-length active queue. No questions. Each row must include: `ID`, `Do`, `Files`, `Acceptance`, `Evidence`, `Stop`, `Status`. |
+| `docs/PROJECT_STATUS.md` | Max 60 lines. Must remain a short snapshot. |
+| `docs/WORKLOG.md` | Append exactly one line per run (`PLAN`/`DO`/`REVIEW`). |
+| `docs/DECISIONS.md` | Append ADR entries only when a real decision is made. |
 
-ai/planning/REQUIREMENTS.md
+Sprint `Status` enum is strict: `TODO | IN_PROGRESS | READY | DONE`.
 
-ai/planning/LOCK_CHECKLIST.md
+## PLAN protocol
 
-Roadmap mode (locked V1 → milestones → sprint):
-Read:
+### REQUIRED READS (in order)
 
-ai/workflows/ROADMAP_MODE.md
+1. `docs/CANONICAL.md`
+2. `AGENTS.md`
+3. `docs/PROJECT_STATUS.md`
+4. `docs/ROADMAP.md`
+5. `docs/SPRINT.md`
+6. `docs/BACKLOG.md`
+7. `docs/DECISIONS.md` (if present)
+8. `docs/WORKLOG.md` (last ~30 lines only)
+9. `docs/client/**` (if present)
+10. Skim docs referenced by the canonical set.
 
-ai/planning/V1_SPEC_LOCK.md
-Optional (pick 1):
+### RESEARCH HELPER POLICY
 
-ai/roadmap/MILESTONES.md
+- The parent agent must personally complete the PLAN required reads in order.
+- After the parent completes the required reads, it may launch read-only helpers for follow-up context gathering.
+- Helpers must not write repository files, stage changes, create commits, or produce parallel planning artifacts.
+- The parent agent must synthesize all PLAN outputs itself.
 
-ai/roadmap/SPRINT.md
+### ALLOWED WRITES
 
-DO mode (execute current sprint):
-Read:
+- `docs/ROADMAP.md`
+- `docs/BACKLOG.md`
+- `docs/SPRINT.md`
+- `docs/PROJECT_STATUS.md`
+- `docs/CANONICAL.md`
+- `docs/CANONICAL_REPORT.md`
+- `docs/DECISIONS.md` (append-only)
+- `docs/WORKLOG.md` (append exactly one PLAN line)
+- `AGENTS.md` (only when user explicitly requests OS contract hardening)
+- `claude.md` (only when user explicitly requests AI contract parity)
 
-ai/workflows/DO_MODE.md
+### FORBIDDEN TOUCH
 
-ai/roadmap/SPRINT.md
-Optional (pick 1):
+- `src/**`
+- `frontend/**`
+- `test/**`
+- `migrations/**`
+- Any file not listed in ALLOWED WRITES
 
-ai/planning/V1_SPEC_LOCK.md
+### REQUIRED OUTPUTS
 
-ai/memory/ISSUES.md
+PLAN must produce:
 
-Delegation mode (Coordinator / cross-cutting):
-Read:
+1. Updated `docs/ROADMAP.md`
+2. Updated `docs/BACKLOG.md`
+3. Updated `docs/SPRINT.md`
+4. Updated `docs/PROJECT_STATUS.md`
+5. Updated `docs/CANONICAL_REPORT.md`
+6. Optional `docs/DECISIONS.md` ADR append(s)
+7. Exactly one PLAN line in `docs/WORKLOG.md`
 
-ai/workflows/DELEGATION_MODE.md
-Optional:
+### WORKLOG format
 
-ai/memory/TOOLING.md
+`- [HH:MM] PLAN: <one-line summary> (sprint: S-xx..S-yy, milestone: Mx)`
 
-Architecture / boundaries:
-Read:
+### Completion
 
-ai/planning/ARCHITECTURE.md
-Optional:
+- PLAN must end with a single commit containing all PLAN doc updates.
+- PLAN completion is evaluated against the pre-PLAN `git status --porcelain` baseline, not absolute tree emptiness.
+- If PLAN started clean, it must end clean after the PLAN commit.
+- If PLAN started dirty, the PLAN commit must contain only allowed PLAN write files, and any remaining dirty entries after the commit must already have existed before PLAN started unless the user explicitly asked to commit them too.
 
-ai/memory/DECISIONS.md
+### STOP CONDITIONS
 
-Data model / API contract:
-Read:
+- If requirement is unknown: write `TBD (Owner: Customer)` in `docs/BACKLOG.md` and a blocker in `docs/PROJECT_STATUS.md`, then stop.
+- If a hard cap would be exceeded: stop and report the cap violation.
+- If sources conflict and cannot be resolved by canonical order: record it in `docs/CANONICAL_REPORT.md` and stop.
+- If PLAN cannot isolate its allowed doc changes from overlapping pre-existing dirt in the same file without also committing unrelated edits, stop and report.
 
-ai/planning/DATA_MODEL.md
-Optional:
+## DO protocol
 
-ai/planning/API_CONTRACT.md
+### REQUIRED READS
 
-Debugging / regressions:
-Read:
+- `docs/CANONICAL.md`
+- `AGENTS.md`
+- `docs/PROJECT_STATUS.md`
+- `docs/SPRINT.md`
+- `docs/BACKLOG.md`
+- `docs/WORKLOG.md` (last ~30 lines only)
+- Code and config files needed for the selected active DO packet
 
-ai/workflows/DEBUGGING.md
+### ALLOWED WRITES
 
-ai/memory/ISSUES.md
-Optional:
+- Product-scope files explicitly listed in the selected active DO packet `Files` scopes
+- Minimal same-area gate-fix files allowed after a required `run:` command fails
+- `docs/SPRINT.md` (status and evidence updates)
+- `docs/BACKLOG.md` (newly discovered tasks)
+- `docs/WORKLOG.md` (append exactly one DO line)
 
-ai/memory/PITFALLS.md
+### FORBIDDEN TOUCH
 
-Commit + evidence discipline:
-Read:
+- `docs/ROADMAP.md`
+- `docs/PROJECT_STATUS.md`
+- `docs/CANONICAL.md`
+- `docs/CANONICAL_REPORT.md`
+- `docs/DECISIONS.md`
+- `AGENTS.md`
+- `claude.md`
 
-ai/workflows/COMMIT_PROTOCOL.md
+### IMPLEMENTATION HELPER POLICY
 
-Drift control ("red thread"):
-If you detect drift (scope creep, refactor urge, tool spiral):
+- After selecting the current sprint row and active DO packet deterministically, the parent may launch native helpers for bounded read-only or implementation work.
+- The parent agent remains solely responsible for packet selection, scope enforcement, command verification, commit creation, evidence updates, worklog updates, and clean-tree validation.
+- The active DO packet may contain 1 to 4 adjacent unchecked substeps from the same row.
+- Helpers may read across the active row, but write access is limited to the active packet `Files` scopes, plus any minimal same-area gate-fix files the parent explicitly authorizes after a required run fails.
+- Helpers must not update `docs/SPRINT.md`, `docs/BACKLOG.md`, or `docs/WORKLOG.md`, and must not stage changes or create protocol commits.
+- Parallel helper work across multiple sprint rows or multiple DO packets is forbidden.
 
-Append a drift entry to ai/memory/ISSUES.md.
+### EXECUTION RULES
 
-Follow ai/workflows/RED_THREAD.md.
+- `docs/SPRINT.md` `Do` checklists must stay flat; each row may include as many substeps as needed, and each substep must be small enough to complete in one DO run.
+- Select work deterministically:
+  1. Pick the first sprint row with `Status != DONE`.
+  2. Inside that row, start from the first unchecked substep that starts with `- [ ]`.
+  3. Build one active DO packet containing that substep and optionally up to the next 3 adjacent unchecked substeps in the same row when their files overlap materially or they can be verified together.
+  4. Execute only that one packet.
+- Do not pull new scope from outside `docs/SPRINT.md`.
+- Before editing, record the DO baseline with `git status --porcelain`.
+- DO may start from a dirty baseline only when every pre-existing dirty path matches the active packet `Files` scopes and can be safely explained as part of that packet.
+- If any pre-existing dirty path falls outside scope, stop with `HARD BLOCKED: dirty baseline outside files-scope`.
+- If a required `run:` command fails, DO may use a bounded same-area gate-fix exception: edit the minimal additional files in the same product area needed to make that required run pass.
+- Before the product commit, run a hygiene check using `git status --porcelain` plus path inspection.
+- If any tracked dirty path is outside the active packet scope or bounded same-area gate-fix scope, stop with `HARD BLOCKED: hygiene check scope mismatch`.
+- DO must finish with a clean working tree at packet boundaries.
+- Two commits:
+  - Product commit: `do(S-XX): <packet summary>`
+  - Docs commit: `docs(S-XX): evidence update`
+- A substep may be marked `- [x]` only if all are true:
+  1. Relevant changes are staged.
+  2. The packet's required `run:` command(s) have been executed (or explicitly `N/A` only when the substep text allows it).
+  3. A product commit exists for that packet.
+  4. If DO modified docs, a docs commit exists and the tree is clean after it. If DO did not modify docs, the tree is clean after the product commit.
+  5. The product commit includes changes inside the active packet `Files` scopes.
+- Each checked substep in the packet must have an `evidence:` line using:
+  `packet:<product_hash> | run:<cmd or command-set> -> <result> | files:<paths from git show --name-only <product_hash>> | docs:<docs_hash or N/A> | status: clean`
+- When DO absorbs an in-scope dirty baseline or uses the same-area gate-fix exception, append `| baseline:absorbed` and/or `| gate-fix:<paths>` before `| status: clean`.
+- If the tree is dirty after the docs commit (or after the product commit when no docs were modified), write `HARD BLOCKED: dirty working tree` in the first unfinished substep evidence line, do not check unfinished substeps, append one DO worklog line, and stop.
+- If a required `run:` command fails and cannot be resolved within the same-area gate-fix exception, write `GATE BLOCKED: <reason>` in the first unfinished substep evidence line, do not check unfinished substeps, append one DO worklog line, and stop.
+- If the product commit does not include any change within the active packet `Files` scopes, write `HARD BLOCKED: commit missing files-scope` in the first unfinished substep evidence line, do not check unfinished substeps, append one DO worklog line, and stop.
+- If product commit is missing, stop and write `HARD BLOCKED: commit missing (commit-per-packet required)` in the first unfinished substep evidence line.
+- If a row is `TODO` and the first packet completes at least one substep, set row `Status=IN_PROGRESS`.
+- Set row `Status=READY` only when all substeps in the selected row are checked and each checked substep evidence line contains `packet` + `run` + `files`.
+- DO may set row status only `TODO -> IN_PROGRESS` and `IN_PROGRESS -> READY`; DO must never set `DONE`.
 
-Reduce scope to the smallest next step that advances the current milestone/sprint.
+### WORKLOG format
 
-Small-files rule:
-AGENTS.md, ai/LOADOUT.md, ai/RULES.md, PROJECT_STATUS.md must remain small (<150 lines). If they grow, split and update this route map.
+`- [HH:MM] DO: <one-line summary> (sprint: S-xx, links: <commit or file paths>)`
 
-Output discipline:
+### STOP CONDITIONS
 
-No speculative claims about repo behavior. Cite file paths or command output.
+- If blocked: write `HARD BLOCKED:` or `GATE BLOCKED:` in the sprint row, append one DO worklog line, then stop.
+- If task requires scope change beyond the bounded same-area gate-fix rule: add task to backlog and stop.
 
-Prefer minimal diffs. No "cleanup" changes unless requested.
+## REVIEW protocol
 
-Every non-trivial step must be anchored with a commit and recorded in WORKLOG.md with commit hash.
+### REQUIRED READS
 
-New .md and code files: include "WHAT IT DO?" header at top (R9).
+- `docs/CANONICAL.md`
+- `AGENTS.md`
+- `docs/PROJECT_STATUS.md`
+- `docs/ROADMAP.md`
+- `docs/SPRINT.md`
+- `docs/BACKLOG.md`
+- `docs/DECISIONS.md` (if present)
+- `docs/WORKLOG.md` (last ~30 lines only)
+- Relevant code evidence for sprint acceptance checks
+- Working tree state via read-only `git status` or `git diff` when evidence validation needs it
+
+### ALLOWED WRITES
+
+- `docs/SPRINT.md` (Evidence and Status updates only)
+- `docs/PROJECT_STATUS.md`
+- `docs/BACKLOG.md`
+- `docs/CANONICAL_REPORT.md`
+- `docs/WORKLOG.md` (append exactly one REVIEW line)
+
+### FORBIDDEN TOUCH
+
+- `docs/ROADMAP.md`
+- `docs/DECISIONS.md`
+- `docs/CANONICAL.md`
+- `AGENTS.md`
+- `claude.md`
+- Product code files
+- Sprint table structure and `Do` substep content in `docs/SPRINT.md`
+
+### REVIEW OUTPUT RULES
+
+- Verify sprint Evidence against Acceptance criteria.
+- Treat sprint rows with `Status=READY` as eligible for acceptance verification.
+- REVIEW may read product code and use read-only verification commands; it must not write product code.
+- If Evidence is missing for a `TODO` sprint item, write `Evidence needed` and continue review.
+- If working tree is dirty, report `Working tree dirty: <file list>` and continue review using current state.
+- If commit hash evidence is not available due to uncommitted work, accept temporary evidence as `uncommitted: <git diff summary or file list>; commit hash pending`.
+- REVIEW may only update sprint `Evidence` and `Status`, plus backlog items for confirmed scope gaps.
+- REVIEW may set `Status=DONE` only from `Status=READY`.
+- REVIEW may set `Status=DONE` only when:
+  1. Acceptance is satisfied.
+  2. Evidence for the row includes commit hash and test output or artifact path.
+- If row `Status != READY`, do not mark `DONE`; write `Not eligible (status != READY)` or `Evidence needed`.
+- If acceptance fails or evidence is insufficient, keep `Status=READY` or set `IN_PROGRESS` only if more DO work is required.
+- Report findings first, ordered by severity.
+- A REVIEW run is considered PASS only when no blocker is triggered and all intended review doc updates are complete.
+- When REVIEW is PASS, stage and commit the REVIEW doc updates in one docs-only commit containing only allowed REVIEW write files.
+- REVIEW pass commit message must be `review: evidence update`.
+- After the REVIEW pass commit, `git status --porcelain` must be empty. If not, record `BLOCKED: dirty working tree after REVIEW pass commit` and stop.
+
+### WORKLOG format
+
+`- [HH:MM] REVIEW: <one-line summary> (findings: <brief>)`
+
+### STOP CONDITIONS
+
+- Pre-existing dirty working tree is allowed during REVIEW checks, but REVIEW cannot be reported as PASS unless the tree is clean at the end.
+- If completing REVIEW would require modifying forbidden files, stop and report.
+- If scope violations are detected, stop.
+- If contradictions in canonical hierarchy are detected, stop.
+- If REVIEW PASS commit cannot be created or the working tree cannot be made clean, stop and report blocker.
