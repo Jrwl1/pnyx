@@ -87,3 +87,25 @@ If accepted:
 Spec updated in commit: ba995d3
 
 Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/roadmap/SPRINT.md, PROJECT_STATUS.md.
+
+---
+
+CR-004: Admin-only canonical politician creation + local bootstrap helper
+
+Proposed change: Tighten `POST /politicians` from `moderator|admin` to `admin` only, while keeping politician proposal review and statement creation behavior unchanged. Add a local-only bootstrap helper that seeds a predictable admin user and prints a ready-to-use JWT for development.
+
+Motivation: Reduce the set of actors who can create canonical politician rows directly while keeping local development practical.
+
+Impacted V1 sections (CAP IDs): CAP-002, role matrix, auth summary, policy decisions, proof coverage.
+
+Risks: Slightly higher admin dependency for canonical create operations; tests and docs that assumed moderator create must be updated together.
+
+Testing/migration implications: Update canonical-create authorization tests/setups, add bootstrap helper regression coverage, and sync the locked spec + traceability docs to the new role gate.
+
+Decision: accepted
+
+If accepted:
+
+Spec updated in commit: TBD
+
+Docs updated: ai/planning/V1_SPEC_LOCK.md, ai/roadmap/MILESTONES.md, ai/planning/API_CONTRACT.md, ai/planning/DATA_MODEL.md, docs/TRACEABILITY_V1.md, PROJECT_STATUS.md.

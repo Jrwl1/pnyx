@@ -103,7 +103,7 @@ CAPTCHA enforcement knobs:
 - Visibility: excludes soft-deleted canonical rows (`deleted_at IS NULL`)
 
 #### `POST /politicians`
-- Auth: `moderator|admin`
+- Auth: `admin`
 - Rate limit: `politician-create`
 - Body: `{ name: string, region?: string, office?: string, externalId?: string }`
 - `201`: `{ id: number }`

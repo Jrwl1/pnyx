@@ -11,7 +11,7 @@ Current mode: Roadmap (S5 Done; post-S5 frontend delivered outside the current m
 What is true now:
 
 - ai/planning/V1_SPEC_LOCK.md is LOCKED (Locked at: 2025-02-15).
-- ai/memory/CHANGE_REQUESTS.md includes accepted CR-002 (moderated intake) and CR-003 (CAPTCHA + fuzzy assistive matching).
+- ai/memory/CHANGE_REQUESTS.md includes accepted CR-002 (moderated intake), CR-003 (CAPTCHA + fuzzy assistive matching), and CR-004 (admin-only canonical create + local bootstrap helper).
 - ai/roadmap/MILESTONES.md includes M4 (trust + abuse hardening) after completed M3.
 - ai/roadmap/SPRINT.md marks S5 `Done` with reviewer PASS evidence and coordinator closeout checklist complete.
 - Lifecycle audit gap closure work is recorded in `WORKLOG.md` as the completed S4 hardening batch.
@@ -25,4 +25,4 @@ Next action:
 
 Notes:
 
-- Policy baseline remains: only `moderator|admin` can create canonical politicians; registered users submit proposals for moderated approval.
+- Policy baseline remains: only `admin` can create canonical politicians; registered users submit proposals for moderated approval.

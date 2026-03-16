@@ -19,7 +19,7 @@ WHAT IT DO? Maps locked V1 capabilities and governance controls to implemented e
 
 | Control area | Implemented endpoints / behavior | Primary regression suites |
 | --- | --- | --- |
-| Canonical create role gate | `POST /politicians` requires `moderator|admin` (`user|anonymous` denied) | `test/role-matrix.test.ts`, `test/politician-dedupe.test.ts` |
+| Canonical create role gate | `POST /politicians` requires `admin` (`anonymous|user|moderator` denied) | `test/role-matrix.test.ts`, `test/politician-dedupe.test.ts`, `test/local-admin-bootstrap.test.ts` |
 | Registration role hardening | `POST /auth/register` rejects public `moderator|admin` assignment | `test/register-role-hardening.test.ts` |
 | Register CAPTCHA enforcement | `POST /auth/register` validates captcha token when enforcement is active | `test/register-captcha.test.ts` |
 | Proposal-submit CAPTCHA enforcement | `POST /politician-proposals` validates captcha for eligible caller role when enforcement is active | `test/proposal-captcha.test.ts` |

@@ -214,7 +214,7 @@ Indexes/constraints:
 - `INV-006` role-aware soft-delete visibility:
   - `GET /statements` and `GET /statements/:id` include pending-delete rows only for `moderator|admin`; deleted rows are excluded.
 - `INV-007` canonical politician creation role gate:
-  - Enforced by `POST /politicians` `requireRole("moderator")` (admin inherits).
+  - Enforced by `POST /politicians` `requireRole("admin")`.
 - `INV-008` proposal decision metadata integrity:
   - Review path sets `decision_by`, `decision_reason`, `decision_code`, `decided_at`, and blocks re-review once status is not `pending`.
 

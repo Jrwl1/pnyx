@@ -54,7 +54,7 @@ Out-of-scope for M0:
 M1: Governance hardening + moderated politician intake
 
 Goal:
-Deliver governance hardening after M0 by enforcing moderator/admin-only canonical politician creation, introducing user proposal intake, and closing privilege/abuse paths around role assignment and intake workflows.
+Deliver governance hardening after M0 by enforcing admin-only canonical politician creation, introducing user proposal intake, and closing privilege/abuse paths around role assignment and intake workflows.
 
 Maps to V1 CAPs:
 - CAP-002: Politician proposal intake + moderated canonical create.
@@ -63,7 +63,7 @@ Maps to V1 CAPs:
 - Rate limits: proposal submit, politician create, and global fallback coverage.
 
 Acceptance criteria:
-- Canonical politician create endpoint is restricted to `moderator|admin`; `user|anonymous` are denied (`403`).
+- Canonical politician create endpoint is restricted to `admin`; `anonymous|user|moderator` are denied (`403`).
 - Registered users can submit politician proposals; proposal queue supports `approve|reject|duplicate` decisions by moderator/admin.
 - Proposal approval creates or links canonical politician records atomically and preserves dedupe guarantees (`externalId` precedence else normalized tuple).
 - Public register path cannot self-assign privileged roles (`moderator|admin`).

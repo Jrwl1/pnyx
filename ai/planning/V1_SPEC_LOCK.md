@@ -13,7 +13,7 @@ Lock rules:
 
 In scope (V1)
 
-- Politicians as canonical identities (moderator/admin create only; optional `externalId`; `verified` flag).
+- Politicians as canonical identities (admin create only; optional `externalId`; `verified` flag).
 - Statements tied to one politician with required `sourceUrl`, `body`, `dateSaid`; statement starts `pending`.
 - Verification status lifecycle managed only by moderator/admin.
 - One vote row per user per statement with visible aggregate and vote overwrite on recast.
@@ -25,8 +25,8 @@ In scope (V1)
 - Roles:
   - Anonymous: read-only.
   - Registered user: submit politician proposals, add statement, vote, edit own within grace window, withdraw own.
-  - Moderator: approve/reject/mark-duplicate politician proposals; create canonical politicians; edit any statement; set verification status; propose delete.
-  - Admin: moderator abilities + approve delete.
+  - Moderator: approve/reject/mark-duplicate politician proposals; edit any statement; set verification status; propose delete.
+  - Admin: moderator abilities + create canonical politicians + approve delete.
 
 Out of scope (V1)
 
@@ -67,14 +67,14 @@ Policy decisions resolved
   - moderator/admin lists include pending-delete by default and exclude `isDeleted=true` by default.
   - explicit filters: `includeDeleted=true`, `includePendingDelete=true|false`.
 - Canonical politician dedupe precedence: `externalId` when present; otherwise normalized `(name, region, office)`.
-- Politician intake policy: users submit proposals; only moderator/admin can create canonical politician records from approved proposals.
+- Politician intake policy: users submit proposals; only admin can create canonical politician records directly or via approved proposals.
 - Registration role policy: public `/auth/register` may only create `user`; privileged role requests (`moderator|admin`) are rejected.
 - CAPTCHA policy: `/auth/register` and `/politician-proposals` require valid captcha verification when enforcement is enabled; missing/invalid captcha returns deterministic error responses.
 - V1 rate limits:
   - login: `5/min` per IP and per account
   - register: `3/min` per IP
   - submit politician proposal: `5/hour` per user
-  - create politician (moderator/admin): `30/hour` per actor
+  - create politician (admin only): `30/hour` per actor
   - add statement: `10/hour` per user
   - vote: `30/min` per user
   - global fallback: `100/5min` per IP
@@ -114,7 +114,7 @@ Global invariants
 - INV-004: No silent statement lifecycle edits; audited via immutable revision records.
 - INV-005: Politician canonical identity uniqueness with dedupe precedence (`externalId` first).
 - INV-006: Soft-delete and pending-delete list defaults are role-aware and explicit.
-- INV-007: Canonical politician rows are only created by moderator/admin actions.
+- INV-007: Canonical politician rows are only created by admin actions.
 - INV-008: Every politician proposal has immutable decision metadata when status != `pending`.
 
 ---
@@ -129,7 +129,8 @@ Auth summary:
 - Read endpoints: anonymous and authenticated users.
 - Write endpoints (statement/vote/edit/withdraw): authenticated users.
 - Politician proposal submit: authenticated users.
-- Politician canonical create + proposal review: moderator/admin only.
+- Politician canonical create: admin only.
+- Politician proposal review: moderator/admin.
 - Verification status + pending delete: moderator/admin.
 - Approve delete: admin only.
 
@@ -153,7 +154,7 @@ CAP-001: List and view politicians and statements
 - References: REQ-006, FLOW-001, INV-001, INV-002, INV-006.
 
 CAP-002: Politician proposal intake + moderated canonical create
-- Behavior: Registered users submit politician proposals; moderator/admin review queue and create canonical politician records under dedupe rules.
+- Behavior: Registered users submit politician proposals; moderator/admin review queue decisions are preserved, and canonical politician records are created by admin actions under dedupe rules.
 - Inputs/outputs: Proposal input `name`, optional `region`, `office`, `externalId`, optional note; review action `approve|reject|duplicate` with optional decision reason; approval outputs linked canonical politician id.
 - Edge cases: Anonymous submit/review -> 403; user direct canonical create -> 403; duplicate canonical identity on approve/create -> 409; unknown proposal -> 404.
 - References: REQ-001, REQ-007, FLOW-002, FLOW-009, INV-005, INV-007, INV-008.
