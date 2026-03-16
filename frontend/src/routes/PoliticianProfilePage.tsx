@@ -5,7 +5,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
 import { usePublicData } from "../context/PublicDataContext";
-import { toPromiseRecord } from "../lib/domain";
+import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
 
 type ProfileTab = "promises" | "votes" | "evidence";
@@ -22,6 +22,7 @@ export const PoliticianProfilePage = (): ReactElement => {
   const activeTab: ProfileTab = PROFILE_TABS.includes(selectedTab) ? selectedTab : "promises";
 
   const politician = useMemo(() => politicians.find((entry) => entry.id === politicianId), [politicianId, politicians]);
+  const linkedPartyShell = useMemo(() => findPartyShellForPolitician(politician), [politician]);
   const promiseRecords = useMemo(() => {
     return statements.filter((statement) => statement.politicianId === politicianId).map(toPromiseRecord);
   }, [politicianId, statements]);
@@ -66,7 +67,11 @@ export const PoliticianProfilePage = (): ReactElement => {
       <section className="hero-panel stack-sm">
         <p className="eyebrow">Politician profile</p>
         <h1>{politician.name}</h1>
-        <p className="lede">{formatIdentityLine(politician.office, politician.region)}</p>
+        <p className="lede">{formatIdentityLine(politician.office, getTerritoryLabel(politician))}</p>
+        <p className="meta-line">
+          Party affiliation:{" "}
+          {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{getPartyAffiliationLabel(politician)}</Link> : getPartyAffiliationLabel(politician)}
+        </p>
         <p className="meta-line mono-inline">External id: {politician.externalId ?? "Data not yet available"}</p>
       </section>
 
@@ -98,6 +103,29 @@ export const PoliticianProfilePage = (): ReactElement => {
         </article>
       </section>
 
+      <section className="split-grid" aria-label="Party context">
+        <article className="card stack-sm">
+          <h2>Party affiliation</h2>
+          <p>
+            {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{getPartyAffiliationLabel(politician)}</Link> : getPartyAffiliationLabel(politician)}
+          </p>
+          <p className="meta-line">
+            {linkedPartyShell
+              ? "Linked to the frontend-local party shell until canonical party membership APIs exist."
+              : "No party affiliation field is available from the connected public dataset yet."}
+          </p>
+        </article>
+
+        <article className="card stack-sm">
+          <h2>Party-line alignment</h2>
+          <StatusChip status="unknown" prefix="Party-line alignment" />
+          <p>PNYX does not infer party-line behavior without a linked party, sourced party stance records, and mapped politician comparisons.</p>
+          <p className="meta-line">
+            Until those records exist, this profile keeps party-line alignment explicit as Unknown rather than implying support or a break.
+          </p>
+        </article>
+      </section>
+
       <section className="card stack-sm" aria-label="Profile tabs">
         <div className="tabs" role="tablist" aria-label="Politician profile tabs">
           <button className={activeTab === "promises" ? "tab active" : "tab"} role="tab" aria-selected={activeTab === "promises"} onClick={() => onTabChange("promises")} type="button">
@@ -113,7 +141,9 @@ export const PoliticianProfilePage = (): ReactElement => {
 
         {activeTab === "promises" ? (
           <>
-            <p className="data-note">Fulfillment and vote alignment fields are currently Unknown until backend accountability fields are available.</p>
+            <p className="data-note">
+              Fulfillment, vote alignment, and party-line comparison fields are currently Unknown until backend accountability mappings are available.
+            </p>
 
             <div className="table-wrapper desktop-only">
               <table className="data-table">
@@ -170,7 +200,7 @@ export const PoliticianProfilePage = (): ReactElement => {
         {activeTab === "votes" ? (
           <div className="stack-sm">
             <p className="data-note">
-              Politician roll-call vote events are not yet available in the backend. Alignment remains Unknown for every promise.
+              Politician roll-call vote events and party-line comparisons are not yet available in the backend. Alignment remains Unknown for every promise.
             </p>
             <div className="cards-grid cards-grid-1">
               {promiseRecords.map((promise) => (

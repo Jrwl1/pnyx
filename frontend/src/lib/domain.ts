@@ -9,7 +9,7 @@ import type {
   PromiseStats,
   StatementSummary
 } from "../types";
-import { PARTY_ROUTE_SHELLS } from "../types";
+import { getPartyRouteShell, PARTY_ROUTE_SHELLS } from "../types";
 import { DATA_NOT_AVAILABLE, normalizeForSearch } from "./format";
 
 export const ISSUE_OPTIONS = ["Economy", "Healthcare", "Climate", "Education", "Public Safety"] as const;
@@ -81,6 +81,21 @@ export const findPartyShellByQuery = (query: string): PartyProfileShell | null =
         .some((candidate) => candidate === normalizedQuery);
     }) ?? null
   );
+};
+
+export const findPartyShellForPolitician = (politician: Politician | null | undefined): PartyProfileShell | null => {
+  if (!politician) {
+    return null;
+  }
+
+  if (politician.partyId) {
+    const directMatch = getPartyRouteShell(politician.partyId);
+    if (directMatch) {
+      return directMatch;
+    }
+  }
+
+  return findPartyShellByQuery(politician.partyShortName ?? politician.partyName ?? "");
 };
 
 export const getIssueTagsForStatement = (statement: StatementSummary): string[] => {

@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
 import { usePublicData } from "../context/PublicDataContext";
 import { getStatementById, getStatementRevisions } from "../lib/api";
-import { toPromiseRecord } from "../lib/domain";
+import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
 import type { StatementDetail, StatementRevision } from "../types";
 
@@ -92,6 +92,8 @@ export const PromiseDetailPage = (): ReactElement => {
 
   const promiseRecord = toPromiseRecord(statement);
   const politician = politicians.find((entry) => entry.id === statement.politicianId);
+  const linkedPartyShell = findPartyShellForPolitician(politician);
+  const partyAffiliationLabel = politician ? getPartyAffiliationLabel(politician) : "Data not yet available";
 
   return (
     <div className="stack-lg">
@@ -101,11 +103,14 @@ export const PromiseDetailPage = (): ReactElement => {
         <p className="meta-line">
           {politician ? (
             <>
-              <Link to={`/politicians/${politician.id}`}>{politician.name}</Link> - {formatIdentityLine(politician.office, politician.region)}
+              <Link to={`/politicians/${politician.id}`}>{politician.name}</Link> - {formatIdentityLine(politician.office, getTerritoryLabel(politician))}
             </>
           ) : (
             <>Politician id {statement.politicianId}</>
           )}
+        </p>
+        <p className="meta-line">
+          Party affiliation: {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{partyAffiliationLabel}</Link> : partyAffiliationLabel}
         </p>
       </section>
 
@@ -134,6 +139,19 @@ export const PromiseDetailPage = (): ReactElement => {
             <li>No roll-call vote events are currently available from the backend.</li>
           </ul>
         </article>
+      </section>
+
+      <section className="card stack-sm" aria-label="Party stance comparison">
+        <h2>Party stance comparison</h2>
+        <StatusChip status="unknown" prefix="Party stance comparison" />
+        <p>
+          Linked party:{" "}
+          {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{partyAffiliationLabel}</Link> : partyAffiliationLabel}
+        </p>
+        <p>No official party stance record is mapped to this promise yet.</p>
+        <p className="meta-line">
+          PNYX only compares a promise against party stance when a linked party and a sourced party stance record both exist. Until then, this block remains explicit about Unknown state.
+        </p>
       </section>
 
       <section className="card stack-sm" aria-label="Evidence list">
@@ -176,7 +194,9 @@ export const PromiseDetailPage = (): ReactElement => {
         <p>
           Oppose: <strong>{statement.aggregate.oppose}</strong>
         </p>
-        <p className="data-note">Community confidence reflects user sentiment and is not a politician roll-call voting record.</p>
+        <p className="data-note">
+          Community confidence reflects user sentiment and is not a politician roll-call voting record or a party stance record.
+        </p>
       </section>
     </div>
   );
