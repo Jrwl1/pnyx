@@ -10,3 +10,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [01:09] REVIEW: accept S-12 Finland-first home and directory packet (findings: none)
 - [01:11] DO: add party-context detail and methodology surfaces (sprint: S-13, links: 864104a, docs/SPRINT.md)
 - [01:12] REVIEW: accept S-13 party-context detail packet (findings: none)
+- [01:17] DO: verify public routes and silence router warnings (sprint: S-14, links: 827b1aa, docs/SPRINT.md)

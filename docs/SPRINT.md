@@ -27,7 +27,7 @@ Implement the first Finland-first public discovery UI slice against the shipped 
 | S-11 | Add Finland-first route shell and public nav for party-aware discovery. See `S-11` substeps below. | `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts` | Public nav is `Home | Politicians | Parties | Methodology`, routes `/parties` and `/parties/:id` exist, and the frontend build/typecheck pass. | REVIEW PASS: packet `c537be9` satisfies the route-shell acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if route-shell changes require backend or API changes beyond frontend-local placeholder/unknown-state handling. | DONE |
 | S-12 | Refresh home and politician directory for Finland-first public discovery. See `S-12` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Home keeps politician search as the dominant CTA, adds party-aware discovery context, and politician directory reflects Finland-first labels and party-aware filtering states without faking data. | REVIEW PASS: packet `4b8f29c` satisfies the Finland-first home/directory acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if the slice requires canonical changes or backend data not already covered by honest unknown-state handling. | DONE |
 | S-13 | Add party-context surfaces to politician detail, promise detail, and methodology. See `S-13` substeps below. | `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Politician and promise detail pages include party-context sections, methodology defines party stance and party-line logic, and all missing data is rendered as explicit unknown states. | REVIEW PASS: packet `864104a` satisfies the detail-party-context acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if detail-page party context requires invented alignment or fabricated backend values. | DONE |
-| S-14 | Verify the first public discovery slice against build and browser expectations. See `S-14` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and a browser pass across Home / Politicians / Parties / Methodology complete with no blocking UI regression. | Pending. | Stop if required verification reveals frontend behavior that cannot be fixed within the same frontend area. | TODO |
+| S-14 | Verify the first public discovery slice against build and browser expectations. See `S-14` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and a browser pass across Home / Politicians / Parties / Methodology complete with no blocking UI regression. | Packet `827b1aa` completed the final static proof and browser verification after silencing route-wide React Router warnings; the row is ready for acceptance review. | Stop if required verification reveals frontend behavior that cannot be fixed within the same frontend area. | READY |
 
 ### S-11 substeps
 
@@ -82,12 +82,12 @@ Implement the first Finland-first public discovery UI slice against the shipped 
 
 ### S-14 substeps
 
-- [ ] Run frontend static proof for the updated public discovery slice
+- [x] Run frontend static proof for the updated public discovery slice
   - files: `frontend/**`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: pending
+  - evidence: packet:827b1aa | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/main.tsx | docs:N/A | status: clean
 
-- [ ] Verify the updated public route shell in a browser across Home, Politicians, Parties, and Methodology
+- [x] Verify the updated public route shell in a browser across Home, Politicians, Parties, and Methodology
   - files: `frontend/**`
   - run: `playwright MCP verification of /, /politicians, /parties, /methodology`
-  - evidence: pending
+  - evidence: packet:827b1aa | run:playwright MCP verification of /, /politicians, /parties, /methodology on http://127.0.0.1:4174 -> pass | files:frontend/src/main.tsx | docs:N/A | status: clean
