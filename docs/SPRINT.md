@@ -26,7 +26,7 @@ Implement the first Finland-first public discovery UI slice against the shipped 
 | --- | --- | --- | --- | --- | --- | --- |
 | S-11 | Add Finland-first route shell and public nav for party-aware discovery. See `S-11` substeps below. | `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts` | Public nav is `Home | Politicians | Parties | Methodology`, routes `/parties` and `/parties/:id` exist, and the frontend build/typecheck pass. | REVIEW PASS: packet `c537be9` satisfies the route-shell acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if route-shell changes require backend or API changes beyond frontend-local placeholder/unknown-state handling. | DONE |
 | S-12 | Refresh home and politician directory for Finland-first public discovery. See `S-12` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Home keeps politician search as the dominant CTA, adds party-aware discovery context, and politician directory reflects Finland-first labels and party-aware filtering states without faking data. | REVIEW PASS: packet `4b8f29c` satisfies the Finland-first home/directory acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if the slice requires canonical changes or backend data not already covered by honest unknown-state handling. | DONE |
-| S-13 | Add party-context surfaces to politician detail, promise detail, and methodology. See `S-13` substeps below. | `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Politician and promise detail pages include party-context sections, methodology defines party stance and party-line logic, and all missing data is rendered as explicit unknown states. | Pending. | Stop if detail-page party context requires invented alignment or fabricated backend values. | TODO |
+| S-13 | Add party-context surfaces to politician detail, promise detail, and methodology. See `S-13` substeps below. | `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Politician and promise detail pages include party-context sections, methodology defines party stance and party-line logic, and all missing data is rendered as explicit unknown states. | Packet `864104a` added politician, promise, and methodology party-context surfaces; all S-13 substeps now carry packet evidence and the row is ready for acceptance review. | Stop if detail-page party context requires invented alignment or fabricated backend values. | READY |
 | S-14 | Verify the first public discovery slice against build and browser expectations. See `S-14` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and a browser pass across Home / Politicians / Parties / Methodology complete with no blocking UI regression. | Pending. | Stop if required verification reveals frontend behavior that cannot be fixed within the same frontend area. | TODO |
 
 ### S-11 substeps
@@ -65,20 +65,20 @@ Implement the first Finland-first public discovery UI slice against the shipped 
 
 ### S-13 substeps
 
-- [ ] Add party affiliation and party-line context to the politician profile without inventing alignment data
+- [x] Add party affiliation and party-line context to the politician profile without inventing alignment data
   - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
   - run: `pnpm frontend:typecheck`
-  - evidence: pending
+  - evidence: packet:864104a | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
 
-- [ ] Add party stance comparison to promise detail with explicit unknown-state handling
+- [x] Add party stance comparison to promise detail with explicit unknown-state handling
   - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: pending
+  - evidence: packet:864104a | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
 
-- [ ] Extend methodology copy to define party stance and party-line comparison alongside fulfillment and vote alignment
+- [x] Extend methodology copy to define party stance and party-line comparison alongside fulfillment and vote alignment
   - files: `frontend/src/routes/MethodologyPage.tsx`
   - run: `pnpm frontend:build`
-  - evidence: pending
+  - evidence: packet:864104a | run:pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
 
 ### S-14 substeps
 
