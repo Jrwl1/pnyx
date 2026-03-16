@@ -11,18 +11,20 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 
 ## Epic E2: Finland-first public discovery and party context
 
-- B-101: Lock the next public discovery milestone against the shipped Frontend V3 and backend reality.
-- B-102: Define party-page requirements and acceptance criteria.
-- B-103: Define party stance records separately from politician stance records.
-- B-104: Define politician-vs-party alignment and party-line-break surfaces.
-- B-105: Identify data-model and API implications before implementation.
+- B-101: Lock the next public discovery milestone against the shipped Frontend V3 and backend reality. -- DONE
+- B-102: Define party-page requirements and acceptance criteria. -- DONE
+- B-103: Define party stance records separately from politician stance records. -- DONE
+- B-104: Define politician-vs-party alignment and party-line-break surfaces. -- DONE
+- B-105: Identify data-model and API implications before implementation. -- DONE
 
 ## Epic E3: Public-surface implementation
 
-- B-201: Implement party discovery surfaces and routing.
-- B-202: Extend politician detail views with party-context surfaces where appropriate.
-- B-203: Add test coverage for public discovery routing and key trust boundaries.
-- B-204: Reconcile `docs/FRONTEND_V3_SPEC.md` with the next shipped public slice.
+- B-201: Implement route shell changes for `Parties` nav, `/parties`, and `/parties/:id`.
+- B-202: Refresh home and politician directory for Finland-first public discovery.
+- B-203: Extend politician profile, promise detail, and methodology with party-context surfaces.
+- B-204: Add verification coverage for updated public discovery routing, build, and browser-verified trust states. -- IN SPRINT
+- B-205: Introduce frontend-local party placeholder data or equivalent honest unknown-state structures until backend party APIs exist.
+- B-206: Add backend-ready follow-ups for canonical parties, memberships, and party stances once frontend route shells land.
 
 ## Epic E4: Trust and moderation hardening
 

@@ -1,6 +1,6 @@
 # Sprint
 
-Window: 2026-03-16 to 2026-04-06
+Window: 2026-03-17 to 2026-04-06
 
 Executable DO queue. Execute top-to-bottom.
 Each `Do` checklist must stay flat and each substep must be small enough to complete in one DO run.
@@ -18,27 +18,76 @@ Required substep shape:
 
 ## Goal (this sprint)
 
-Lock the next Finland-first public discovery and party-context delivery slice against the shipped Frontend V3 and backend reality.
+Implement the first Finland-first public discovery UI slice against the shipped Frontend V3, starting with route shell, nav, and party-aware public surfaces that remain honest about missing backend data.
 
 ---
 
 | ID | Do | Files | Acceptance | Evidence | Stop | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| S-01 | Review shipped public-surface reality and lock the next public discovery milestone. See `S-01` substeps below. | `docs/ROADMAP.md`, `docs/BACKLOG.md`, `docs/SPRINT.md`, `docs/PROJECT_STATUS.md`, `docs/CANONICAL_REPORT.md`, `docs/DECISIONS.md`, `docs/FRONTEND_V3_SPEC.md`, `docs/TRACEABILITY_V1.md`, `frontend/**`, `src/**`, `test/**` | Canonical docs describe the next Finland-first delivery slice in a way that matches current shipped code and identifies the first executable implementation queue. | Pending. | Stop if the shipped `frontend/`, `src/`, and current product docs contradict each other in a way that cannot be resolved by canonical hierarchy without a customer decision. | TODO |
+| S-11 | Add Finland-first route shell and public nav for party-aware discovery. See `S-11` substeps below. | `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts` | Public nav is `Home | Politicians | Parties | Methodology`, routes `/parties` and `/parties/:id` exist, and the frontend build/typecheck pass. | Pending. | Stop if route-shell changes require backend or API changes beyond frontend-local placeholder/unknown-state handling. | TODO |
+| S-12 | Refresh home and politician directory for Finland-first public discovery. See `S-12` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Home keeps politician search as the dominant CTA, adds party-aware discovery context, and politician directory reflects Finland-first labels and party-aware filtering states without faking data. | Pending. | Stop if the slice requires canonical changes or backend data not already covered by honest unknown-state handling. | TODO |
+| S-13 | Add party-context surfaces to politician detail, promise detail, and methodology. See `S-13` substeps below. | `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Politician and promise detail pages include party-context sections, methodology defines party stance and party-line logic, and all missing data is rendered as explicit unknown states. | Pending. | Stop if detail-page party context requires invented alignment or fabricated backend values. | TODO |
+| S-14 | Verify the first public discovery slice against build and browser expectations. See `S-14` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and a browser pass across Home / Politicians / Parties / Methodology complete with no blocking UI regression. | Pending. | Stop if required verification reveals frontend behavior that cannot be fixed within the same frontend area. | TODO |
 
-### S-01 substeps
+### S-11 substeps
 
-- [ ] Review the shipped public surfaces and identify the exact gap between current Frontend V3 and the Finland-first party-context scope
-  - files: `frontend/**`, `src/**`, `test/**`, `docs/FRONTEND_V3_SPEC.md`, `docs/TRACEABILITY_V1.md`, `docs/ROADMAP.md`, `docs/PROJECT_STATUS.md`
-  - run: `rg -n "party|politician|promise|methodology|ops" frontend src test docs`
+- [ ] Add `Parties` to the shared public nav and route table
+  - files: `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`
+  - run: `pnpm frontend:typecheck`
   - evidence: pending
 
-- [ ] Update canonical docs so the next milestone and backlog explicitly define party pages, party stance records, and politician-vs-party alignment surfaces
-  - files: `docs/ROADMAP.md`, `docs/BACKLOG.md`, `docs/PROJECT_STATUS.md`, `docs/CANONICAL_REPORT.md`, `docs/DECISIONS.md`
-  - run: `N/A`
+- [ ] Add route-shell page components for party directory and party profile
+  - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: pending
 
-- [ ] Replace this sprint placeholder row with the first implementation-ready queue once the milestone is locked
-  - files: `docs/SPRINT.md`
-  - run: `N/A`
+- [ ] Keep the new route shell honest about missing backend party APIs by using explicit unknown or placeholder states only
+  - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/types.ts`
+  - run: `pnpm frontend:build`
+  - evidence: pending
+
+### S-12 substeps
+
+- [ ] Replace politician-only home-page copy and sections with Finland-first discovery copy while keeping politician search as the primary CTA
+  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck`
+  - evidence: pending
+
+- [ ] Add party-aware discovery modules to home using honest local placeholder or unknown-state structures
+  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
+  - run: `pnpm frontend:build`
+  - evidence: pending
+
+- [ ] Refresh the politician directory for Finland-first labels and party-aware filter behavior
+  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: pending
+
+### S-13 substeps
+
+- [ ] Add party affiliation and party-line context to the politician profile without inventing alignment data
+  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck`
+  - evidence: pending
+
+- [ ] Add party stance comparison to promise detail with explicit unknown-state handling
+  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: pending
+
+- [ ] Extend methodology copy to define party stance and party-line comparison alongside fulfillment and vote alignment
+  - files: `frontend/src/routes/MethodologyPage.tsx`
+  - run: `pnpm frontend:build`
+  - evidence: pending
+
+### S-14 substeps
+
+- [ ] Run frontend static proof for the updated public discovery slice
+  - files: `frontend/**`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: pending
+
+- [ ] Verify the updated public route shell in a browser across Home, Politicians, Parties, and Methodology
+  - files: `frontend/**`
+  - run: `playwright MCP verification of /, /politicians, /parties, /methodology`
   - evidence: pending

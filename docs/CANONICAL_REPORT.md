@@ -1,6 +1,6 @@
 # Canonical report
 
-Last updated: 2026-03-16
+Last updated: 2026-03-17
 
 ## Migration summary
 
@@ -18,6 +18,14 @@ Last updated: 2026-03-16
 3. Delegation guidance existed in repo docs and helper rules.
    - Winner: the no-delegation rule in the new active contract. Direct MCP tools remain allowed and encouraged where useful.
 
-## Follow-up requirement
+## Reconciliation update
 
-- The next `PLAN` run must reconcile the new canonical milestone and sprint queue with current shipped `frontend/`, `src/`, `test/`, and `docs/FRONTEND_V3_SPEC.md` reality before implementation resumes.
+- The frontend public-discovery spec in `docs/FRONTEND_V3_SPEC.md` has now been absorbed into the active canonical direction for Finland-first party-aware public discovery.
+- Current shipped frontend reality remains narrower than the absorbed spec:
+  - `frontend/src/App.tsx` and `frontend/src/layout/PublicLayout.tsx` still expose only `Home | Politicians | Methodology`.
+  - No `frontend/src/routes/PartiesPage.tsx` or `frontend/src/routes/PartyProfilePage.tsx` exists yet.
+  - Current home, directory, profile, promise, and methodology pages remain politician-only and do not implement party-context surfaces.
+- Resolution by canonical hierarchy:
+  - Code wins for "what exists now".
+  - `docs/FRONTEND_V3_SPEC.md` + `docs/ROADMAP.md` win for "what must be delivered next".
+- This `PLAN` run resolves the previous placeholder sprint by converting it into an implementation-ready frontend queue grounded in current code and the absorbed public-discovery spec.

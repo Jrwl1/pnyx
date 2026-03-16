@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated: 2026-03-16
+Last updated: 2026-03-17
 
 Planning baseline:
 
@@ -22,7 +22,7 @@ Planning baseline:
 
 ## M1: Finland-first public discovery and party context lock
 
-**Status:** In progress.
+**Status:** Done.
 
 **Done criteria:**
 
@@ -33,13 +33,15 @@ Planning baseline:
 
 ## M2: Public discovery implementation
 
-**Status:** Planned.
+**Status:** In progress.
 
 **Done criteria:**
 
-1. Public politician and party discovery surfaces are implemented against the locked milestone.
-2. The first party-context surfaces are visible and test-covered.
-3. Search, routing, and detail pages stay consistent with `docs/FRONTEND_V3_SPEC.md` and the updated canonical docs.
+1. Public navigation and routing include `Home | Politicians | Parties | Methodology` plus route shells for `/parties` and `/parties/:id`.
+2. Home and politician-directory surfaces are refreshed for Finland-first public discovery while keeping politician search as the dominant action.
+3. Party directory and party profile route shells exist with honest unknown states or frontend-local placeholder structures where backend party APIs are not yet available.
+4. Politician profile, promise detail, and methodology surfaces include party context without inventing fulfillment, vote, or party-line data.
+5. `pnpm frontend:typecheck`, `pnpm frontend:build`, and targeted browser verification pass against the updated public discovery slice.
 
 ## M3: Trust, moderation, and evidence hardening
 
@@ -56,3 +58,5 @@ Planning baseline:
 1. Delegation or autopilot-based repo execution flows
 2. Repo-specific rules that deny useful non-delegating MCP tools by default
 3. Product planning that is not grounded in current shipped `frontend/`, `src/`, and `test/` reality
+4. Cross-country rollout before the Finland-first model is proven in code
+5. Public leaderboards as a primary discovery mechanic
