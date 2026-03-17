@@ -14,6 +14,15 @@ import {
 } from "./db/canonical-promises.js";
 import { db } from "./db/client.js";
 import { getPartyById, listCurrentPartyContexts, listParties, listPartyAliases, listPartyMembers } from "./db/party-graph.js";
+import {
+  buildPromiseClaimDuplicateAssist,
+  claimStatuses,
+  getPromiseClaimById,
+  listCanonicalHistory,
+  listClaimEquivalenceSignals,
+  listPromiseClaimAudits,
+  listPromiseClaims
+} from "./db/promise-claims.js";
 
 export const app = express();
 app.use(express.json());
@@ -283,9 +292,13 @@ type ProposalStatus = (typeof proposalStatuses)[number];
 const rejectReasonCodes = ["insufficient_evidence", "invalid_identity", "not_public_figure", "out_of_scope"] as const;
 const duplicateReasonCodes = ["duplicate_canonical", "duplicate_pending", "already_tracked"] as const;
 const canonicalPublicStatuses = ["draft", "public"] as const;
+const promiseClaimRejectReasonCodes = ["insufficient_evidence", "unverifiable_source", "out_of_scope"] as const;
+const promiseClaimSignalReasonCodes = ["same_claim", "same_promise", "different_subject", "different_scope"] as const;
 type RejectReasonCode = (typeof rejectReasonCodes)[number];
 type DuplicateReasonCode = (typeof duplicateReasonCodes)[number];
 type CanonicalPublicStatus = (typeof canonicalPublicStatuses)[number];
+type PromiseClaimRejectReasonCode = (typeof promiseClaimRejectReasonCodes)[number];
+type PromiseClaimSignalReasonCode = (typeof promiseClaimSignalReasonCodes)[number];
 
 const isProposalStatus = (value: string): value is ProposalStatus => {
   return proposalStatuses.includes(value as ProposalStatus);
@@ -301,6 +314,18 @@ const isDuplicateReasonCode = (value: string): value is DuplicateReasonCode => {
 
 const isCanonicalPublicStatus = (value: string): value is CanonicalPublicStatus => {
   return canonicalPublicStatuses.includes(value as CanonicalPublicStatus);
+};
+
+const isPromiseClaimStatus = (value: string): value is (typeof claimStatuses)[number] => {
+  return claimStatuses.includes(value as (typeof claimStatuses)[number]);
+};
+
+const isPromiseClaimRejectReasonCode = (value: string): value is PromiseClaimRejectReasonCode => {
+  return promiseClaimRejectReasonCodes.includes(value as PromiseClaimRejectReasonCode);
+};
+
+const isPromiseClaimSignalReasonCode = (value: string): value is PromiseClaimSignalReasonCode => {
+  return promiseClaimSignalReasonCodes.includes(value as PromiseClaimSignalReasonCode);
 };
 
 const createCanonicalPolitician = (input: CanonicalPoliticianInput, actorId: string): CanonicalPoliticianResult => {
@@ -799,6 +824,7 @@ const parsePageValue = (value: string | undefined, fallback: number, max: number
 
 const partyIdPattern = /^[a-z0-9-]{2,40}$/;
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+const INVALID_DATE_TOKEN = "__INVALID_DATE__";
 
 const normalizeOptionalText = (value: unknown): string | null => {
   if (value == null) {
@@ -813,7 +839,7 @@ const normalizeOptionalDate = (value: unknown): string | null => {
   if (!normalized) {
     return null;
   }
-  return datePattern.test(normalized) ? normalized : "__INVALID_DATE__";
+  return datePattern.test(normalized) ? normalized : INVALID_DATE_TOKEN;
 };
 
 const serializePartySummary = (row: ReturnType<typeof listParties>[number]) => ({
@@ -1696,8 +1722,515 @@ app.get("/canonical-promises/:id", (req, res) => {
 
   res.json({
     promise,
-    acceptedSources: listCanonicalPromiseSources(canonicalPromiseId)
+    acceptedSources: listCanonicalPromiseSources(canonicalPromiseId),
+    history: listCanonicalHistory(canonicalPromiseId)
   });
+});
+
+app.post("/promise-claims", requireRole("user"), (req, res) => {
+  const { politicianId, claimText, sourceUrl, dateSaid, sourceNote } = req.body as {
+    politicianId?: number;
+    claimText?: string;
+    sourceUrl?: string;
+    dateSaid?: string;
+    sourceNote?: string;
+  };
+
+  if (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+  const normalizedClaimText = claimText?.trim() ?? "";
+  const normalizedSourceUrl = sourceUrl?.trim() ?? "";
+  const normalizedDateSaid = normalizeOptionalDate(dateSaid);
+  if (!normalizedClaimText || !normalizedSourceUrl || !normalizedDateSaid || normalizedDateSaid === INVALID_DATE_TOKEN) {
+    res.status(400).json({ error: "politicianId, claimText, sourceUrl, and dateSaid are required" });
+    return;
+  }
+
+  const politician = db.prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(politicianId) as { "1"?: number } | undefined;
+  if (!politician) {
+    res.status(404).json({ error: "politician not found" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO promise_claims (submitted_by, politician_id, claim_text, source_url, date_said, source_note, status)
+         VALUES (?, ?, ?, ?, ?, ?, 'pending')`
+      )
+      .run(req.auth.userId ?? "unknown", politicianId, normalizedClaimText, normalizedSourceUrl, normalizedDateSaid, normalizeOptionalText(sourceNote));
+    const claimId = result.lastInsertRowid as number;
+    db.prepare(
+      `INSERT INTO promise_claim_audits (claim_id, actor_id, action, from_status, to_status, reason)
+       VALUES (?, ?, 'submitted', NULL, 'pending', NULL)`
+    ).run(claimId, req.auth.userId ?? "unknown");
+    res.status(201).json({ id: claimId, status: "pending" });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "duplicate pending claim" : "internal server error"
+    });
+  }
+});
+
+app.post("/promise-claims/duplicate-assist-preview", requireRole("user"), (req, res) => {
+  const { politicianId, claimText, sourceUrl } = req.body as { politicianId?: number; claimText?: string; sourceUrl?: string };
+  if (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+  const normalizedClaimText = claimText?.trim() ?? "";
+  const normalizedSourceUrl = sourceUrl?.trim() ?? "";
+  if (!normalizedClaimText || !normalizedSourceUrl) {
+    res.status(400).json({ error: "claimText and sourceUrl are required" });
+    return;
+  }
+
+  res.json(
+    buildPromiseClaimDuplicateAssist({
+      politicianId,
+      claimText: normalizedClaimText,
+      sourceUrl: normalizedSourceUrl
+    })
+  );
+});
+
+app.get("/promise-claims", requireRole("user"), (req, res) => {
+  const includeAll = req.auth.role === "moderator" || req.auth.role === "admin";
+  const statusRaw = (req.query.status as string | undefined)?.trim().toLowerCase();
+  const status = statusRaw && statusRaw !== "all" ? statusRaw : undefined;
+  if (status && !isPromiseClaimStatus(status)) {
+    res.status(400).json({ error: "invalid status filter" });
+    return;
+  }
+
+  const assignee = includeAll ? (req.query.assignee as string | undefined)?.trim() : undefined;
+  const page = parsePageValue(req.query.page as string | undefined, 1, 10_000);
+  const pageSize = parsePageValue(req.query.pageSize as string | undefined, 20, 100);
+  const result = listPromiseClaims({
+    submitterId: req.auth.userId ?? "unknown",
+    includeAll,
+    status: status as typeof claimStatuses[number] | undefined,
+    assignee,
+    page,
+    pageSize
+  });
+
+  res.json({
+    items: result.items,
+    page,
+    pageSize,
+    total: result.total
+  });
+});
+
+app.get("/promise-claims/:id", requireRole("user"), (req, res) => {
+  const claimId = Number(req.params.id);
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+
+  const claim = getPromiseClaimById(claimId);
+  if (!claim) {
+    res.status(404).json({ error: "promise claim not found" });
+    return;
+  }
+
+  const includeAll = req.auth.role === "moderator" || req.auth.role === "admin";
+  if (!includeAll && claim.submittedBy !== req.auth.userId) {
+    res.status(403).json({ error: "forbidden", message: "claim detail is limited to submitter or moderator" });
+    return;
+  }
+
+  res.json({ claim });
+});
+
+app.get("/promise-claims/:id/duplicate-assist", requireRole("user"), (req, res) => {
+  const claimId = Number(req.params.id);
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+
+  const claim = getPromiseClaimById(claimId);
+  if (!claim) {
+    res.status(404).json({ error: "promise claim not found" });
+    return;
+  }
+
+  const includeAll = req.auth.role === "moderator" || req.auth.role === "admin";
+  if (!includeAll && claim.submittedBy !== req.auth.userId) {
+    res.status(403).json({ error: "forbidden", message: "claim detail is limited to submitter or moderator" });
+    return;
+  }
+
+  res.json(
+    buildPromiseClaimDuplicateAssist({
+      claimId,
+      politicianId: claim.politicianId,
+      claimText: claim.claimText,
+      sourceUrl: claim.sourceUrl
+    })
+  );
+});
+
+app.post("/promise-claims/:id/equivalence-signals", requireRole("user"), (req, res) => {
+  const claimId = Number(req.params.id);
+  const { targetKind, targetId, relation, reasonCode } = req.body as {
+    targetKind?: string;
+    targetId?: number;
+    relation?: string;
+    reasonCode?: string;
+  };
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+  if (targetKind !== "canonical_promise" && targetKind !== "claim") {
+    res.status(400).json({ error: "targetKind must be canonical_promise or claim" });
+    return;
+  }
+  if (!Number.isInteger(targetId) || (targetId ?? 0) <= 0) {
+    res.status(400).json({ error: "targetId must be a positive integer" });
+    return;
+  }
+  if (relation !== "same_as" && relation !== "non_match") {
+    res.status(400).json({ error: "relation must be same_as or non_match" });
+    return;
+  }
+  if (!reasonCode || !isPromiseClaimSignalReasonCode(reasonCode)) {
+    res.status(400).json({ error: "invalid equivalence reasonCode" });
+    return;
+  }
+
+  const claim = getPromiseClaimById(claimId);
+  if (!claim) {
+    res.status(404).json({ error: "promise claim not found" });
+    return;
+  }
+  if (claim.status !== "pending") {
+    res.status(409).json({ error: "promise claim is not pending" });
+    return;
+  }
+  if (targetKind === "canonical_promise") {
+    const canonicalPromise = getCanonicalPromiseById(targetId, true);
+    if (!canonicalPromise) {
+      res.status(404).json({ error: "canonical promise not found" });
+      return;
+    }
+  } else {
+    const targetClaim = getPromiseClaimById(targetId);
+    if (!targetClaim) {
+      res.status(404).json({ error: "target claim not found" });
+      return;
+    }
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO claim_equivalence_signals (claim_id, actor_id, target_kind, target_id, relation, reason_code, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+         ON CONFLICT(claim_id, actor_id, target_kind, target_id)
+         DO UPDATE SET relation = excluded.relation, reason_code = excluded.reason_code, updated_at = datetime('now')`
+      )
+      .run(claimId, req.auth.userId ?? "unknown", targetKind, targetId, relation, reasonCode);
+    res.status(201).json({ ok: true, id: Number(result.lastInsertRowid || 0) });
+  } catch {
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.get("/promise-claims/:id/equivalence-signals", requireRole("user"), (req, res) => {
+  const claimId = Number(req.params.id);
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+  const claim = getPromiseClaimById(claimId);
+  if (!claim) {
+    res.status(404).json({ error: "promise claim not found" });
+    return;
+  }
+
+  const includeAll = req.auth.role === "moderator" || req.auth.role === "admin";
+  if (!includeAll && claim.submittedBy !== req.auth.userId) {
+    res.status(403).json({ error: "forbidden", message: "claim detail is limited to submitter or moderator" });
+    return;
+  }
+
+  res.json({ items: listClaimEquivalenceSignals(claimId) });
+});
+
+app.post("/promise-claims/:id/claim", requireRole("moderator"), (req, res) => {
+  const claimId = Number(req.params.id);
+  const expectedVersion = (req.body as { expectedVersion?: number }).expectedVersion;
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    res.status(400).json({ error: "expectedVersion must be a non-negative integer" });
+    return;
+  }
+
+  const actorId = req.auth.userId ?? "moderation";
+  try {
+    const tx = db.transaction(() => {
+      const claim = db
+        .prepare("SELECT status, assignee_id AS assigneeId, review_version AS reviewVersion FROM promise_claims WHERE id = ?")
+        .get(claimId) as { status: typeof claimStatuses[number]; assigneeId: string | null; reviewVersion: number } | undefined;
+      if (!claim) {
+        throw { status: 404, error: "promise claim not found" };
+      }
+      if (claim.status !== "pending") {
+        throw { status: 409, error: "promise claim is not pending" };
+      }
+      if (expectedVersion !== undefined && expectedVersion !== claim.reviewVersion) {
+        throw { status: 409, error: "promise claim version conflict" };
+      }
+      if (claim.assigneeId && claim.assigneeId !== actorId) {
+        throw { status: 409, error: "promise claim already claimed by another moderator" };
+      }
+      if (claim.assigneeId === actorId) {
+        return { assigneeId: actorId, reviewVersion: claim.reviewVersion };
+      }
+
+      const write = db
+        .prepare(
+          "UPDATE promise_claims SET assignee_id = ?, assigned_at = datetime('now'), updated_at = datetime('now'), review_version = review_version + 1 WHERE id = ? AND status = 'pending' AND review_version = ?"
+        )
+        .run(actorId, claimId, claim.reviewVersion);
+      if (write.changes === 0) {
+        throw { status: 409, error: "promise claim version conflict" };
+      }
+      db.prepare(
+        "INSERT INTO promise_claim_audits (claim_id, actor_id, action, from_status, to_status, reason) VALUES (?, ?, 'claimed', 'pending', 'pending', NULL)"
+      ).run(claimId, actorId);
+      return { assigneeId: actorId, reviewVersion: claim.reviewVersion + 1 };
+    });
+    res.json({ ok: true, ...tx() });
+  } catch (err) {
+    if (typeof err === "object" && err !== null && "status" in err && "error" in err) {
+      res.status((err as { status: number }).status).json({ error: (err as { error: string }).error });
+      return;
+    }
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.post("/promise-claims/:id/release", requireRole("moderator"), (req, res) => {
+  const claimId = Number(req.params.id);
+  const expectedVersion = (req.body as { expectedVersion?: number }).expectedVersion;
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    res.status(400).json({ error: "expectedVersion must be a non-negative integer" });
+    return;
+  }
+
+  const actorId = req.auth.userId ?? "moderation";
+  const isAdmin = req.auth.role === "admin";
+  try {
+    const tx = db.transaction(() => {
+      const claim = db
+        .prepare("SELECT status, assignee_id AS assigneeId, review_version AS reviewVersion FROM promise_claims WHERE id = ?")
+        .get(claimId) as { status: typeof claimStatuses[number]; assigneeId: string | null; reviewVersion: number } | undefined;
+      if (!claim) {
+        throw { status: 404, error: "promise claim not found" };
+      }
+      if (claim.status !== "pending") {
+        throw { status: 409, error: "promise claim is not pending" };
+      }
+      if (!claim.assigneeId) {
+        throw { status: 409, error: "promise claim is not claimed" };
+      }
+      if (!isAdmin && claim.assigneeId !== actorId) {
+        throw { status: 403, error: "only assignee or admin can release this claim" };
+      }
+      if (expectedVersion !== undefined && expectedVersion !== claim.reviewVersion) {
+        throw { status: 409, error: "promise claim version conflict" };
+      }
+
+      const write = db
+        .prepare(
+          "UPDATE promise_claims SET assignee_id = NULL, assigned_at = NULL, updated_at = datetime('now'), review_version = review_version + 1 WHERE id = ? AND status = 'pending' AND review_version = ?"
+        )
+        .run(claimId, claim.reviewVersion);
+      if (write.changes === 0) {
+        throw { status: 409, error: "promise claim version conflict" };
+      }
+      db.prepare(
+        "INSERT INTO promise_claim_audits (claim_id, actor_id, action, from_status, to_status, reason) VALUES (?, ?, 'released', 'pending', 'pending', NULL)"
+      ).run(claimId, actorId);
+      return { reviewVersion: claim.reviewVersion + 1 };
+    });
+    res.json({ ok: true, ...tx() });
+  } catch (err) {
+    if (typeof err === "object" && err !== null && "status" in err && "error" in err) {
+      res.status((err as { status: number }).status).json({ error: (err as { error: string }).error });
+      return;
+    }
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => {
+  const claimId = Number(req.params.id);
+  const { decision, reason, reasonCode, linkedCanonicalPromiseId, publicStatus, expectedVersion } = req.body as {
+    decision?: string;
+    reason?: string;
+    reasonCode?: string;
+    linkedCanonicalPromiseId?: number;
+    publicStatus?: string;
+    expectedVersion?: number;
+  };
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+  if (decision !== "merge" && decision !== "canonize" && decision !== "reject") {
+    res.status(400).json({ error: "decision must be merge, canonize, or reject" });
+    return;
+  }
+  if (expectedVersion !== undefined && (!Number.isInteger(expectedVersion) || expectedVersion < 0)) {
+    res.status(400).json({ error: "expectedVersion must be a non-negative integer" });
+    return;
+  }
+  if (decision === "reject" && (!reasonCode || !isPromiseClaimRejectReasonCode(reasonCode))) {
+    res.status(400).json({ error: "invalid reasonCode for reject decision" });
+    return;
+  }
+  if ((decision === "merge" || decision === "canonize") && reasonCode && !isPromiseClaimSignalReasonCode(reasonCode)) {
+    res.status(400).json({ error: "invalid reasonCode for merge or canonize decision" });
+    return;
+  }
+
+  const actorId = req.auth.userId ?? "moderation";
+  const isAdmin = req.auth.role === "admin";
+  const normalizedPublicStatus = isCanonicalPublicStatus(publicStatus?.trim().toLowerCase() ?? "public")
+    ? (publicStatus?.trim().toLowerCase() ?? "public")
+    : undefined;
+  if (decision === "canonize" && !normalizedPublicStatus) {
+    res.status(400).json({ error: "publicStatus must be draft or public for canonize decision" });
+    return;
+  }
+
+  try {
+    const tx = db.transaction(() => {
+      const claim = db
+        .prepare(
+          `SELECT id, politician_id AS politicianId, claim_text AS claimText, source_url AS sourceUrl, source_note AS sourceNote,
+            status, assignee_id AS assigneeId, review_version AS reviewVersion
+           FROM promise_claims WHERE id = ?`
+        )
+        .get(claimId) as
+        | {
+            id: number;
+            politicianId: number;
+            claimText: string;
+            sourceUrl: string;
+            sourceNote: string | null;
+            status: typeof claimStatuses[number];
+            assigneeId: string | null;
+            reviewVersion: number;
+          }
+        | undefined;
+      if (!claim) {
+        throw { status: 404, error: "promise claim not found" };
+      }
+      if (claim.status !== "pending") {
+        throw { status: 409, error: "promise claim is not pending" };
+      }
+      if (claim.assigneeId && claim.assigneeId !== actorId && !isAdmin) {
+        throw { status: 409, error: "promise claim is claimed by another moderator" };
+      }
+      if (expectedVersion !== undefined && expectedVersion !== claim.reviewVersion) {
+        throw { status: 409, error: "promise claim version conflict" };
+      }
+
+      let targetCanonicalPromiseId: number | null = null;
+      let nextStatus: "merged" | "canonized" | "rejected";
+      if (decision === "merge") {
+        if (!Number.isInteger(linkedCanonicalPromiseId) || (linkedCanonicalPromiseId ?? 0) <= 0) {
+          throw { status: 400, error: "linkedCanonicalPromiseId is required for merge decision" };
+        }
+        const canonicalPromise = getCanonicalPromiseById(linkedCanonicalPromiseId, true);
+        if (!canonicalPromise) {
+          throw { status: 404, error: "canonical promise not found" };
+        }
+        targetCanonicalPromiseId = linkedCanonicalPromiseId;
+        nextStatus = "merged";
+      } else if (decision === "canonize") {
+        const createPromise = db
+          .prepare(
+            `INSERT INTO canonical_promises (politician_id, promise_text, public_status, primary_statement_id, created_by)
+             VALUES (?, ?, ?, NULL, ?)`
+          )
+          .run(claim.politicianId, claim.claimText, normalizedPublicStatus ?? "public", actorId);
+        targetCanonicalPromiseId = createPromise.lastInsertRowid as number;
+        nextStatus = "canonized";
+      } else {
+        nextStatus = "rejected";
+      }
+
+      if (targetCanonicalPromiseId) {
+        db.prepare(
+          `INSERT OR IGNORE INTO canonical_promise_sources
+           (canonical_promise_id, statement_id, source_url, source_note, accepted_by, updated_at)
+           VALUES (?, NULL, ?, ?, ?, datetime('now'))`
+        ).run(targetCanonicalPromiseId, claim.sourceUrl, claim.sourceNote, actorId);
+      }
+
+      const write = db
+        .prepare(
+          `UPDATE promise_claims
+           SET status = ?, decision_by = ?, decision_reason = ?, decision_code = ?, linked_canonical_promise_id = ?,
+             assignee_id = COALESCE(assignee_id, ?), assigned_at = COALESCE(assigned_at, datetime('now')),
+             updated_at = datetime('now'), decided_at = datetime('now'), review_version = review_version + 1
+           WHERE id = ? AND status = 'pending' AND review_version = ?`
+        )
+        .run(nextStatus, actorId, normalizeOptionalText(reason), reasonCode ?? null, targetCanonicalPromiseId, actorId, claimId, claim.reviewVersion);
+      if (write.changes === 0) {
+        throw { status: 409, error: "promise claim version conflict" };
+      }
+
+      db.prepare(
+        `INSERT INTO promise_claim_audits
+         (claim_id, actor_id, action, from_status, to_status, reason, reason_code, linked_canonical_promise_id)
+         VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)`
+      ).run(claimId, actorId, nextStatus, nextStatus, normalizeOptionalText(reason), reasonCode ?? null, targetCanonicalPromiseId);
+
+      return { status: nextStatus, canonicalPromiseId: targetCanonicalPromiseId, reviewVersion: claim.reviewVersion + 1 };
+    });
+    res.json({ ok: true, ...tx() });
+  } catch (err) {
+    if (typeof err === "object" && err !== null && "status" in err && "error" in err) {
+      res.status((err as { status: number }).status).json({ error: (err as { error: string }).error });
+      return;
+    }
+    res.status(500).json({ error: "internal server error" });
+  }
+});
+
+app.get("/promise-claims/:id/audits", requireRole("moderator"), (req, res) => {
+  const claimId = Number(req.params.id);
+  if (!Number.isInteger(claimId) || claimId <= 0) {
+    res.status(400).json({ error: "invalid claim id" });
+    return;
+  }
+  if (!getPromiseClaimById(claimId)) {
+    res.status(404).json({ error: "promise claim not found" });
+    return;
+  }
+
+  res.json({ items: listPromiseClaimAudits(claimId) });
 });
 
 app.get("/statements", (_req, res) => {
