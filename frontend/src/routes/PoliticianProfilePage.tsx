@@ -1,13 +1,15 @@
 /* Politician profile with scorecards, required tabs, and promise-level accountability fields. */
 
-import { useMemo, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
+import { listCanonicalPromises } from "../lib/api";
 import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
+import type { CanonicalPromiseSummary } from "../types";
 
 type ProfileTab = "promises" | "votes" | "evidence";
 
@@ -34,19 +36,58 @@ export const PoliticianProfilePage = (): ReactElement => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { session } = useAuth();
   const { politicians, statements, loading, error, refresh } = usePublicData();
+  const [canonicalPromises, setCanonicalPromises] = useState<CanonicalPromiseSummary[]>([]);
+  const [canonicalLoading, setCanonicalLoading] = useState<boolean>(true);
+  const [canonicalError, setCanonicalError] = useState<string | null>(null);
 
   const politicianId = Number(id);
   const selectedTab = (searchParams.get("tab") as ProfileTab) ?? "promises";
   const activeTab: ProfileTab = PROFILE_TABS.includes(selectedTab) ? selectedTab : "promises";
+
+  useEffect(() => {
+    if (!Number.isFinite(politicianId)) {
+      setCanonicalLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const loadCanonicalPromises = async (): Promise<void> => {
+      setCanonicalLoading(true);
+      setCanonicalError(null);
+      try {
+        const items = await listCanonicalPromises(politicianId, session?.token);
+        if (!cancelled) {
+          setCanonicalPromises(items);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCanonicalError((err as Error).message || "Unable to load canonical promises.");
+        }
+      } finally {
+        if (!cancelled) {
+          setCanonicalLoading(false);
+        }
+      }
+    };
+
+    void loadCanonicalPromises();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [politicianId, session?.token]);
 
   const politician = useMemo(() => politicians.find((entry) => entry.id === politicianId), [politicianId, politicians]);
   const linkedPartyShell = useMemo(() => findPartyShellForPolitician(politician), [politician]);
   const promiseRecords = useMemo(() => {
     return statements.filter((statement) => statement.politicianId === politicianId).map(toPromiseRecord);
   }, [politicianId, statements]);
+  const rawSubmissionHistory = useMemo(() => {
+    return statements.filter((statement) => statement.politicianId === politicianId && !statement.canonicalPromiseId);
+  }, [politicianId, statements]);
 
-  const totalPromises = promiseRecords.length;
-  const unknownCount = promiseRecords.filter((promise) => promise.fulfillmentStatus === "unknown").length;
+  const totalPromises = canonicalPromises.length > 0 ? canonicalPromises.length : promiseRecords.length;
+  const unknownCount = canonicalPromises.length > 0 ? canonicalPromises.length : promiseRecords.filter((promise) => promise.fulfillmentStatus === "unknown").length;
   const tabPanelId = `profile-panel-${activeTab}`;
   const statementContributionTarget = session
     ? `/contribute/statements/new?politicianId=${politicianId}`
@@ -67,12 +108,12 @@ export const PoliticianProfilePage = (): ReactElement => {
     );
   }
 
-  if (loading) {
+  if (loading || canonicalLoading) {
     return <LoadingState label="Loading politician profile..." />;
   }
 
-  if (error) {
-    return <ErrorState message={error} onRetry={() => void refresh()} />;
+  if (error || canonicalError) {
+    return <ErrorState message={error ?? canonicalError ?? "Unable to load politician profile."} onRetry={() => void refresh()} />;
   }
 
   if (!politician) {
@@ -221,7 +262,9 @@ export const PoliticianProfilePage = (): ReactElement => {
         <div key={activeTab} id={tabPanelId} className="tab-panel-motion" role="tabpanel" aria-labelledby={`profile-tab-${activeTab}`}>
           {activeTab === "promises" ? (
             <>
-            <p className="data-note">These promise statuses are still Unknown. Read methodology for how they will be assessed.</p>
+            <p className="data-note">
+              Canonical promises are listed first when they exist. Raw statement submissions stay visible separately so public readers can distinguish the canon from submission history.
+            </p>
 
             <div className="table-wrapper desktop-only">
               <table className="data-table">
@@ -229,6 +272,7 @@ export const PoliticianProfilePage = (): ReactElement => {
                   <tr>
                     <th scope="col">Promise statement</th>
                     <th scope="col">Date promised</th>
+                    <th scope="col">Public state</th>
                     <th scope="col">Current fulfillment status</th>
                     <th scope="col">Vote alignment status</th>
                     <th scope="col">Evidence count</th>
@@ -236,42 +280,61 @@ export const PoliticianProfilePage = (): ReactElement => {
                   </tr>
                 </thead>
                 <tbody>
-                  {promiseRecords.map((promise) => (
-                    <tr key={promise.id}>
-                      <td>{promise.promiseText}</td>
-                      <td>{formatDate(promise.datePromised)}</td>
-                      <td>
-                        <StatusChip status={promise.fulfillmentStatus} prefix="Fulfillment" />
-                      </td>
-                      <td>
-                        <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
-                      </td>
-                      <td>{promise.evidenceCount}</td>
-                      <td>
-                        <Link to={`/promises/${promise.id}`}>Open promise</Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {(canonicalPromises.length > 0 ? canonicalPromises : promiseRecords).map((promise) => {
+                    const isCanonical = "publicStatus" in promise;
+                    const detailId = isCanonical ? promise.primaryStatementId : promise.id;
+                    return (
+                      <tr key={isCanonical ? `canonical-${promise.id}` : `legacy-${promise.id}`}>
+                        <td>{promise.promiseText}</td>
+                        <td>{formatDate(isCanonical ? promise.createdAt : promise.datePromised)}</td>
+                        <td>{isCanonical ? promise.publicStatus : "legacy"}</td>
+                        <td>
+                          <StatusChip status="unknown" prefix="Fulfillment" />
+                        </td>
+                        <td>
+                          <StatusChip status="unknown" prefix="Vote alignment" />
+                        </td>
+                        <td>{isCanonical ? promise.acceptedSourceCount : promise.evidenceCount}</td>
+                        <td>{detailId ? <Link to={`/promises/${detailId}`}>Open promise</Link> : <span className="meta-line">No compatible detail route</span>}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             <div className="cards-grid cards-grid-1 mobile-only">
-              {promiseRecords.map((promise) => (
-                <article key={promise.id} className="card stack-xs">
-                  <h3>{promise.promiseText}</h3>
-                  <p className="meta-line">Date promised: {formatDate(promise.datePromised)}</p>
-                  <p>
-                    Fulfillment: <StatusChip status={promise.fulfillmentStatus} prefix="Fulfillment" />
-                  </p>
-                  <p>
-                    Vote alignment: <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
-                  </p>
-                  <p>Evidence count: {promise.evidenceCount}</p>
-                  <Link to={`/promises/${promise.id}`}>Open promise detail</Link>
-                </article>
-              ))}
+              {(canonicalPromises.length > 0 ? canonicalPromises : promiseRecords).map((promise) => {
+                const isCanonical = "publicStatus" in promise;
+                const detailId = isCanonical ? promise.primaryStatementId : promise.id;
+                return (
+                  <article key={isCanonical ? `canonical-${promise.id}` : `legacy-${promise.id}`} className="card stack-xs">
+                    <h3>{promise.promiseText}</h3>
+                    <p className="meta-line">Date promised: {formatDate(isCanonical ? promise.createdAt : promise.datePromised)}</p>
+                    <p className="meta-line">Public state: {isCanonical ? promise.publicStatus : "legacy"}</p>
+                    <p>Evidence count: {isCanonical ? promise.acceptedSourceCount : promise.evidenceCount}</p>
+                    {detailId ? <Link to={`/promises/${detailId}`}>Open promise detail</Link> : <p className="meta-line">No compatible detail route.</p>}
+                  </article>
+                );
+              })}
             </div>
+
+            <article className="card stack-sm">
+              <h2>Raw submission history</h2>
+              {rawSubmissionHistory.length === 0 ? (
+                <p className="meta-line">No extra raw submissions are linked to this politician beyond the current canonical surfaces.</p>
+              ) : (
+                <ul className="timeline-list">
+                  {rawSubmissionHistory.map((statement) => (
+                    <li key={statement.id} className="timeline-item">
+                      <p className="mono-inline">{formatDate(statement.createdAt)}</p>
+                      <p>{statement.body}</p>
+                      <p className="meta-line">Verification: {formatReviewStatus(statement.verificationStatus)}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </article>
             </>
           ) : null}
 

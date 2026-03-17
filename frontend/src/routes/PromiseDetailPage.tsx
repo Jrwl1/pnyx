@@ -172,6 +172,11 @@ export const PromiseDetailPage = (): ReactElement => {
         <p className="eyebrow">Promise detail</p>
         <h1>{promiseRecord.promiseText}</h1>
         <p className="meta-line">
+          {statement.canonical
+            ? `Canonical promise status: ${statement.canonical.publicStatus}.`
+            : "Legacy statement detail without a linked canonical promise yet."}
+        </p>
+        <p className="meta-line">
           {politician ? (
             <>
               <Link to={`/politicians/${politician.id}`}>{politician.name}</Link>
@@ -200,12 +205,15 @@ export const PromiseDetailPage = (): ReactElement => {
       </section>
 
       <section className="card stack-sm claim-block" aria-label="Promise claim">
-        <h2>Promise claim</h2>
+        <h2>{statement.canonical ? "Canonical promise framing" : "Promise claim"}</h2>
         <p className="claim-quote">{statement.body}</p>
         <p className="meta-line">Date promised: {formatDate(statement.dateSaid)}</p>
         <p>
           Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
         </p>
+        {statement.canonical ? (
+          <p className="meta-line">Accepted sources in bundle: {statement.canonical.acceptedSourceCount}</p>
+        ) : null}
       </section>
 
       <section className="split-grid">
@@ -238,10 +246,21 @@ export const PromiseDetailPage = (): ReactElement => {
         <h2>Evidence list</h2>
         <p className="meta-line">Newest first</p>
         <ol>
-          <li>
-            <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
-            <span className="meta-line">Original source for this promise statement</span>
-          </li>
+          {statement.acceptedSources.length > 0 ? (
+            statement.acceptedSources.map((source) => (
+              <li key={source.id}>
+                <a href={source.sourceUrl}>{source.sourceUrl}</a>
+                <span className="meta-line">
+                  Accepted source{source.sourceNote ? ` · ${source.sourceNote}` : ""}
+                </span>
+              </li>
+            ))
+          ) : (
+            <li>
+              <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
+              <span className="meta-line">Original source for this promise statement</span>
+            </li>
+          )}
         </ol>
       </section>
 

@@ -88,6 +88,32 @@ export interface StatementSummary {
   verificationStatus: string;
   authorId: string;
   createdAt: string;
+  canonicalPromiseId: number | null;
+  promiseKind: PromiseKind;
+  canonicalPromiseText: string | null;
+  acceptedSourceCount: number;
+}
+
+export type PromiseKind = "raw_submission" | "canonical_public" | "canonical_draft";
+
+export interface CanonicalPromiseMetadata {
+  id: number;
+  promiseText: string;
+  publicStatus: "draft" | "public";
+  primaryStatementId: number | null;
+  acceptedSourceCount: number;
+}
+
+export interface CanonicalPromiseSource {
+  id: number;
+  canonicalPromiseId: number;
+  statementId: number | null;
+  sourceUrl: string;
+  sourceNote: string | null;
+  acceptedBy: string;
+  acceptedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface StatementDetail extends StatementSummary {
@@ -97,6 +123,8 @@ export interface StatementDetail extends StatementSummary {
     oppose: number;
   };
   viewerVote: VoteValue | null;
+  canonical: CanonicalPromiseMetadata | null;
+  acceptedSources: CanonicalPromiseSource[];
   revisionCount: number;
   revisionHistoryUrl: string;
 }
@@ -248,6 +276,24 @@ export interface PromiseRecord {
   fulfillmentSummary: string;
   voteAlignment: AlignmentStatus;
   evidenceCount: number;
+  canonicalPromiseId: number | null;
+  recordType: "canonical" | "legacy";
+}
+
+export interface CanonicalPromiseSummary {
+  id: number;
+  politicianId: number;
+  promiseText: string;
+  publicStatus: "draft" | "public";
+  primaryStatementId: number | null;
+  acceptedSourceCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CanonicalPromiseDetailResponse {
+  promise: CanonicalPromiseSummary;
+  acceptedSources: CanonicalPromiseSource[];
 }
 
 export interface PromiseStats {

@@ -6,6 +6,8 @@ import type {
   BackendPartyDetailResponse,
   BackendPartyMembersResponse,
   BackendPartySummary,
+  CanonicalPromiseDetailResponse,
+  CanonicalPromiseSummary,
   Politician,
   ProposalAuditResponse,
   ProposalClaimResult,
@@ -143,6 +145,16 @@ export const getPartyById = async (id: string): Promise<BackendPartyDetailRespon
 export const getPartyMembers = async (id: string, includeHistorical = false): Promise<BackendPartyMembersResponse> => {
   const suffix = includeHistorical ? "?includeHistorical=1" : "";
   return fetchJson<BackendPartyMembersResponse>(`/parties/${id}/members${suffix}`);
+};
+
+export const listCanonicalPromises = async (politicianId?: number, token?: string): Promise<CanonicalPromiseSummary[]> => {
+  const suffix = politicianId ? `?politicianId=${politicianId}` : "";
+  const response = await fetchJson<{ items: CanonicalPromiseSummary[] }>(`/canonical-promises${suffix}`, { token });
+  return response.items;
+};
+
+export const getCanonicalPromiseById = async (id: number, token?: string): Promise<CanonicalPromiseDetailResponse> => {
+  return fetchJson<CanonicalPromiseDetailResponse>(`/canonical-promises/${id}`, { token });
 };
 
 export const listStatements = async (): Promise<StatementSummary[]> => {

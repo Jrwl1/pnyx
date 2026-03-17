@@ -238,7 +238,7 @@ export const HomePage = (): ReactElement => {
           ) : (
             latestPromises.map((entry) => (
               <article key={entry.promise.id} className="card promise-feed-card">
-                <p className="mono-inline">Promise record</p>
+                <p className="mono-inline">{entry.promise.recordType === "canonical" ? "Canonical promise" : "Raw submission"}</p>
                 <div className="claim-block claim-block-compact">
                   <h3>
                     <Link to={`/promises/${entry.promise.id}`}>{truncatePromiseText(entry.promise.promiseText)}</Link>
@@ -266,6 +266,7 @@ export const HomePage = (): ReactElement => {
                 <div className="stat-strip" aria-label="Promise summary">
                   <span className="stat-pill">Promised {formatDate(entry.publishedAt)}</span>
                   <span className="stat-pill">Evidence {entry.promise.evidenceCount}</span>
+                  <span className="stat-pill">{entry.promise.recordType === "canonical" ? "Canonical public" : "Legacy submission"}</span>
                   <span className="stat-pill">Status Unknown</span>
                 </div>
                 <div className="card-link-row">

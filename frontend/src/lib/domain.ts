@@ -61,15 +61,18 @@ export const toPartyRecord = (party: BackendPartySummary): PartyRecord => {
 };
 
 export const toPromiseRecord = (statement: StatementSummary): PromiseRecord => {
+  const recordType = statement.canonicalPromiseId ? "canonical" : "legacy";
   return {
     id: statement.id,
     politicianId: statement.politicianId,
-    promiseText: statement.body,
+    promiseText: statement.canonicalPromiseText ?? statement.body,
     datePromised: statement.dateSaid,
     fulfillmentStatus: "unknown",
     fulfillmentSummary: DATA_NOT_AVAILABLE,
     voteAlignment: "unknown",
-    evidenceCount: statement.sourceUrl ? 1 : 0
+    evidenceCount: statement.acceptedSourceCount > 0 ? statement.acceptedSourceCount : statement.sourceUrl ? 1 : 0,
+    canonicalPromiseId: statement.canonicalPromiseId,
+    recordType
   };
 };
 
