@@ -14,3 +14,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [01:18] REVIEW: accept S-14 verification packet and close the sprint queue (findings: none)
 - [11:59] PLAN: roll the shipped public-discovery foundation into an M3 frontend hardening queue (sprint: S-15..S-20, milestone: M3)
 - [12:07] DO: blocked before S-15 due to dirty baseline outside packet scope (sprint: S-15, links: docs/SPRINT.md)
+- [12:11] DO: rewrite S-15 home trust copy packet (sprint: S-15, links: 44b0ce3, docs/SPRINT.md)
