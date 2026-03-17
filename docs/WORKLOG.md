@@ -18,3 +18,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:13] DO: rewrite S-15 party route copy packet (sprint: S-15, links: 445c754, docs/SPRINT.md)
 - [12:15] DO: tighten S-15 unknown-state copy packet (sprint: S-15, links: f63dea3, docs/SPRINT.md)
 - [12:16] REVIEW: accept S-15 public trust copy row (findings: none)
+- [12:21] DO: rebuild S-16 home discovery packet (sprint: S-16, links: 589c1d4, docs/SPRINT.md)
