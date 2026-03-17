@@ -1,4 +1,4 @@
-/* WHAT IT DO? Implements a Finland-first party directory route shell using frontend-local placeholders and explicit unknown states. */
+/* Finland-first party directory with explicit unknown states. */
 
 import type { ReactElement } from "react";
 import { Link } from "react-router-dom";
@@ -14,34 +14,34 @@ export const PartiesPage = (): ReactElement => {
     <div className="stack-lg">
       <section className="hero-panel grid-12">
         <div className="col-span-8 stack-md">
-          <p className="eyebrow">Finland-first party discovery</p>
-          <h1>Browse political party route shells without faking backend coverage.</h1>
+          <p className="eyebrow">Finnish party directory</p>
+          <h1>Browse Finnish political parties on PNYX.</h1>
           <p className="lede">
-            These party pages exist so public navigation and discovery can land now. Official party stances, memberships, and party-line summaries remain explicit unknowns until the public backend exposes canonical party records.
+            Open each party page to see the public context available today, the politician links already connected, and the gaps that are still visible.
           </p>
         </div>
 
-        <aside className="col-span-4 stack-sm info-panel" aria-label="Directory status">
-          <h2>Directory status</h2>
+        <aside className="col-span-4 stack-sm info-panel" aria-label="Directory notes">
+          <h2>What to expect</h2>
           <ul>
-            <li>This is a frontend-local placeholder directory.</li>
-            <li>Counts stay Unknown when no party API exists.</li>
-            <li>The seed list is non-exhaustive and used for route-shell validation only.</li>
+            <li>Unknown counts mean the supporting public data has not been connected yet.</li>
+            <li>Party pages keep party records separate from individual politician records.</li>
+            <li>The directory will expand as more party coverage is added.</li>
           </ul>
         </aside>
       </section>
 
-      <section className="stack-sm" aria-label="Party route shells">
+      <section className="stack-sm" aria-label="Party directory">
         <div className="section-header">
-          <h2>Party route shells</h2>
-          <p className="data-note">Every card below links to a public party profile shell with explicit missing-data messaging.</p>
+          <h2>Parties on PNYX</h2>
+          <p className="data-note">Each card opens a party page with current context, linked records, and clearly marked unknowns.</p>
         </div>
 
         <div className="cards-grid route-shell-grid">
           {PARTY_ROUTE_SHELLS.map((entry) => (
             <article key={entry.party.id} className="card stack-sm card-interactive">
               <div className="stack-xs">
-                <span className="placeholder-badge mono-inline">Placeholder shell</span>
+                <span className="placeholder-badge mono-inline">Party page</span>
                 <h3>{entry.party.name}</h3>
                 <p className="meta-line mono-inline">{entry.party.shortName}</p>
                 <p>{entry.party.contextLine}</p>
@@ -63,8 +63,8 @@ export const PartiesPage = (): ReactElement => {
               </div>
 
               <div className="card-link-row">
-                <Link to={`/parties/${entry.party.id}`}>Open party profile</Link>
-                <Link to="/methodology">Review methodology</Link>
+                <Link to={`/parties/${entry.party.id}`}>View party profile</Link>
+                <Link to="/methodology">Read methodology</Link>
               </div>
             </article>
           ))}
