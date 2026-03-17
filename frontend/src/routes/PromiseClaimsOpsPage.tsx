@@ -199,6 +199,7 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
         <h1>Promise claim queue</h1>
         <div className="card-link-row">
           <Link to="/ops">Open politician proposal queue</Link>
+          <Link to="/ops/records">Open editorial record ops</Link>
           <Link to="/contribute/promises/new">Open contributor claim form</Link>
         </div>
       </section>

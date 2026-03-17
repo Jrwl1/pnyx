@@ -48,6 +48,9 @@ import type {
   StatementSubmissionResult,
   StatementRevision,
   StatementSummary,
+  LaunchCoverageSummary,
+  VoteEventRecord,
+  VoteEventSummary,
   VoteSubmissionResult,
   VoteValue
 } from "../types";
@@ -203,6 +206,108 @@ export const getPartyMembers = async (id: string, includeHistorical = false): Pr
 export const getPartyStances = async (id: string): Promise<BackendPartyStance[]> => {
   const response = await fetchJson<{ items: BackendPartyStance[] }>(`/parties/${id}/stances`);
   return response.items;
+};
+
+export const createPartyStance = async (
+  token: string,
+  input: {
+    partyId: string;
+    issue?: string;
+    stanceText: string;
+    sourceUrl: string;
+    sourceNote?: string;
+    dateSaid: string;
+  }
+): Promise<{ id: number; partyId: string }> => {
+  return fetchJson<{ id: number; partyId: string }>("/party-stances", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const listVoteEvents = async (politicianId?: number): Promise<VoteEventSummary[]> => {
+  const suffix = politicianId ? `?politicianId=${politicianId}` : "";
+  const response = await fetchJson<{ items: VoteEventSummary[] }>(`/vote-events${suffix}`);
+  return response.items;
+};
+
+export const getVoteEventById = async (id: number): Promise<{ event: VoteEventSummary; records: VoteEventRecord[] }> => {
+  return fetchJson<{ event: VoteEventSummary; records: VoteEventRecord[] }>(`/vote-events/${id}`);
+};
+
+export const createVoteEvent = async (
+  token: string,
+  input: {
+    externalKey?: string;
+    countryCode?: string;
+    institutionName?: string;
+    issue?: string;
+    title: string;
+    sourceUrl: string;
+    sourceNote?: string;
+    eventDate: string;
+  }
+): Promise<{ id: number }> => {
+  return fetchJson<{ id: number }>("/vote-events", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const createVoteEventRecord = async (
+  token: string,
+  voteEventId: number,
+  input: {
+    politicianId: number;
+    voteValue: "for" | "against" | "abstain" | "absent";
+    sourceNote?: string;
+  }
+): Promise<{ id: number; voteEventId: number; politicianId: number }> => {
+  return fetchJson<{ id: number; voteEventId: number; politicianId: number }>(`/vote-events/${voteEventId}/records`, {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const createFulfillmentAssessment = async (
+  token: string,
+  canonicalPromiseId: number,
+  input: {
+    status: "fulfilled" | "broken" | "in_progress" | "unknown";
+    summary: string;
+    sourceUrl: string;
+    sourceNote?: string;
+    evidenceDate: string;
+  }
+): Promise<{ id: number; canonicalPromiseId: number }> => {
+  return fetchJson<{ id: number; canonicalPromiseId: number }>(`/canonical-promises/${canonicalPromiseId}/fulfillment-assessments`, {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const createPartyAlignment = async (
+  token: string,
+  canonicalPromiseId: number,
+  input: {
+    partyStanceId: number;
+    status: "aligned" | "broke_party_line";
+    reason?: string;
+  }
+): Promise<{ id: number; canonicalPromiseId: number; partyStanceId: number }> => {
+  return fetchJson<{ id: number; canonicalPromiseId: number; partyStanceId: number }>(`/canonical-promises/${canonicalPromiseId}/party-alignments`, {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const getLaunchCoverage = async (token: string): Promise<LaunchCoverageSummary> => {
+  return fetchJson<LaunchCoverageSummary>("/ops/launch-coverage", { token });
 };
 
 export const getPoliticianTrustSummary = async (id: number, token?: string): Promise<PoliticianTrustSummaryResponse> => {

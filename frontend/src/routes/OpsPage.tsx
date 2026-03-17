@@ -289,6 +289,10 @@ export const OpsPage = (): ReactElement => {
         <p className="eyebrow">Moderation</p>
         <h1>Politician proposal queue</h1>
         <p className="lede">Filter the queue, claim work, review pending items, and use duplicate assist before recording a moderation decision.</p>
+        <div className="card-link-row">
+          <Link to="/ops/records">Open editorial record ops</Link>
+          <Link to="/ops/claims">Open promise claim queue</Link>
+        </div>
       </section>
 
       {metrics ? (

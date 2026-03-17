@@ -9,6 +9,7 @@ import { HomePage } from "./routes/HomePage";
 import { MethodologyPage } from "./routes/MethodologyPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 import { OpsPage } from "./routes/OpsPage";
+import { OpsRecordsPage } from "./routes/OpsRecordsPage";
 import { PartiesPage } from "./routes/PartiesPage";
 import { PartyProfilePage } from "./routes/PartyProfilePage";
 import { PromiseClaimDetailPage } from "./routes/PromiseClaimDetailPage";
@@ -43,6 +44,7 @@ export const App = (): ReactElement => {
             <Route path="/contribute/statements/new" element={<SubmitStatementPage />} />
             <Route element={<RequireRoleRoute minimumRole="moderator" />}>
               <Route path="/ops" element={<OpsPage />} />
+              <Route path="/ops/records" element={<OpsRecordsPage />} />
               <Route path="/ops/claims" element={<PromiseClaimsOpsPage />} />
             </Route>
           </Route>

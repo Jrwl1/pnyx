@@ -676,6 +676,50 @@ export interface BackendPartyStance {
   updatedAt: string;
 }
 
+export interface VoteEventSummary {
+  id: number;
+  externalKey: string | null;
+  countryCode: string;
+  institutionName: string;
+  issue: string | null;
+  title: string;
+  sourceUrl: string;
+  sourceNote: string | null;
+  eventDate: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VoteEventRecord {
+  id: number;
+  voteEventId: number;
+  politicianId: number;
+  voteValue: VoteRecordValue;
+  sourceNote: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface LaunchCoverageSummary {
+  parties: {
+    total: number;
+    withStances: number;
+  };
+  politicians: {
+    total: number;
+    withCurrentMembership: number;
+  };
+  canonicalPromises: {
+    publicTotal: number;
+    withFulfillment: number;
+    withVoteLinks: number;
+    withPartyAlignment: number;
+  };
+  pendingClaims: number;
+}
+
 export interface BackendPartyDetailResponse {
   party: BackendPartySummary;
   aliases: BackendPartyAlias[];

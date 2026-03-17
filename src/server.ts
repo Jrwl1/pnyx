@@ -655,6 +655,56 @@ app.get("/activity", (req, res) => {
   res.json({ items });
 });
 
+app.get("/ops/launch-coverage", requireRole("moderator"), (_req, res) => {
+  const parties = db
+    .prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM parties WHERE deleted_at IS NULL) AS total,
+        (SELECT COUNT(DISTINCT party_id) FROM party_stances) AS withStances`
+    )
+    .get() as { total: number; withStances: number };
+
+  const politicians = db
+    .prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM politicians WHERE deleted_at IS NULL) AS total,
+        (SELECT COUNT(DISTINCT politician_id) FROM party_memberships WHERE end_date IS NULL OR end_date >= date('now')) AS withCurrentMembership`
+    )
+    .get() as { total: number; withCurrentMembership: number };
+
+  const canonicalPromises = db
+    .prepare(
+      `SELECT
+        (SELECT COUNT(*) FROM canonical_promises WHERE deleted_at IS NULL AND public_status = 'public') AS publicTotal,
+        (SELECT COUNT(DISTINCT canonical_promise_id) FROM promise_fulfillment_assessments) AS withFulfillment,
+        (SELECT COUNT(DISTINCT canonical_promise_id) FROM canonical_promise_vote_links) AS withVoteLinks,
+        (SELECT COUNT(DISTINCT canonical_promise_id) FROM party_alignment_assessments) AS withPartyAlignment`
+    )
+    .get() as { publicTotal: number; withFulfillment: number; withVoteLinks: number; withPartyAlignment: number };
+
+  const pendingClaims = db
+    .prepare("SELECT COUNT(*) AS total FROM promise_claims WHERE status = 'pending'")
+    .get() as { total: number };
+
+  res.json({
+    parties: {
+      total: Number(parties.total ?? 0),
+      withStances: Number(parties.withStances ?? 0)
+    },
+    politicians: {
+      total: Number(politicians.total ?? 0),
+      withCurrentMembership: Number(politicians.withCurrentMembership ?? 0)
+    },
+    canonicalPromises: {
+      publicTotal: Number(canonicalPromises.publicTotal ?? 0),
+      withFulfillment: Number(canonicalPromises.withFulfillment ?? 0),
+      withVoteLinks: Number(canonicalPromises.withVoteLinks ?? 0),
+      withPartyAlignment: Number(canonicalPromises.withPartyAlignment ?? 0)
+    },
+    pendingClaims: Number(pendingClaims.total ?? 0)
+  });
+});
+
 app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
   res.json({
     ...buildAbuseMetricsSnapshot(),
