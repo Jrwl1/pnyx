@@ -4,9 +4,13 @@ import type {
   AuthTokenRequest,
   AuthTokenResponse,
   Politician,
+  PoliticianProposalInput,
+  PoliticianProposalRecord,
   RegisterAccountInput,
   RegisteredAccount,
   StatementDetail,
+  StatementSubmissionInput,
+  StatementSubmissionResult,
   StatementRevision,
   StatementSummary
 } from "../types";
@@ -86,6 +90,25 @@ export const registerAccount = async (input: RegisterAccountInput): Promise<Regi
       email: input.email,
       captchaToken: input.captchaToken
     }
+  });
+};
+
+export const submitPoliticianProposal = async (
+  token: string,
+  input: PoliticianProposalInput
+): Promise<PoliticianProposalRecord> => {
+  return fetchJson<PoliticianProposalRecord>("/politician-proposals", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const createStatement = async (token: string, input: StatementSubmissionInput): Promise<StatementSubmissionResult> => {
+  return fetchJson<StatementSubmissionResult>("/statements", {
+    method: "POST",
+    token,
+    body: input
   });
 };
 

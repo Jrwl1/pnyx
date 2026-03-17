@@ -3,6 +3,7 @@
 import { useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { useAuth } from "../context/AuthContext";
 import {
   buildDirectoryRows,
   buildHomePartyCards,
@@ -24,8 +25,14 @@ const truncatePromiseText = (value: string, maxLength = 156): string => {
   return `${value.slice(0, maxLength).trimEnd()}...`;
 };
 
+const buildSignInRedirectLink = (target: string): string => {
+  const params = new URLSearchParams({ redirect: target });
+  return `/sign-in?${params.toString()}`;
+};
+
 export const HomePage = (): ReactElement => {
   const navigate = useNavigate();
+  const { session } = useAuth();
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [query, setQuery] = useState<string>("");
 
@@ -52,6 +59,8 @@ export const HomePage = (): ReactElement => {
   const featuredParties = useMemo(() => buildHomePartyCards(politicians, statements).slice(0, 4), [politicians, statements]);
   const exactPartyMatch = useMemo(() => findPartyShellByQuery(query), [query]);
   const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query), [politicians, query]);
+  const politicianProposalTarget = session ? "/contribute/politicians/new" : buildSignInRedirectLink("/contribute/politicians/new");
+  const statementContributionTarget = session ? "/contribute/statements/new" : buildSignInRedirectLink("/contribute/statements/new");
 
   const onSearchSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -340,6 +349,32 @@ export const HomePage = (): ReactElement => {
             <li>Unknown means the evidence has not been connected or assessed yet.</li>
             <li>Party stance is not treated as the same thing as an individual politician promise.</li>
             <li>Methodology explains how sources, evidence, and missing data are handled.</li>
+          </ul>
+        </article>
+      </section>
+
+      <section className="panel-grid">
+        <article className="card stack-sm">
+          <h2>Help expand the record</h2>
+          <p>
+            Signed-in contributors can submit missing politician profiles or add sourced statements for existing politicians without leaving the public site.
+          </p>
+          <div className="card-link-row">
+            <Link className="button button-secondary" to={politicianProposalTarget}>
+              {session ? "Submit politician proposal" : "Sign in to submit a politician proposal"}
+            </Link>
+            <Link className="button button-link" to={statementContributionTarget}>
+              {session ? "Add statement to a politician" : "Sign in to add a statement"}
+            </Link>
+          </div>
+        </article>
+
+        <article className="card stack-sm">
+          <h2>Contribution rules</h2>
+          <ul className="placeholder-list">
+            <li>Proposal submissions may require a captcha token when enforcement is active.</li>
+            <li>Statement submissions must include a politician, source URL, quoted body, and the date it was said.</li>
+            <li>Duplicate and rate-limit responses are shown directly from the backend so missing access or abuse limits stay visible.</li>
           </ul>
         </article>
       </section>

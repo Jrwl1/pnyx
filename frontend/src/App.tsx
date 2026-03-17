@@ -16,6 +16,8 @@ import { PoliticiansPage } from "./routes/PoliticiansPage";
 import { PromiseDetailPage } from "./routes/PromiseDetailPage";
 import { RegisterPage } from "./routes/RegisterPage";
 import { SignInPage } from "./routes/SignInPage";
+import { SubmitPoliticianProposalPage } from "./routes/SubmitPoliticianProposalPage";
+import { SubmitStatementPage } from "./routes/SubmitStatementPage";
 
 export const App = (): ReactElement => {
   return (
@@ -32,6 +34,8 @@ export const App = (): ReactElement => {
           <Route path="/promises/:id" element={<PromiseDetailPage />} />
           <Route path="/methodology" element={<MethodologyPage />} />
           <Route element={<RequireAuthRoute />}>
+            <Route path="/contribute/politicians/new" element={<SubmitPoliticianProposalPage />} />
+            <Route path="/contribute/statements/new" element={<SubmitStatementPage />} />
             <Route element={<RequireRoleRoute minimumRole="moderator" />}>
               <Route path="/ops" element={<OpsPage />} />
             </Route>

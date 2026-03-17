@@ -31,6 +31,32 @@ export interface AuthSession {
   expiresAt: string | null;
 }
 
+export interface PoliticianProposalInput {
+  name: string;
+  region?: string;
+  office?: string;
+  externalId?: string;
+  sourceNote?: string;
+  captchaToken?: string;
+}
+
+export interface PoliticianProposalRecord {
+  id: number;
+  status: string;
+}
+
+export interface StatementSubmissionInput {
+  politicianId: number;
+  sourceUrl: string;
+  body: string;
+  dateSaid: string;
+}
+
+export interface StatementSubmissionResult {
+  id: number;
+  verificationStatus: string;
+}
+
 export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknown";
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
 export type PartyLineStatus = "aligned" | "broke_party_line" | "unknown";

@@ -4,6 +4,7 @@ import { useMemo, type ReactElement } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
+import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
 import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
@@ -23,9 +24,15 @@ const formatReviewStatus = (value: string): string => {
   return REVIEW_STATUS_LABELS[value.toLowerCase()] ?? value.replace(/_/g, " ");
 };
 
+const buildSignInRedirectLink = (target: string): string => {
+  const params = new URLSearchParams({ redirect: target });
+  return `/sign-in?${params.toString()}`;
+};
+
 export const PoliticianProfilePage = (): ReactElement => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { session } = useAuth();
   const { politicians, statements, loading, error, refresh } = usePublicData();
 
   const politicianId = Number(id);
@@ -41,6 +48,9 @@ export const PoliticianProfilePage = (): ReactElement => {
   const totalPromises = promiseRecords.length;
   const unknownCount = promiseRecords.filter((promise) => promise.fulfillmentStatus === "unknown").length;
   const tabPanelId = `profile-panel-${activeTab}`;
+  const statementContributionTarget = session
+    ? `/contribute/statements/new?politicianId=${politicianId}`
+    : buildSignInRedirectLink(`/contribute/statements/new?politicianId=${politicianId}`);
 
   const onTabChange = (tab: ProfileTab): void => {
     const next = new URLSearchParams(searchParams);
@@ -111,6 +121,9 @@ export const PoliticianProfilePage = (): ReactElement => {
         <div className="card-link-row">
           <Link className="button button-link" to="/politicians">
             Back to politician directory
+          </Link>
+          <Link className="button button-secondary" to={statementContributionTarget}>
+            {session ? "Submit statement for this politician" : "Sign in to submit a statement"}
           </Link>
         </div>
       </section>
