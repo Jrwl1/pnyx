@@ -40,6 +40,7 @@ export const PoliticianProfilePage = (): ReactElement => {
 
   const totalPromises = promiseRecords.length;
   const unknownCount = promiseRecords.filter((promise) => promise.fulfillmentStatus === "unknown").length;
+  const tabPanelId = `profile-panel-${activeTab}`;
 
   const onTabChange = (tab: ProfileTab): void => {
     const next = new URLSearchParams(searchParams);
@@ -169,19 +170,44 @@ export const PoliticianProfilePage = (): ReactElement => {
 
       <section className="card stack-sm" aria-label="Profile tabs">
         <div className="tabs" role="tablist" aria-label="Politician profile tabs">
-          <button className={activeTab === "promises" ? "tab active" : "tab"} role="tab" aria-selected={activeTab === "promises"} onClick={() => onTabChange("promises")} type="button">
+          <button
+            id="profile-tab-promises"
+            className={activeTab === "promises" ? "tab active" : "tab"}
+            role="tab"
+            aria-controls={tabPanelId}
+            aria-selected={activeTab === "promises"}
+            onClick={() => onTabChange("promises")}
+            type="button"
+          >
             Promises
           </button>
-          <button className={activeTab === "votes" ? "tab active" : "tab"} role="tab" aria-selected={activeTab === "votes"} onClick={() => onTabChange("votes")} type="button">
+          <button
+            id="profile-tab-votes"
+            className={activeTab === "votes" ? "tab active" : "tab"}
+            role="tab"
+            aria-controls={tabPanelId}
+            aria-selected={activeTab === "votes"}
+            onClick={() => onTabChange("votes")}
+            type="button"
+          >
             Voting record vs promises
           </button>
-          <button className={activeTab === "evidence" ? "tab active" : "tab"} role="tab" aria-selected={activeTab === "evidence"} onClick={() => onTabChange("evidence")} type="button">
+          <button
+            id="profile-tab-evidence"
+            className={activeTab === "evidence" ? "tab active" : "tab"}
+            role="tab"
+            aria-controls={tabPanelId}
+            aria-selected={activeTab === "evidence"}
+            onClick={() => onTabChange("evidence")}
+            type="button"
+          >
             Evidence timeline
           </button>
         </div>
 
-        {activeTab === "promises" ? (
-          <>
+        <div key={activeTab} id={tabPanelId} className="tab-panel-motion" role="tabpanel" aria-labelledby={`profile-tab-${activeTab}`}>
+          {activeTab === "promises" ? (
+            <>
             <p className="data-note">These promise statuses are still Unknown. Read methodology for how they will be assessed.</p>
 
             <div className="table-wrapper desktop-only">
@@ -233,43 +259,44 @@ export const PoliticianProfilePage = (): ReactElement => {
                 </article>
               ))}
             </div>
-          </>
-        ) : null}
+            </>
+          ) : null}
 
-        {activeTab === "votes" ? (
-          <div className="stack-sm">
-            <p className="data-note">No vote comparison is available for these promises yet.</p>
-            <div className="cards-grid cards-grid-1">
-              {promiseRecords.map((promise) => (
-                <article key={promise.id} className="card stack-xs">
-                  <h3>{promise.promiseText}</h3>
-                  <p className="meta-line">Promised on {formatDate(promise.datePromised)}</p>
-                  <StatusChip status="unknown" prefix="Vote alignment" />
-                  <p className="meta-line">Data not yet available</p>
-                </article>
-              ))}
+          {activeTab === "votes" ? (
+            <div className="stack-sm">
+              <p className="data-note">No vote comparison is available for these promises yet.</p>
+              <div className="cards-grid cards-grid-1">
+                {promiseRecords.map((promise) => (
+                  <article key={promise.id} className="card stack-xs">
+                    <h3>{promise.promiseText}</h3>
+                    <p className="meta-line">Promised on {formatDate(promise.datePromised)}</p>
+                    <StatusChip status="unknown" prefix="Vote alignment" />
+                    <p className="meta-line">Data not yet available</p>
+                  </article>
+                ))}
+              </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
 
-        {activeTab === "evidence" ? (
-          <div className="timeline-list" role="list" aria-label="Evidence timeline">
-            {statements
-              .filter((statement) => statement.politicianId === politician.id)
-              .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
-              .map((statement) => (
-                <article key={statement.id} className="timeline-item" role="listitem">
-                  <p className="mono-inline">{formatDateTime(statement.createdAt)}</p>
-                  <h3>{statement.body}</h3>
-                  <p>
-                    Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
-                  </p>
-                  <p className="meta-line">Evidence review: {formatReviewStatus(statement.verificationStatus)}</p>
-                  <Link to={`/promises/${statement.id}`}>Review full promise record</Link>
-                </article>
-              ))}
-          </div>
-        ) : null}
+          {activeTab === "evidence" ? (
+            <div className="timeline-list" role="list" aria-label="Evidence timeline">
+              {statements
+                .filter((statement) => statement.politicianId === politician.id)
+                .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+                .map((statement) => (
+                  <article key={statement.id} className="timeline-item" role="listitem">
+                    <p className="mono-inline">{formatDateTime(statement.createdAt)}</p>
+                    <h3>{statement.body}</h3>
+                    <p>
+                      Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
+                    </p>
+                    <p className="meta-line">Evidence review: {formatReviewStatus(statement.verificationStatus)}</p>
+                    <Link to={`/promises/${statement.id}`}>Review full promise record</Link>
+                  </article>
+                ))}
+            </div>
+          ) : null}
+        </div>
       </section>
     </div>
   );

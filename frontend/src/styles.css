@@ -375,6 +375,37 @@ button {
   flex: 1 1 320px;
 }
 
+.search-suggestions {
+  display: grid;
+  gap: 6px;
+}
+
+.search-suggestion {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d3dae7;
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink-strong);
+  cursor: pointer;
+  text-align: left;
+}
+
+.search-suggestion strong {
+  font-size: 1rem;
+}
+
+.search-suggestion span {
+  color: var(--ink-muted);
+  font-size: 0.95rem;
+}
+
+.search-suggestion:hover {
+  background: #f7f9fd;
+}
+
 .button {
   border: 1px solid transparent;
   border-radius: 10px;
@@ -792,6 +823,22 @@ button {
   background: var(--accent-civic);
   color: #fff;
   border-color: var(--accent-civic);
+}
+
+.tab-panel-motion {
+  animation: tab-panel-in 160ms ease;
+}
+
+@keyframes tab-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .status-chip {

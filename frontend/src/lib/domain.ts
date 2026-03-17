@@ -12,7 +12,7 @@ import type {
   StatementSummary
 } from "../types";
 import { getPartyRouteShell, PARTY_ROUTE_SHELLS } from "../types";
-import { DATA_NOT_AVAILABLE, normalizeForSearch } from "./format";
+import { DATA_NOT_AVAILABLE, formatIdentityLine, normalizeForSearch } from "./format";
 
 export const ISSUE_OPTIONS = [
   "Economy and jobs",
@@ -37,6 +37,12 @@ export const SORT_OPTIONS = {
 } as const;
 
 export type DirectorySort = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS];
+export interface SearchSuggestion {
+  key: string;
+  label: string;
+  description: string;
+  target: string;
+}
 
 export const toPromiseRecord = (statement: StatementSummary): PromiseRecord => {
   return {
@@ -219,6 +225,43 @@ export const buildSearchText = (row: DirectoryRow): string => {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+};
+
+export const buildSearchSuggestions = (politicians: Politician[], query: string, limit = 6): SearchSuggestion[] => {
+  const normalizedQuery = normalizeForSearch(query);
+  if (normalizedQuery.length < 2) {
+    return [];
+  }
+
+  const partySuggestions = PARTY_ROUTE_SHELLS.filter((entry) =>
+    [entry.party.name, entry.party.shortName].some((value) => normalizeForSearch(value).includes(normalizedQuery))
+  ).map((entry) => ({
+    key: `party-${entry.party.id}`,
+    label: entry.party.name,
+    description: `${entry.party.shortName} party page`,
+    target: `/parties/${entry.party.id}`
+  }));
+
+  const politicianSuggestions = politicians
+    .filter((politician) => {
+      return [
+        politician.name,
+        politician.office,
+        getTerritoryLabel(politician),
+        politician.partyName,
+        politician.partyShortName
+      ]
+        .filter(Boolean)
+        .some((value) => normalizeForSearch(value).includes(normalizedQuery));
+    })
+    .map((politician) => ({
+      key: `politician-${politician.id}`,
+      label: politician.name,
+      description: `${formatIdentityLine(politician.office, getTerritoryLabel(politician))} · ${getPartyAffiliationLabel(politician)}`,
+      target: `/politicians/${politician.id}`
+    }));
+
+  return [...politicianSuggestions, ...partySuggestions].slice(0, limit);
 };
 
 export const buildLatestPromiseFeed = (

@@ -7,6 +7,7 @@ import {
   buildDirectoryRows,
   buildHomePartyCards,
   buildLatestPromiseFeed,
+  buildSearchSuggestions,
   findPartyShellByQuery,
   getPartyAffiliationLabel,
   getTerritoryLabel,
@@ -50,6 +51,7 @@ export const HomePage = (): ReactElement => {
 
   const featuredParties = useMemo(() => buildHomePartyCards(politicians, statements).slice(0, 4), [politicians, statements]);
   const exactPartyMatch = useMemo(() => findPartyShellByQuery(query), [query]);
+  const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query), [politicians, query]);
 
   const onSearchSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
@@ -70,6 +72,10 @@ export const HomePage = (): ReactElement => {
     params.set("q", trimmedQuery);
 
     navigate(`/politicians${params.toString() ? `?${params.toString()}` : ""}`);
+  };
+
+  const onSuggestionSelect = (target: string): void => {
+    navigate(target);
   };
 
   if (loading) {
@@ -106,6 +112,17 @@ export const HomePage = (): ReactElement => {
               Search
             </button>
           </form>
+
+          {searchSuggestions.length > 0 ? (
+            <div className="search-suggestions" role="listbox" aria-label="Search suggestions">
+              {searchSuggestions.map((suggestion) => (
+                <button key={suggestion.key} className="search-suggestion" type="button" onClick={() => onSuggestionSelect(suggestion.target)}>
+                  <strong>{suggestion.label}</strong>
+                  <span>{suggestion.description}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <p className="data-note">
             {exactPartyMatch

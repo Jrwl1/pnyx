@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import {
   buildDirectoryRows,
+  buildSearchSuggestions,
   buildSearchText,
   getPartyAffiliationLabel,
   getTerritoryLabel,
@@ -36,6 +37,7 @@ export const PoliticiansPage = (): ReactElement => {
 
   const rows = useMemo(() => buildDirectoryRows(politicians, statements), [politicians, statements]);
   const hasPartyData = useMemo(() => hasPartyAffiliationData(politicians), [politicians]);
+  const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query, 5), [politicians, query]);
 
   const territories = useMemo(() => {
     return [...new Set(rows.map((row) => getTerritoryLabel(row.politician)).filter((value): value is string => Boolean(value)))].sort((a, b) =>
@@ -221,6 +223,16 @@ export const PoliticiansPage = (): ReactElement => {
               onChange={onTextFilterChange}
               placeholder="Name, party, office, constituency, or region"
             />
+            {searchSuggestions.length > 0 ? (
+              <div className="search-suggestions" role="listbox" aria-label="Directory search suggestions">
+                {searchSuggestions.map((suggestion) => (
+                  <button key={suggestion.key} className="search-suggestion" type="button" onClick={() => navigate(suggestion.target)}>
+                    <strong>{suggestion.label}</strong>
+                    <span>{suggestion.description}</span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
           </label>
 
           <label className="field-group">
