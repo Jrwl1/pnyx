@@ -40,12 +40,24 @@ import {
 
 export const app = express();
 const allowedCorsOrigin = (process.env.CORS_ALLOW_ORIGIN ?? "").trim();
-if (allowedCorsOrigin) {
+const resolvedCorsOrigin = (origin: string | undefined): string | null => {
+  if (allowedCorsOrigin) {
+    return allowedCorsOrigin;
+  }
+  if (process.env.NODE_ENV !== "production" && origin) {
+    return origin;
+  }
+  return null;
+};
+if (allowedCorsOrigin || process.env.NODE_ENV !== "production") {
   app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", allowedCorsOrigin);
-    res.header("Vary", "Origin");
-    res.header("Access-Control-Allow-Headers", "Authorization, Content-Type");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    const corsOrigin = resolvedCorsOrigin(req.header("origin"));
+    if (corsOrigin) {
+      res.header("Access-Control-Allow-Origin", corsOrigin);
+      res.header("Vary", "Origin");
+      res.header("Access-Control-Allow-Headers", "Authorization, Content-Type");
+      res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    }
     if (req.method === "OPTIONS") {
       res.sendStatus(204);
       return;

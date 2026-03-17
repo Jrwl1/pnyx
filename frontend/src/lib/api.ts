@@ -55,7 +55,7 @@ import type {
   VoteValue
 } from "../types";
 
-const API_BASE = (import.meta.env.VITE_API_BASE ?? "/api").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE ?? import.meta.env.VITE_BACKEND_URL ?? "/api").replace(/\/$/, "");
 
 type ApiErrorPayload = {
   error?: string;
