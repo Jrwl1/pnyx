@@ -37,3 +37,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [15:38] DO: add contributor proposal and statement routes (sprint: S-21, links: 1690950, docs/SPRINT.md)
 - [15:41] DO: add promise voting controls (sprint: S-21, links: d009cd0, docs/SPRINT.md)
 - [15:49] DO: add moderator proposal queue tooling (sprint: S-21, links: 2b9f3ea, docs/SPRINT.md)
+- [15:58] DO: verify S-21 public and moderator browser flows on fresh local frontend/backend ports (sprint: S-21, links: 2b9f3ea, docs/SPRINT.md)
