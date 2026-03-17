@@ -16,3 +16,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:07] DO: blocked before S-15 due to dirty baseline outside packet scope (sprint: S-15, links: docs/SPRINT.md)
 - [12:11] DO: rewrite S-15 home trust copy packet (sprint: S-15, links: 44b0ce3, docs/SPRINT.md)
 - [12:13] DO: rewrite S-15 party route copy packet (sprint: S-15, links: 445c754, docs/SPRINT.md)
+- [12:15] DO: tighten S-15 unknown-state copy packet (sprint: S-15, links: f63dea3, docs/SPRINT.md)
