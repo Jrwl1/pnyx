@@ -214,11 +214,13 @@ export const PoliticiansPage = (): ReactElement => {
 
       <section className="directory-controls stack-sm" aria-label="Directory filters">
         <div className="controls-grid">
-          <label className="field-group">
+          <label className="field-group" htmlFor="directory-search">
             <span>Search</span>
             <input
+              id="directory-search"
               className="text-input"
               type="search"
+              name="q"
               value={query}
               onChange={onTextFilterChange}
               placeholder="Name, party, office, constituency, or region"
@@ -235,9 +237,9 @@ export const PoliticiansPage = (): ReactElement => {
             ) : null}
           </label>
 
-          <label className="field-group">
+          <label className="field-group" htmlFor="directory-territory">
             <span>Constituency or region</span>
-            <select className="select-input" value={territory} onChange={onSelectFilterChange("territory")}>
+            <select id="directory-territory" name="territory" className="select-input" value={territory} onChange={onSelectFilterChange("territory")}>
               <option value="">All constituencies or regions</option>
               {territories.map((option) => (
                 <option key={option} value={option}>
@@ -247,9 +249,9 @@ export const PoliticiansPage = (): ReactElement => {
             </select>
           </label>
 
-          <label className="field-group">
+          <label className="field-group" htmlFor="directory-office">
             <span>Office</span>
-            <select className="select-input" value={office} onChange={onSelectFilterChange("office")}>
+            <select id="directory-office" name="office" className="select-input" value={office} onChange={onSelectFilterChange("office")}>
               <option value="">All offices</option>
               {offices.map((option) => (
                 <option key={option} value={option}>
@@ -259,9 +261,11 @@ export const PoliticiansPage = (): ReactElement => {
             </select>
           </label>
 
-          <label className="field-group">
+          <label className="field-group" htmlFor="directory-party">
             <span>Party</span>
             <select
+              id="directory-party"
+              name="party"
               className="select-input"
               value={hasPartyData ? party : ""}
               onChange={onSelectFilterChange("party")}
@@ -277,9 +281,9 @@ export const PoliticiansPage = (): ReactElement => {
             </select>
           </label>
 
-          <label className="field-group">
+          <label className="field-group" htmlFor="directory-issue">
             <span>Issue</span>
-            <select className="select-input" value={issue} onChange={onSelectFilterChange("issue")}>
+            <select id="directory-issue" name="issue" className="select-input" value={issue} onChange={onSelectFilterChange("issue")}>
               <option value="">All issues</option>
               {ISSUE_OPTIONS.map((option) => (
                 <option key={option} value={option}>
@@ -289,9 +293,9 @@ export const PoliticiansPage = (): ReactElement => {
             </select>
           </label>
 
-          <label className="field-group">
+          <label className="field-group" htmlFor="directory-sort">
             <span>Sort</span>
-            <select className="select-input" value={effectiveSort} onChange={onSelectFilterChange("sort")}>
+            <select id="directory-sort" name="sort" className="select-input" value={effectiveSort} onChange={onSelectFilterChange("sort")}>
               {(Object.values(SORT_OPTIONS) as DirectorySort[]).map((option) => (
                 <option key={option} value={option} disabled={option === SORT_OPTIONS.fulfillmentRate && !hasKnownFulfillmentData}>
                   {SORT_LABELS[option]}
