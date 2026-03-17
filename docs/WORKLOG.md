@@ -49,3 +49,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [16:41] DO: add promise claim schema, moderation APIs, and equivalence signals (sprint: S-24, links: bf70c1d, docs/SPRINT.md)
 - [16:54] DO: connect promise claim routes and verify merge/canonize flows in browser (sprint: S-24, links: d8365b8, docs/SPRINT.md)
 - [16:55] REVIEW: accept S-24 promise claim canonization row (findings: none)
+- [18:05] DO: add S-25 trust-record backend primitives and Finland-first source paths (sprint: S-25, links: 59a7c94, docs/SPRINT.md)
