@@ -456,6 +456,19 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/search", (req, res) => {
+  const query = (req.query.q as string | undefined)?.trim() ?? "";
+  if (query.length < 2) {
+    res.json({ items: [] });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  res.json({
+    items: buildSearchItems(query, includeNonPublic)
+  });
+});
+
 app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
   res.json({
     ...buildAbuseMetricsSnapshot(),
@@ -1647,6 +1660,137 @@ const buildFuzzyDuplicateHints = (
     });
 
   return scored.slice(0, DUPLICATE_ASSIST_FUZZY_LIMIT);
+};
+
+type SearchItem = {
+  kind: "politician" | "party" | "promise" | "topic";
+  key: string;
+  label: string;
+  description: string;
+  target: string;
+};
+
+const buildSearchItems = (query: string, includeNonPublic: boolean): SearchItem[] => {
+  const normalized = query.trim().toLowerCase();
+  if (normalized.length < 2) {
+    return [];
+  }
+
+  const like = `%${normalized}%`;
+  const politicians = db
+    .prepare(
+      `SELECT pol.id,
+        pol.name,
+        pol.region,
+        pol.office,
+        p.short_name AS partyShortName
+       FROM politicians pol
+       LEFT JOIN party_memberships pm ON pm.politician_id = pol.id AND pm.end_date IS NULL
+       LEFT JOIN parties p ON p.id = pm.party_id AND p.deleted_at IS NULL
+       WHERE pol.deleted_at IS NULL
+         AND (
+           lower(pol.name) LIKE ?
+           OR lower(COALESCE(pol.region, '')) LIKE ?
+           OR lower(COALESCE(pol.office, '')) LIKE ?
+           OR lower(COALESCE(p.name, '')) LIKE ?
+           OR lower(COALESCE(p.short_name, '')) LIKE ?
+         )
+       ORDER BY lower(pol.name), pol.id
+       LIMIT 5`
+    )
+    .all(like, like, like, like, like) as Array<{
+    id: number;
+    name: string;
+    region: string | null;
+    office: string | null;
+    partyShortName: string | null;
+  }>;
+
+  const parties = db
+    .prepare(
+      `SELECT DISTINCT p.id,
+        p.name,
+        p.short_name AS shortName
+       FROM parties p
+       LEFT JOIN party_aliases pa ON pa.party_id = p.id
+       WHERE p.deleted_at IS NULL
+         AND (
+           lower(p.name) LIKE ?
+           OR lower(p.short_name) LIKE ?
+           OR lower(COALESCE(pa.alias, '')) LIKE ?
+         )
+       ORDER BY lower(p.short_name), lower(p.name)
+       LIMIT 5`
+    )
+    .all(like, like, like) as Array<{ id: string; name: string; shortName: string }>;
+
+  const promiseVisibilityClause = includeNonPublic ? "" : " AND cp.public_status = 'public'";
+  const promises = db
+    .prepare(
+      `SELECT cp.id,
+        cp.promise_text AS promiseText,
+        cp.primary_statement_id AS statementId,
+        cp.politician_id AS politicianId,
+        pol.name AS politicianName
+       FROM canonical_promises cp
+       JOIN politicians pol ON pol.id = cp.politician_id
+       WHERE cp.deleted_at IS NULL${promiseVisibilityClause}
+         AND lower(cp.promise_text) LIKE ?
+       ORDER BY cp.created_at DESC, cp.id DESC
+       LIMIT 5`
+    )
+    .all(like) as Array<{
+    id: number;
+    promiseText: string;
+    statementId: number | null;
+    politicianId: number;
+    politicianName: string;
+  }>;
+
+  const topics = db
+    .prepare(
+      `SELECT DISTINCT issue
+       FROM (
+         SELECT issue FROM party_stances
+         UNION
+         SELECT issue FROM vote_events
+       )
+       WHERE issue IS NOT NULL AND lower(issue) LIKE ?
+       ORDER BY lower(issue)
+       LIMIT 5`
+    )
+    .all(like) as Array<{ issue: string }>;
+
+  return [
+    ...politicians.map((row) => ({
+      kind: "politician" as const,
+      key: `politician-${row.id}`,
+      label: row.name,
+      description: `${row.office ?? "Office not provided"} · ${row.region ?? "Region not provided"}${row.partyShortName ? ` · ${row.partyShortName}` : ""}`,
+      target: `/politicians/${row.id}`
+    })),
+    ...parties.map((row) => ({
+      kind: "party" as const,
+      key: `party-${row.id}`,
+      label: row.name,
+      description: `${row.shortName} party page`,
+      target: `/parties/${row.id}`
+    })),
+    ...promises.map((row) => ({
+      kind: "promise" as const,
+      key: `promise-${row.id}`,
+      label: row.promiseText,
+      description: `${row.politicianName} · canonical promise`,
+      target: row.statementId ? `/promises/${row.statementId}` : `/politicians/${row.politicianId}?tab=promises`
+    })),
+    ...topics.map((row) => ({
+      kind: "topic" as const,
+      key: `topic-${row.issue.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      label: row.issue,
+      description: "Topic or issue search",
+      target: `/politicians?q=${encodeURIComponent(row.issue)}`
+    }))
+  ];
 };
 
 type ProposalTxError = {

@@ -7,17 +7,16 @@ import { useAuth } from "../context/AuthContext";
 import {
   buildDirectoryRows,
   buildLatestPromiseFeed,
-  buildSearchSuggestions,
   findPartyShellByQuery,
   getPartyAffiliationLabel,
   getTerritoryLabel,
   ISSUE_OPTIONS,
   toPartyRecord
 } from "../lib/domain";
-import { listParties } from "../lib/api";
+import { listParties, searchSite } from "../lib/api";
 import { formatDate, formatIdentityLine } from "../lib/format";
 import { usePublicData } from "../context/PublicDataContext";
-import type { BackendPartySummary } from "../types";
+import type { BackendPartySummary, SearchResultItem } from "../types";
 
 const truncatePromiseText = (value: string, maxLength = 156): string => {
   if (value.length <= maxLength) {
@@ -46,6 +45,7 @@ export const HomePage = (): ReactElement => {
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [query, setQuery] = useState<string>("");
   const [parties, setParties] = useState<BackendPartySummary[]>([]);
+  const [searchSuggestions, setSearchSuggestions] = useState<SearchResultItem[]>([]);
   const [partyLoading, setPartyLoading] = useState<boolean>(true);
   const [partyError, setPartyError] = useState<string | null>(null);
 
@@ -104,9 +104,35 @@ export const HomePage = (): ReactElement => {
       .slice(0, 4);
   }, [parties]);
   const exactPartyMatch = useMemo(() => findPartyShellByQuery(query, partyRecords), [partyRecords, query]);
-  const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query, 6, partyRecords), [partyRecords, politicians, query]);
   const politicianProposalTarget = session ? "/contribute/politicians/new" : buildSignInRedirectLink("/contribute/politicians/new");
   const statementContributionTarget = session ? "/contribute/statements/new" : buildSignInRedirectLink("/contribute/statements/new");
+
+  useEffect(() => {
+    const trimmedQuery = query.trim();
+    if (trimmedQuery.length < 2) {
+      setSearchSuggestions([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loadSuggestions = async (): Promise<void> => {
+      try {
+        const items = await searchSite(trimmedQuery);
+        if (!cancelled) {
+          setSearchSuggestions(items.slice(0, 6));
+        }
+      } catch {
+        if (!cancelled) {
+          setSearchSuggestions([]);
+        }
+      }
+    };
+
+    void loadSuggestions();
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
 
   const onSearchSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();

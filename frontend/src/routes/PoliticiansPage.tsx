@@ -1,11 +1,10 @@
 /* Finland-first politician directory with public-discovery filters. */
 
-import { useEffect, useMemo, type ChangeEvent, type KeyboardEvent, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type KeyboardEvent, type ReactElement } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import {
   buildDirectoryRows,
-  buildSearchSuggestions,
   buildSearchText,
   getPartyAffiliationLabel,
   getTerritoryLabel,
@@ -14,8 +13,10 @@ import {
   SORT_OPTIONS,
   type DirectorySort
 } from "../lib/domain";
+import { searchSite } from "../lib/api";
 import { formatDateTime, formatIdentityLine } from "../lib/format";
 import { usePublicData } from "../context/PublicDataContext";
+import type { SearchResultItem } from "../types";
 
 const SORT_LABELS: Record<DirectorySort, string> = {
   most_promises: "Most promises",
@@ -27,6 +28,7 @@ export const PoliticiansPage = (): ReactElement => {
   const navigate = useNavigate();
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [searchSuggestions, setSearchSuggestions] = useState<SearchResultItem[]>([]);
 
   const query = searchParams.get("q") ?? "";
   const territory = searchParams.get("territory") ?? "";
@@ -37,7 +39,6 @@ export const PoliticiansPage = (): ReactElement => {
 
   const rows = useMemo(() => buildDirectoryRows(politicians, statements), [politicians, statements]);
   const hasPartyData = useMemo(() => hasPartyAffiliationData(politicians), [politicians]);
-  const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query, 5), [politicians, query]);
 
   const territories = useMemo(() => {
     return [...new Set(rows.map((row) => getTerritoryLabel(row.politician)).filter((value): value is string => Boolean(value)))].sort((a, b) =>
@@ -80,6 +81,32 @@ export const PoliticiansPage = (): ReactElement => {
 
   const effectiveSort =
     sort === SORT_OPTIONS.fulfillmentRate && !hasKnownFulfillmentData ? SORT_OPTIONS.recentlyUpdated : sort;
+
+  useEffect(() => {
+    if (query.trim().length < 2) {
+      setSearchSuggestions([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loadSuggestions = async (): Promise<void> => {
+      try {
+        const items = await searchSite(query.trim());
+        if (!cancelled) {
+          setSearchSuggestions(items.slice(0, 5));
+        }
+      } catch {
+        if (!cancelled) {
+          setSearchSuggestions([]);
+        }
+      }
+    };
+
+    void loadSuggestions();
+    return () => {
+      cancelled = true;
+    };
+  }, [query]);
 
   useEffect(() => {
     if (party && !hasPartyData) {

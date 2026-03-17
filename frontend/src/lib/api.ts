@@ -33,6 +33,7 @@ import type {
   PoliticianProposalRecord,
   RegisterAccountInput,
   RegisteredAccount,
+  SearchResultItem,
   StatementDetail,
   StatementSubmissionInput,
   StatementSubmissionResult,
@@ -141,6 +142,11 @@ export const createStatement = async (token: string, input: StatementSubmissionI
 
 export const listPoliticians = async (): Promise<Politician[]> => {
   const response = await fetchJson<{ items: Politician[] }>("/politicians");
+  return response.items;
+};
+
+export const searchSite = async (query: string): Promise<SearchResultItem[]> => {
+  const response = await fetchJson<{ items: SearchResultItem[] }>(`/search?q=${encodeURIComponent(query)}`);
   return response.items;
 };
 

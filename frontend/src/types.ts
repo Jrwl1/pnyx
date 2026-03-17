@@ -65,6 +65,15 @@ export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
 export type PartyLineStatus = "aligned" | "broke_party_line" | "unknown";
 export type PlaceholderState = "placeholder";
 export type PartyDataState = "placeholder" | "live";
+export type SearchResultKind = "politician" | "party" | "promise" | "topic";
+
+export interface SearchResultItem {
+  kind: SearchResultKind;
+  key: string;
+  label: string;
+  description: string;
+  target: string;
+}
 
 export interface Politician {
   id: number;
