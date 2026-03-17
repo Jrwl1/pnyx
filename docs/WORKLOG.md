@@ -25,3 +25,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:26] REVIEW: accept S-17 Finland-first correctness row (findings: none)
 - [12:30] DO: add S-18 amber identity and claim styling packet (sprint: S-18, links: 4882359, docs/SPRINT.md)
 - [12:32] DO: add S-18 public breadcrumbs, footer, and sentiment packet (sprint: S-18, links: b9d86e8, docs/SPRINT.md)
+- [12:32] REVIEW: accept S-18 public design row (findings: none)
