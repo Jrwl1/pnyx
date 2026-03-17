@@ -221,25 +221,25 @@ Convert Pnyx from a read-first public alpha into a contribution-capable Finland-
   - run: `pnpm test`
   - evidence: packet:59a7c94e69cbc0266e57e9b44a632e7dde015f0f | run:pnpm test -> pass | files:migrations/0008_trust_records.sql, src/db/trust-records.ts, src/server.ts, test/migration.test.ts, test/trust-records.test.ts | docs:N/A | status: clean
 
-- [ ] Expose backend-derived politician and party trust summary reads with counts first, percentages second, and explicit unknown handling
+- [x] Expose backend-derived politician and party trust summary reads with counts first, percentages second, and explicit unknown handling
   - files: `src/server.ts`, `test/**`
   - run: `pnpm test`
-  - evidence: Pending.
+  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm test -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
 
-- [ ] Update politician profile trust cards and tables to use backend-derived promise-trust and party-line-trust data
+- [x] Update politician profile trust cards and tables to use backend-derived promise-trust and party-line-trust data
   - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
 
-- [ ] Update party directory and party profile to show member trust cards and party-average trust summaries from backend assessments
+- [x] Update party directory and party profile to show member trust cards and party-average trust summaries from backend assessments
   - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
 
-- [ ] Update promise detail and methodology to explain real fulfillment, vote-alignment, and party-stance comparison logic
+- [x] Update promise detail and methodology to explain real fulfillment, vote-alignment, and party-stance comparison logic
   - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
 
 - [ ] Run regression, accessibility, and browser verification for trust-dimension surfaces on politician, party, and promise routes
   - files: `frontend/src/**`, `src/server.ts`, `test/**`

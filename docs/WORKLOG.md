@@ -50,3 +50,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [16:54] DO: connect promise claim routes and verify merge/canonize flows in browser (sprint: S-24, links: d8365b8, docs/SPRINT.md)
 - [16:55] REVIEW: accept S-24 promise claim canonization row (findings: none)
 - [18:05] DO: add S-25 trust-record backend primitives and Finland-first source paths (sprint: S-25, links: 59a7c94, docs/SPRINT.md)
+- [18:19] DO: connect S-25 trust summaries and public trust surfaces (sprint: S-25, links: 493d351, docs/SPRINT.md)
