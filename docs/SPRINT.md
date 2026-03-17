@@ -82,7 +82,7 @@ Move Pnyx from a feature-complete-enough accountability product to a launchable 
 - [ ] Run browser verification for editorial ops and launch coverage views from moderator/admin sessions
   - files: `frontend/src/**`, `src/server.ts`, `test/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of editorial ops flows`
-  - evidence: Pending.
+  - evidence: GATE BLOCKED: isolated browser verification for `/ops/records` could not be completed cleanly because the local frontend/backend pair did not stay pointed at the fresh backend consistently enough to exercise the new editorial ops routes under the required browser run.
 
 ### S-29 substeps
 

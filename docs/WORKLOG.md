@@ -62,3 +62,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [20:20] DO: verify S-27 launch auth redirects and sign-in flow on a fresh browser/backend pair (sprint: S-27, links: a7d1b5c, docs/SPRINT.md)
 - [20:21] REVIEW: accept S-27 launch auth row (findings: none)
 - [20:27] DO: add protected editorial record ops and launch coverage views (sprint: S-28, links: eeb0b64, docs/SPRINT.md)
+- [20:31] DO: blocked on S-28 editorial browser verification due unstable local frontend/backend pairing for `/ops/records` (sprint: S-28, links: docs/SPRINT.md)
