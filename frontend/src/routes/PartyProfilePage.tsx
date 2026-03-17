@@ -48,6 +48,11 @@ export const PartyProfilePage = (): ReactElement => {
         <h1>{partyShell.party.name}</h1>
         <span className="party-badge">{partyShell.party.shortName}</span>
         <p className="lede">{partyShell.party.contextLine}</p>
+        <div className="card-link-row">
+          <Link className="button button-link" to="/parties">
+            Back to party directory
+          </Link>
+        </div>
       </section>
 
       <section className="scorecards-grid" aria-label="Party summary cards">

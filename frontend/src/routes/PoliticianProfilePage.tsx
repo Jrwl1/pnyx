@@ -107,6 +107,11 @@ export const PoliticianProfilePage = (): ReactElement => {
           )}
         </p>
         <p className="meta-line mono-inline">External id: {politician.externalId ?? "Data not yet available"}</p>
+        <div className="card-link-row">
+          <Link className="button button-link" to="/politicians">
+            Back to politician directory
+          </Link>
+        </div>
       </section>
 
       <section className="scorecards-grid" aria-label="Promise and alignment scorecards">

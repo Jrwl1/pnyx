@@ -1,7 +1,7 @@
 /* Finland-first politician directory with public-discovery filters. */
 
-import { useEffect, useMemo, type ChangeEvent, type ReactElement } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useEffect, useMemo, type ChangeEvent, type KeyboardEvent, type ReactElement } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import {
   buildDirectoryRows,
@@ -23,6 +23,7 @@ const SORT_LABELS: Record<DirectorySort, string> = {
 };
 
 export const PoliticiansPage = (): ReactElement => {
+  const navigate = useNavigate();
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -179,6 +180,17 @@ export const PoliticiansPage = (): ReactElement => {
     updateParam(key, event.target.value);
   };
 
+  const openPoliticianProfile = (politicianId: number): void => {
+    navigate(`/politicians/${politicianId}`);
+  };
+
+  const onRowKeyDown = (event: KeyboardEvent<HTMLElement>, politicianId: number): void => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openPoliticianProfile(politicianId);
+    }
+  };
+
   if (loading) {
     return <LoadingState label="Loading politician directory..." />;
   }
@@ -303,7 +315,14 @@ export const PoliticiansPage = (): ReactElement => {
             </thead>
             <tbody>
               {filteredRows.map((row) => (
-                <tr key={row.politician.id}>
+                <tr
+                  key={row.politician.id}
+                  className="table-row-link"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => openPoliticianProfile(row.politician.id)}
+                  onKeyDown={(event) => onRowKeyDown(event, row.politician.id)}
+                >
                   <td>
                     <Link to={`/politicians/${row.politician.id}`}>{row.politician.name}</Link>
                   </td>
@@ -327,7 +346,14 @@ export const PoliticiansPage = (): ReactElement => {
 
         <div className="cards-grid cards-grid-1 mobile-only">
           {filteredRows.map((row) => (
-            <article key={row.politician.id} className="card stack-xs">
+            <article
+              key={row.politician.id}
+              className="card stack-xs card-interactive card-link-surface"
+              role="link"
+              tabIndex={0}
+              onClick={() => openPoliticianProfile(row.politician.id)}
+              onKeyDown={(event) => onRowKeyDown(event, row.politician.id)}
+            >
               <h3>
                 <Link to={`/politicians/${row.politician.id}`}>{row.politician.name}</Link>
               </h3>

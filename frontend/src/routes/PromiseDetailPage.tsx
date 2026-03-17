@@ -155,6 +155,11 @@ export const PromiseDetailPage = (): ReactElement => {
             partyAffiliationLabel
           )}
         </p>
+        <div className="card-link-row">
+          <Link className="button button-link" to={politician ? `/politicians/${politician.id}` : "/politicians"}>
+            {politician ? "Back to politician profile" : "Back to politician directory"}
+          </Link>
+        </div>
       </section>
 
       <section className="card stack-sm claim-block" aria-label="Promise claim">

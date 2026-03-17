@@ -655,12 +655,28 @@ button {
   background: #fafbff;
 }
 
+.table-row-link {
+  cursor: pointer;
+}
+
+.table-row-link:hover td {
+  background: #fbfcff;
+}
+
+.table-row-link:focus-visible td {
+  box-shadow: inset 0 0 0 2px rgba(31, 95, 191, 0.32);
+}
+
 .desktop-only {
   display: block;
 }
 
 .mobile-only {
   display: none;
+}
+
+.card-link-surface {
+  cursor: pointer;
 }
 
 .scorecards-grid {
