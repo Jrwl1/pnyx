@@ -464,6 +464,7 @@ app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
 });
 
 app.get("/politicians", (_req, res) => {
+  const includeNonPublic = _req.auth.role === "moderator" || _req.auth.role === "admin";
   const rows = db
     .prepare(
       "SELECT id, name, region, office, external_id AS externalId, verified, created_at AS createdAt FROM politicians WHERE deleted_at IS NULL ORDER BY created_at DESC"
@@ -485,14 +486,62 @@ app.get("/politicians", (_req, res) => {
         ...row,
         partyId: party?.partyId ?? null,
         partyName: party?.partyName ?? null,
-        partyShortName: party?.partyShortName ?? null
+        partyShortName: party?.partyShortName ?? null,
+        trustSummary: getPoliticianTrustSummary(row.id, includeNonPublic)
       };
     })
   });
 });
 
+app.get("/politicians/:id/trust-summary", (req, res) => {
+  const politicianId = Number(req.params.id);
+  if (!Number.isInteger(politicianId) || politicianId <= 0) {
+    res.status(400).json({ error: "invalid politician id" });
+    return;
+  }
+
+  const politician = db
+    .prepare(
+      `SELECT id, name, region, office, external_id AS externalId, verified, created_at AS createdAt
+       FROM politicians
+       WHERE id = ? AND deleted_at IS NULL
+       LIMIT 1`
+    )
+    .get(politicianId) as
+    | {
+        id: number;
+        name: string;
+        region: string | null;
+        office: string | null;
+        externalId: string | null;
+        verified: number;
+        createdAt: string;
+      }
+    | undefined;
+  if (!politician) {
+    res.status(404).json({ error: "politician not found" });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  res.json({
+    politician,
+    trustSummary: getPoliticianTrustSummary(politicianId, includeNonPublic)
+  });
+});
+
 app.get("/parties", (_req, res) => {
-  res.json({ items: listParties().map(serializePartySummary) });
+  const includeNonPublic = _req.auth.role === "moderator" || _req.auth.role === "admin";
+  res.json({
+    items: listParties().map((row) => {
+      const trustSummary = getPartyTrustSummary(row.id, includeNonPublic);
+      return {
+        ...serializePartySummary(row),
+        officialStanceCount: trustSummary.officialStanceCount,
+        trustSummary
+      };
+    })
+  });
 });
 
 app.get("/parties/:id", (req, res) => {
@@ -503,8 +552,14 @@ app.get("/parties/:id", (req, res) => {
     return;
   }
 
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  const trustSummary = getPartyTrustSummary(partyId, includeNonPublic);
   res.json({
-    party: serializePartySummary(party),
+    party: {
+      ...serializePartySummary(party),
+      officialStanceCount: trustSummary.officialStanceCount,
+      trustSummary
+    },
     aliases: listPartyAliases(partyId),
     membersUrl: `/parties/${partyId}/members`
   });
@@ -519,12 +574,17 @@ app.get("/parties/:id/members", (req, res) => {
   }
 
   const includeHistorical = String(req.query.includeHistorical ?? "") === "1";
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  const trustMembers = new Map(
+    listCurrentPartyTrustMembers(partyId, includeNonPublic).map((member) => [member.politicianId, member])
+  );
   res.json({
     partyId,
     includeHistorical,
     items: listPartyMembers(partyId, includeHistorical).map((row) => ({
       ...row,
-      current: Number(row.current ?? 0)
+      current: Number(row.current ?? 0),
+      trustSummary: trustMembers.get(row.politicianId) ?? null
     }))
   });
 });
@@ -1092,6 +1152,403 @@ const serializeVoteEventSummary = (row: ReturnType<typeof listVoteEvents>[number
   recordCount: Number(row.recordCount ?? 0),
   linkedPromiseCount: Number(row.linkedPromiseCount ?? 0)
 });
+
+type PromiseStatsSummary = {
+  total: number;
+  fulfilled: number;
+  broken: number;
+  inProgress: number;
+  unknown: number;
+};
+
+type VoteAlignmentStatsSummary = {
+  aligned: number;
+  contradicted: number;
+  mixed: number;
+  unknown: number;
+};
+
+type PartyLineStatsSummary = {
+  aligned: number;
+  brokePartyLine: number;
+  unknown: number;
+};
+
+type FulfillmentPercentagesSummary = {
+  fulfilled: number;
+  broken: number;
+  inProgress: number;
+  unknown: number;
+};
+
+type VoteAlignmentPercentagesSummary = {
+  aligned: number;
+  contradicted: number;
+  mixed: number;
+  unknown: number;
+};
+
+type PartyLinePercentagesSummary = {
+  aligned: number;
+  brokePartyLine: number;
+  unknown: number;
+};
+
+type PoliticianPromiseTrustSummary = {
+  canonicalPromiseId: number;
+  statementId: number | null;
+  promiseText: string;
+  datePromised: string;
+  acceptedSourceCount: number;
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentSummary: string;
+  voteAlignment: ReturnType<typeof summarizePromiseVoteAlignment>;
+  voteComparisonCount: number;
+  partyLineStatus: PartyAlignmentStatus | "unknown";
+  latestEvidenceDate: string | null;
+};
+
+type CanonicalPromiseTrustContext = {
+  latestFulfillment: ReturnType<typeof getLatestPromiseFulfillmentAssessment> | null;
+  voteAlignmentSummary: ReturnType<typeof summarizePromiseVoteAlignment>;
+  voteComparisons: ReturnType<typeof listPromiseVoteComparisons>;
+  latestPartyAlignment: ReturnType<typeof listPromisePartyAlignments>[number] | null;
+  partyAlignments: ReturnType<typeof listPromisePartyAlignments>;
+};
+
+type PoliticianTrustSummary = {
+  politicianId: number;
+  fulfillmentCounts: PromiseStatsSummary;
+  fulfillmentPercentages: FulfillmentPercentagesSummary | null;
+  voteAlignmentCounts: VoteAlignmentStatsSummary;
+  voteAlignmentPercentages: VoteAlignmentPercentagesSummary | null;
+  partyLineCounts: PartyLineStatsSummary;
+  partyLinePercentages: PartyLinePercentagesSummary | null;
+  promises: PoliticianPromiseTrustSummary[];
+};
+
+type PartyTrustMemberSummary = {
+  politicianId: number;
+  name: string;
+  region: string | null;
+  office: string | null;
+  promiseCount: number;
+  fulfillmentCounts: PromiseStatsSummary;
+  voteAlignmentCounts: VoteAlignmentStatsSummary;
+  partyLineCounts: PartyLineStatsSummary;
+  lastUpdatedAt: string | null;
+};
+
+type PartyTrustSummary = {
+  partyId: string;
+  officialStanceCount: number;
+  memberCount: number;
+  promiseCount: number;
+  fulfillmentCounts: PromiseStatsSummary;
+  fulfillmentPercentages: FulfillmentPercentagesSummary | null;
+  voteAlignmentCounts: VoteAlignmentStatsSummary;
+  voteAlignmentPercentages: VoteAlignmentPercentagesSummary | null;
+  partyLineCounts: PartyLineStatsSummary;
+  partyLinePercentages: PartyLinePercentagesSummary | null;
+  members: PartyTrustMemberSummary[];
+};
+
+type CanonicalPromiseTrustBase = {
+  canonicalPromiseId: number;
+  promiseText: string;
+  statementId: number | null;
+  datePromised: string;
+  acceptedSourceCount: number;
+};
+
+const roundPercent = (count: number, total: number): number => {
+  return total > 0 ? Math.round((count / total) * 100) : 0;
+};
+
+const buildPromiseStats = (promises: PoliticianPromiseTrustSummary[]): PromiseStatsSummary => {
+  return promises.reduce<PromiseStatsSummary>(
+    (stats, promise) => {
+      stats.total += 1;
+      if (promise.fulfillmentStatus === "fulfilled") {
+        stats.fulfilled += 1;
+      } else if (promise.fulfillmentStatus === "broken") {
+        stats.broken += 1;
+      } else if (promise.fulfillmentStatus === "in_progress") {
+        stats.inProgress += 1;
+      } else {
+        stats.unknown += 1;
+      }
+      return stats;
+    },
+    {
+      total: 0,
+      fulfilled: 0,
+      broken: 0,
+      inProgress: 0,
+      unknown: 0
+    }
+  );
+};
+
+const buildVoteAlignmentStats = (promises: PoliticianPromiseTrustSummary[]): VoteAlignmentStatsSummary => {
+  return promises.reduce<VoteAlignmentStatsSummary>(
+    (stats, promise) => {
+      if (promise.voteAlignment === "aligned") {
+        stats.aligned += 1;
+      } else if (promise.voteAlignment === "contradicted") {
+        stats.contradicted += 1;
+      } else if (promise.voteAlignment === "mixed") {
+        stats.mixed += 1;
+      } else {
+        stats.unknown += 1;
+      }
+      return stats;
+    },
+    {
+      aligned: 0,
+      contradicted: 0,
+      mixed: 0,
+      unknown: 0
+    }
+  );
+};
+
+const buildPartyLineStats = (promises: PoliticianPromiseTrustSummary[]): PartyLineStatsSummary => {
+  return promises.reduce<PartyLineStatsSummary>(
+    (stats, promise) => {
+      if (promise.partyLineStatus === "aligned") {
+        stats.aligned += 1;
+      } else if (promise.partyLineStatus === "broke_party_line") {
+        stats.brokePartyLine += 1;
+      } else {
+        stats.unknown += 1;
+      }
+      return stats;
+    },
+    {
+      aligned: 0,
+      brokePartyLine: 0,
+      unknown: 0
+    }
+  );
+};
+
+const buildFulfillmentPercentages = (counts: PromiseStatsSummary): FulfillmentPercentagesSummary | null => {
+  if (counts.total === 0) {
+    return null;
+  }
+  return {
+    fulfilled: roundPercent(counts.fulfilled, counts.total),
+    broken: roundPercent(counts.broken, counts.total),
+    inProgress: roundPercent(counts.inProgress, counts.total),
+    unknown: roundPercent(counts.unknown, counts.total)
+  };
+};
+
+const buildVoteAlignmentPercentages = (counts: VoteAlignmentStatsSummary): VoteAlignmentPercentagesSummary | null => {
+  const total = counts.aligned + counts.contradicted + counts.mixed + counts.unknown;
+  if (total === 0) {
+    return null;
+  }
+  return {
+    aligned: roundPercent(counts.aligned, total),
+    contradicted: roundPercent(counts.contradicted, total),
+    mixed: roundPercent(counts.mixed, total),
+    unknown: roundPercent(counts.unknown, total)
+  };
+};
+
+const buildPartyLinePercentages = (counts: PartyLineStatsSummary): PartyLinePercentagesSummary | null => {
+  const total = counts.aligned + counts.brokePartyLine + counts.unknown;
+  if (total === 0) {
+    return null;
+  }
+  return {
+    aligned: roundPercent(counts.aligned, total),
+    brokePartyLine: roundPercent(counts.brokePartyLine, total),
+    unknown: roundPercent(counts.unknown, total)
+  };
+};
+
+const listCanonicalPromiseTrustBases = (politicianId: number, includeNonPublic: boolean): CanonicalPromiseTrustBase[] => {
+  const visibilityClause = includeNonPublic ? "" : " AND cp.public_status = 'public'";
+  return db
+    .prepare(
+      `SELECT cp.id AS canonicalPromiseId,
+        cp.promise_text AS promiseText,
+        cp.primary_statement_id AS statementId,
+        COALESCE(st.date_said, cp.created_at) AS datePromised,
+        (
+          SELECT COUNT(*)
+          FROM canonical_promise_sources cps
+          WHERE cps.canonical_promise_id = cp.id
+        ) AS acceptedSourceCount
+       FROM canonical_promises cp
+       LEFT JOIN statements st ON st.id = cp.primary_statement_id
+       WHERE cp.deleted_at IS NULL AND cp.politician_id = ?${visibilityClause}
+       ORDER BY COALESCE(st.date_said, cp.created_at) DESC, cp.id DESC`
+    )
+    .all(politicianId) as CanonicalPromiseTrustBase[];
+};
+
+const buildLatestEvidenceDate = ({
+  datePromised,
+  latestFulfillment,
+  voteComparisons,
+  partyAlignments
+}: {
+  datePromised: string;
+  latestFulfillment: ReturnType<typeof getLatestPromiseFulfillmentAssessment> | null;
+  voteComparisons: ReturnType<typeof listPromiseVoteComparisons>;
+  partyAlignments: ReturnType<typeof listPromisePartyAlignments>;
+}): string | null => {
+  const candidates = [
+    datePromised,
+    latestFulfillment?.evidenceDate ?? null,
+    voteComparisons[0]?.eventDate ?? null,
+    partyAlignments[0]?.dateSaid ?? null
+  ].filter(Boolean) as string[];
+  if (candidates.length === 0) {
+    return null;
+  }
+  return candidates.reduce((latest, current) => {
+    return new Date(current).getTime() > new Date(latest).getTime() ? current : latest;
+  });
+};
+
+const getCanonicalPromiseTrustContext = (canonicalPromiseId: number): CanonicalPromiseTrustContext => {
+  const latestFulfillment = getLatestPromiseFulfillmentAssessment(canonicalPromiseId) ?? null;
+  const voteComparisons = listPromiseVoteComparisons(canonicalPromiseId);
+  const partyAlignments = listPromisePartyAlignments(canonicalPromiseId);
+  return {
+    latestFulfillment,
+    voteAlignmentSummary: summarizePromiseVoteAlignment(voteComparisons),
+    voteComparisons,
+    latestPartyAlignment: partyAlignments[0] ?? null,
+    partyAlignments
+  };
+};
+
+const listPoliticianPromiseTrust = (politicianId: number, includeNonPublic: boolean): PoliticianPromiseTrustSummary[] => {
+  return listCanonicalPromiseTrustBases(politicianId, includeNonPublic).map((base) => {
+    const trustContext = getCanonicalPromiseTrustContext(base.canonicalPromiseId);
+    return {
+      canonicalPromiseId: base.canonicalPromiseId,
+      statementId: base.statementId,
+      promiseText: base.promiseText,
+      datePromised: base.datePromised,
+      acceptedSourceCount: Number(base.acceptedSourceCount ?? 0),
+      fulfillmentStatus: trustContext.latestFulfillment?.status ?? "unknown",
+      fulfillmentSummary: trustContext.latestFulfillment?.summary ?? "Data not yet available",
+      voteAlignment: trustContext.voteAlignmentSummary,
+      voteComparisonCount: trustContext.voteComparisons.length,
+      partyLineStatus: trustContext.latestPartyAlignment?.status ?? "unknown",
+      latestEvidenceDate: buildLatestEvidenceDate({
+        datePromised: base.datePromised,
+        latestFulfillment: trustContext.latestFulfillment,
+        voteComparisons: trustContext.voteComparisons,
+        partyAlignments: trustContext.partyAlignments
+      })
+    };
+  });
+};
+
+const getPoliticianTrustSummary = (politicianId: number, includeNonPublic: boolean): PoliticianTrustSummary => {
+  const promises = listPoliticianPromiseTrust(politicianId, includeNonPublic);
+  const fulfillmentCounts = buildPromiseStats(promises);
+  const voteAlignmentCounts = buildVoteAlignmentStats(promises);
+  const partyLineCounts = buildPartyLineStats(promises);
+  return {
+    politicianId,
+    promises,
+    fulfillmentCounts,
+    fulfillmentPercentages: buildFulfillmentPercentages(fulfillmentCounts),
+    voteAlignmentCounts,
+    voteAlignmentPercentages: buildVoteAlignmentPercentages(voteAlignmentCounts),
+    partyLineCounts,
+    partyLinePercentages: buildPartyLinePercentages(partyLineCounts)
+  };
+};
+
+const countPartyStances = (partyId: string): number => {
+  const row = db
+    .prepare(
+      `SELECT COUNT(*) AS total
+       FROM party_stances
+       WHERE party_id = ?`
+    )
+    .get(partyId) as { total: number };
+  return Number(row.total ?? 0);
+};
+
+const listCurrentPartyTrustMembers = (partyId: string, includeNonPublic: boolean): PartyTrustMemberSummary[] => {
+  const rows = db
+    .prepare(
+      `SELECT pol.id AS politicianId,
+        pol.name,
+        pol.region,
+        pol.office
+       FROM party_memberships pm
+       JOIN politicians pol ON pol.id = pm.politician_id
+       WHERE pm.party_id = ? AND pm.end_date IS NULL AND pol.deleted_at IS NULL
+       ORDER BY lower(pol.name), pol.id`
+    )
+    .all(partyId) as Array<{ politicianId: number; name: string; region: string | null; office: string | null }>;
+
+  return rows
+    .map((row) => {
+      const trustSummary = getPoliticianTrustSummary(row.politicianId, includeNonPublic);
+      const lastUpdatedAt = trustSummary.promises.reduce<string | null>((latest, promise) => {
+        if (!promise.latestEvidenceDate) {
+          return latest;
+        }
+        if (!latest) {
+          return promise.latestEvidenceDate;
+        }
+        return new Date(promise.latestEvidenceDate).getTime() > new Date(latest).getTime() ? promise.latestEvidenceDate : latest;
+      }, null);
+
+      return {
+        politicianId: row.politicianId,
+        name: row.name,
+        region: row.region,
+        office: row.office,
+        promiseCount: trustSummary.fulfillmentCounts.total,
+        fulfillmentCounts: trustSummary.fulfillmentCounts,
+        voteAlignmentCounts: trustSummary.voteAlignmentCounts,
+        partyLineCounts: trustSummary.partyLineCounts,
+        lastUpdatedAt
+      };
+    })
+    .sort((left, right) => {
+      if (right.promiseCount !== left.promiseCount) {
+        return right.promiseCount - left.promiseCount;
+      }
+      return left.name.localeCompare(right.name);
+    });
+};
+
+const getPartyTrustSummary = (partyId: string, includeNonPublic: boolean): PartyTrustSummary => {
+  const members = listCurrentPartyTrustMembers(partyId, includeNonPublic);
+  const promises = members.flatMap((member) => listPoliticianPromiseTrust(member.politicianId, includeNonPublic));
+  const fulfillmentCounts = buildPromiseStats(promises);
+  const voteAlignmentCounts = buildVoteAlignmentStats(promises);
+  const partyLineCounts = buildPartyLineStats(promises);
+
+  return {
+    partyId,
+    officialStanceCount: countPartyStances(partyId),
+    memberCount: members.length,
+    promiseCount: fulfillmentCounts.total,
+    fulfillmentCounts,
+    fulfillmentPercentages: buildFulfillmentPercentages(fulfillmentCounts),
+    voteAlignmentCounts,
+    voteAlignmentPercentages: buildVoteAlignmentPercentages(voteAlignmentCounts),
+    partyLineCounts,
+    partyLinePercentages: buildPartyLinePercentages(partyLineCounts),
+    members
+  };
+};
 
 type IdentityCandidate = {
   id: number;
@@ -1967,7 +2424,8 @@ app.get("/canonical-promises/:id", (req, res) => {
   res.json({
     promise,
     acceptedSources: listCanonicalPromiseSources(canonicalPromiseId),
-    history: listCanonicalHistory(canonicalPromiseId)
+    history: listCanonicalHistory(canonicalPromiseId),
+    trustContext: getCanonicalPromiseTrustContext(canonicalPromiseId)
   });
 });
 

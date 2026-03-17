@@ -4,12 +4,20 @@ import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
-import { getPartyById, getPartyMembers } from "../lib/api";
+import { getPartyById, getPartyMembers, getPartyStances } from "../lib/api";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
-import type { BackendPartyAlias, BackendPartyMember, BackendPartySummary } from "../types";
+import type { BackendPartyAlias, BackendPartyMember, BackendPartyStance, BackendPartySummary } from "../types";
 
-const formatUnknownCount = (value: number | null): string => {
-  return value === null ? "Unknown" : String(value);
+const formatPercent = (value: number | null | undefined): string => {
+  return value == null ? "Unknown" : `${value}%`;
+};
+
+const formatPartyLineCounts = (party: BackendPartySummary | null): string => {
+  const counts = party?.trustSummary?.partyLineCounts;
+  if (!counts) {
+    return "Unknown";
+  }
+  return `A ${counts.aligned} / Break ${counts.brokePartyLine} / U ${counts.unknown}`;
 };
 
 export const PartyProfilePage = (): ReactElement => {
@@ -17,6 +25,7 @@ export const PartyProfilePage = (): ReactElement => {
   const [party, setParty] = useState<BackendPartySummary | null>(null);
   const [aliases, setAliases] = useState<BackendPartyAlias[]>([]);
   const [members, setMembers] = useState<BackendPartyMember[]>([]);
+  const [stances, setStances] = useState<BackendPartyStance[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,11 +41,16 @@ export const PartyProfilePage = (): ReactElement => {
       setLoading(true);
       setError(null);
       try {
-        const [partyDetail, memberResponse] = await Promise.all([getPartyById(id), getPartyMembers(id, true)]);
+        const [partyDetail, memberResponse, stanceItems] = await Promise.all([
+          getPartyById(id),
+          getPartyMembers(id, true),
+          getPartyStances(id)
+        ]);
         if (!cancelled) {
           setParty(partyDetail.party);
           setAliases(partyDetail.aliases);
           setMembers(memberResponse.items);
+          setStances(stanceItems);
         }
       } catch (err) {
         if (!cancelled) {
@@ -92,7 +106,7 @@ export const PartyProfilePage = (): ReactElement => {
         <span className="party-badge">{party.shortName}</span>
         <p className="lede">
           {party.description ??
-            "Canonical party identity is now connected. Official stances and party-line comparisons still stay unknown until those source-backed records are added."}
+            "Canonical party identity, official stances, and party trust records are now connected when the source-backed record exists."}
         </p>
         <div className="card-link-row">
           <Link className="button button-link" to="/parties">
@@ -108,9 +122,9 @@ export const PartyProfilePage = (): ReactElement => {
 
       <section className="scorecards-grid" aria-label="Party summary cards">
         <article className="card scorecard">
-          <h2>Aliases tracked</h2>
-          <p className="score-value">{aliases.length}</p>
-          <p className="meta-line">Alternative names and abbreviations for search and identity matching.</p>
+          <h2>Official stances tracked</h2>
+          <p className="score-value">{party.officialStanceCount ?? stances.length}</p>
+          <p className="meta-line">Sourced official party positions currently connected to this profile.</p>
         </article>
         <article className="card scorecard">
           <h2>Members on PNYX</h2>
@@ -118,9 +132,19 @@ export const PartyProfilePage = (): ReactElement => {
           <p className="meta-line">Current memberships connected to politician profiles.</p>
         </article>
         <article className="card scorecard">
-          <h2>Party-line summary</h2>
-          <p className="score-value">Unknown</p>
-          <p className="meta-line">No party-line summary is shown until the supporting records are connected.</p>
+          <h2>Promises assessed</h2>
+          <p className="score-value">{party.trustSummary?.promiseCount ?? 0}</p>
+          <p className="meta-line">Canonical promises from current member politicians with backend trust records.</p>
+        </article>
+        <article className="card scorecard">
+          <h2>Party-line counts</h2>
+          <p className="score-value">{formatPartyLineCounts(party)}</p>
+          <p className="meta-line">
+            Known party-line record:{" "}
+            {formatPercent(
+              party.trustSummary?.partyLinePercentages ? 100 - party.trustSummary.partyLinePercentages.unknown : null
+            )}
+          </p>
         </article>
       </section>
 
@@ -138,6 +162,30 @@ export const PartyProfilePage = (): ReactElement => {
               </li>
             ))}
           </ul>
+        )}
+      </section>
+
+      <section className="card stack-sm" aria-label="Official party stances">
+        <h2>Official party stances</h2>
+        {stances.length === 0 ? (
+          <>
+            <StatusChip status="unknown" prefix="Official party stances" />
+            <p>No official party stance records are connected for this profile yet.</p>
+          </>
+        ) : (
+          <div className="cards-grid cards-grid-1">
+            {stances.map((stance) => (
+              <article key={stance.id} className="card stack-xs">
+                <h3>{stance.issue ?? "General policy position"}</h3>
+                <p>{stance.stanceText}</p>
+                <p className="meta-line">Date: {formatDate(stance.dateSaid)}</p>
+                <p className="meta-line">
+                  Source: <a href={stance.sourceUrl}>{stance.sourceUrl}</a>
+                </p>
+                {stance.sourceNote ? <p className="meta-line">{stance.sourceNote}</p> : null}
+              </article>
+            ))}
+          </div>
         )}
       </section>
 
@@ -159,6 +207,20 @@ export const PartyProfilePage = (): ReactElement => {
                   <p className="meta-line">{formatIdentityLine(member.office, member.region)}</p>
                   <p className="meta-line">Membership start: {formatDate(member.startDate)}</p>
                   {member.roleTitle ? <p>Role: {member.roleTitle}</p> : null}
+                  {member.trustSummary ? (
+                    <>
+                      <p className="meta-line">
+                        Trust counts: F {member.trustSummary.fulfillmentCounts.fulfilled} / B {member.trustSummary.fulfillmentCounts.broken} / P{" "}
+                        {member.trustSummary.fulfillmentCounts.inProgress} / U {member.trustSummary.fulfillmentCounts.unknown}
+                      </p>
+                      <p className="meta-line">
+                        Party-line: A {member.trustSummary.partyLineCounts.aligned} / Break {member.trustSummary.partyLineCounts.brokePartyLine} / U{" "}
+                        {member.trustSummary.partyLineCounts.unknown}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="meta-line">Trust summary not yet available for this member.</p>
+                  )}
                 </article>
               ))}
             </div>
@@ -193,10 +255,17 @@ export const PartyProfilePage = (): ReactElement => {
 
       <section className="card stack-sm" aria-label="Party-line alignment context">
         <h2>Party-line alignment context</h2>
-        <StatusChip status="unknown" prefix="Party-line alignment context" />
-        <p>PNYX keeps politician promises, party stances, and party-line comparisons separate.</p>
+        <p>PNYX keeps politician promises, party stances, and party-line assessments separate, then rolls the counts up from source-backed records.</p>
         <p className="meta-line">
-          This page now uses canonical party identity and membership data, but it still avoids inventing stance or alignment conclusions.
+          Fulfillment: F {party.trustSummary?.fulfillmentCounts.fulfilled ?? 0} / B {party.trustSummary?.fulfillmentCounts.broken ?? 0} / P{" "}
+          {party.trustSummary?.fulfillmentCounts.inProgress ?? 0} / U {party.trustSummary?.fulfillmentCounts.unknown ?? 0}
+        </p>
+        <p className="meta-line">
+          Vote alignment: A {party.trustSummary?.voteAlignmentCounts.aligned ?? 0} / C {party.trustSummary?.voteAlignmentCounts.contradicted ?? 0} / M{" "}
+          {party.trustSummary?.voteAlignmentCounts.mixed ?? 0} / U {party.trustSummary?.voteAlignmentCounts.unknown ?? 0}
+        </p>
+        <p className="meta-line">
+          Party line: {formatPartyLineCounts(party)}. Percentages stay secondary and are shown only after the raw counts.
         </p>
         <div className="card-link-row">
           <Link to="/politicians">Browse politicians</Link>

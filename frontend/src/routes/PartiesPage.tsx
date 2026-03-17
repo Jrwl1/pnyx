@@ -3,12 +3,27 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
-import { StatusChip } from "../components/StatusChip";
 import { listParties } from "../lib/api";
 import type { BackendPartySummary } from "../types";
 
-const formatUnknownCount = (value: number | null): string => {
-  return value === null ? "Unknown" : String(value);
+const formatPercent = (value: number | null | undefined): string => {
+  return value == null ? "Unknown" : `${value}%`;
+};
+
+const formatFulfillmentCounts = (entry: BackendPartySummary): string => {
+  const counts = entry.trustSummary?.fulfillmentCounts;
+  if (!counts) {
+    return "Unknown";
+  }
+  return `F ${counts.fulfilled} / B ${counts.broken} / P ${counts.inProgress} / U ${counts.unknown}`;
+};
+
+const formatPartyLineCounts = (entry: BackendPartySummary): string => {
+  const counts = entry.trustSummary?.partyLineCounts;
+  if (!counts) {
+    return "Unknown";
+  }
+  return `A ${counts.aligned} / Break ${counts.brokePartyLine} / U ${counts.unknown}`;
 };
 
 export const PartiesPage = (): ReactElement => {
@@ -81,23 +96,39 @@ export const PartiesPage = (): ReactElement => {
                 <h3>{entry.name}</h3>
                 <p>
                   {entry.description ??
-                    "Canonical party identity is available here now. Official stances and trust comparisons remain unknown until those records are connected."}
+                    "Canonical party identity is available here now. Source-backed stance and trust records are shown directly when they exist."}
                 </p>
               </div>
 
               <div className="stack-xs" aria-label={`${entry.name} summary`}>
                 <p className="metric-pair">
-                  <span>Aliases tracked</span>
-                  <strong>{entry.aliasCount}</strong>
+                  <span>Official stances tracked</span>
+                  <strong>{entry.officialStanceCount ?? 0}</strong>
                 </p>
                 <p className="metric-pair">
                   <span>Members on PNYX</span>
                   <strong>{entry.currentMemberCount}</strong>
                 </p>
-                <div className="metric-pair">
-                  <span>Party-line summary</span>
-                  <StatusChip status="unknown" prefix="Party-line summary" />
-                </div>
+                <p className="metric-pair">
+                  <span>Promises assessed</span>
+                  <strong>{entry.trustSummary?.promiseCount ?? 0}</strong>
+                </p>
+                <p className="metric-pair">
+                  <span>Fulfillment counts</span>
+                  <strong>{formatFulfillmentCounts(entry)}</strong>
+                </p>
+                <p className="metric-pair">
+                  <span>Party-line counts</span>
+                  <strong>{formatPartyLineCounts(entry)}</strong>
+                </p>
+                <p className="meta-line">
+                  Known party-line record:{" "}
+                  {formatPercent(
+                    entry.trustSummary?.partyLinePercentages
+                      ? 100 - entry.trustSummary.partyLinePercentages.unknown
+                      : null
+                  )}
+                </p>
               </div>
 
               <div className="card-link-row">

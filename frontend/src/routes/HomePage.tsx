@@ -6,7 +6,6 @@ import { ErrorState, LoadingState } from "../components/PageState";
 import { useAuth } from "../context/AuthContext";
 import {
   buildDirectoryRows,
-  buildHomePartyCards,
   buildLatestPromiseFeed,
   buildSearchSuggestions,
   findPartyShellByQuery,
@@ -31,6 +30,14 @@ const truncatePromiseText = (value: string, maxLength = 156): string => {
 const buildSignInRedirectLink = (target: string): string => {
   const params = new URLSearchParams({ redirect: target });
   return `/sign-in?${params.toString()}`;
+};
+
+const formatPartyLineCounts = (party: BackendPartySummary): string => {
+  const counts = party.trustSummary?.partyLineCounts;
+  if (!counts) {
+    return "Unknown";
+  }
+  return `A ${counts.aligned} / Break ${counts.brokePartyLine} / U ${counts.unknown}`;
 };
 
 export const HomePage = (): ReactElement => {
@@ -79,7 +86,23 @@ export const HomePage = (): ReactElement => {
       .slice(0, 4);
   }, [politicians, statements]);
 
-  const featuredParties = useMemo(() => buildHomePartyCards(politicians, statements, partyRecords).slice(0, 4), [partyRecords, politicians, statements]);
+  const featuredParties = useMemo(() => {
+    return [...parties]
+      .sort((left, right) => {
+        const promiseDelta = (right.trustSummary?.promiseCount ?? 0) - (left.trustSummary?.promiseCount ?? 0);
+        if (promiseDelta !== 0) {
+          return promiseDelta;
+        }
+
+        const memberDelta = right.currentMemberCount - left.currentMemberCount;
+        if (memberDelta !== 0) {
+          return memberDelta;
+        }
+
+        return left.name.localeCompare(right.name);
+      })
+      .slice(0, 4);
+  }, [parties]);
   const exactPartyMatch = useMemo(() => findPartyShellByQuery(query, partyRecords), [partyRecords, query]);
   const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query, 6, partyRecords), [partyRecords, politicians, query]);
   const politicianProposalTarget = session ? "/contribute/politicians/new" : buildSignInRedirectLink("/contribute/politicians/new");
@@ -186,8 +209,8 @@ export const HomePage = (): ReactElement => {
                   <span className="data-note">No canonical parties connected yet.</span>
                 ) : (
                   featuredParties.map((entry) => (
-                    <Link key={entry.party.id} className="shortcut-link" to={`/parties/${entry.party.id}`}>
-                      {entry.party.shortName}
+                    <Link key={entry.id} className="shortcut-link" to={`/parties/${entry.id}`}>
+                      {entry.shortName}
                     </Link>
                   ))
                 )}
@@ -345,19 +368,23 @@ export const HomePage = (): ReactElement => {
               </article>
             ) : (
               featuredParties.map((entry) => (
-                <article key={entry.party.id} className="card discovery-card">
+                <article key={entry.id} className="card discovery-card">
                   <div className="stack-xs">
-                    <h3>{entry.party.name}</h3>
-                    <span className="party-badge">{entry.party.shortName}</span>
-                    <p>{entry.party.contextLine}</p>
+                    <h3>{entry.name}</h3>
+                    <span className="party-badge">{entry.shortName}</span>
+                    <p>
+                      {entry.description ??
+                        "Source-backed stance counts and party trust summaries are shown here when the supporting record exists."}
+                    </p>
                   </div>
-                  <div className="stat-strip" aria-label={`${entry.party.name} summary`}>
-                    <span className="stat-pill">{entry.linkedPoliticians} linked politicians</span>
-                    <span className="stat-pill">{entry.promisesTracked} promises tracked</span>
-                    <span className="stat-pill">Latest {formatDate(entry.latestActivity)}</span>
+                  <div className="stat-strip" aria-label={`${entry.name} summary`}>
+                    <span className="stat-pill">{entry.currentMemberCount} current members</span>
+                    <span className="stat-pill">{entry.officialStanceCount ?? 0} official stances</span>
+                    <span className="stat-pill">{entry.trustSummary?.promiseCount ?? 0} promises assessed</span>
+                    <span className="stat-pill">{formatPartyLineCounts(entry)}</span>
                   </div>
                   <div className="card-link-row">
-                    <Link className="button button-link" to={`/parties/${entry.party.id}`}>
+                    <Link className="button button-link" to={`/parties/${entry.id}`}>
                       View party profile
                     </Link>
                   </div>

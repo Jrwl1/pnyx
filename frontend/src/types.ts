@@ -58,6 +58,7 @@ export interface StatementSubmissionResult {
 }
 
 export type VoteValue = "support" | "oppose";
+export type VoteRecordValue = "for" | "against" | "abstain" | "absent";
 
 export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknown";
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
@@ -77,6 +78,7 @@ export interface Politician {
   externalId: string | null;
   verified: number;
   createdAt: string;
+  trustSummary?: PoliticianTrustSummary;
 }
 
 export interface StatementSummary {
@@ -400,6 +402,7 @@ export interface CanonicalPromiseDetailResponse {
   promise: CanonicalPromiseSummary;
   acceptedSources: CanonicalPromiseSource[];
   history?: CanonicalPromiseHistoryEntry[];
+  trustContext?: CanonicalPromiseTrustContext;
 }
 
 export interface CanonicalPromiseHistoryEntry {
@@ -427,6 +430,83 @@ export interface AlignmentStats {
   contradicted: number;
   mixed: number;
   unknown: number;
+}
+
+export interface PartyLineStats {
+  aligned: number;
+  brokePartyLine: number;
+  unknown: number;
+}
+
+export interface FulfillmentPercentages {
+  fulfilled: number;
+  broken: number;
+  inProgress: number;
+  unknown: number;
+}
+
+export interface VoteAlignmentPercentages {
+  aligned: number;
+  contradicted: number;
+  mixed: number;
+  unknown: number;
+}
+
+export interface PartyLinePercentages {
+  aligned: number;
+  brokePartyLine: number;
+  unknown: number;
+}
+
+export interface PoliticianPromiseTrustRecord {
+  canonicalPromiseId: number;
+  statementId: number | null;
+  promiseText: string;
+  datePromised: string;
+  acceptedSourceCount: number;
+  fulfillmentStatus: FulfillmentStatus;
+  fulfillmentSummary: string;
+  voteAlignment: AlignmentStatus;
+  voteComparisonCount: number;
+  partyLineStatus: PartyLineStatus;
+  latestEvidenceDate: string | null;
+}
+
+export interface PoliticianTrustSummary {
+  politicianId: number;
+  fulfillmentCounts: PromiseStats;
+  fulfillmentPercentages: FulfillmentPercentages | null;
+  voteAlignmentCounts: AlignmentStats;
+  voteAlignmentPercentages: VoteAlignmentPercentages | null;
+  partyLineCounts: PartyLineStats;
+  partyLinePercentages: PartyLinePercentages | null;
+  promises: PoliticianPromiseTrustRecord[];
+}
+
+export interface PartyTrustMemberSummary {
+  politicianId: number;
+  name: string;
+  region: string | null;
+  office: string | null;
+  promiseCount: number;
+  fulfillmentCounts: PromiseStats;
+  voteAlignmentCounts: AlignmentStats;
+  partyLineCounts: PartyLineStats;
+  lastUpdatedAt: string | null;
+}
+
+export interface PartyTrustSummary {
+  partyId: string;
+  officialStanceCount: number;
+  memberCount: number;
+  promiseCount: number;
+  fulfillmentCounts: PromiseStats;
+  fulfillmentPercentages: FulfillmentPercentages | null;
+  voteAlignmentCounts: AlignmentStats;
+  voteAlignmentPercentages: VoteAlignmentPercentages | null;
+  partyLineCounts: PartyLineStats;
+  partyLinePercentages: PartyLinePercentages | null;
+  members: PartyTrustMemberSummary[];
 }
 
 export interface DirectoryRow {
@@ -458,6 +538,8 @@ export interface BackendPartySummary {
   currentMemberCount: number;
   createdAt: string;
   updatedAt: string;
+  officialStanceCount?: number;
+  trustSummary?: PartyTrustSummary;
 }
 
 export interface BackendPartyAlias {
@@ -484,6 +566,19 @@ export interface BackendPartyMember {
   createdAt: string;
   updatedAt: string;
   current: number;
+  trustSummary?: PartyTrustMemberSummary | null;
+}
+
+export interface BackendPartyStance {
+  id: number;
+  partyId: string;
+  issue: string | null;
+  stanceText: string;
+  sourceUrl: string;
+  sourceNote: string | null;
+  dateSaid: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface BackendPartyDetailResponse {
@@ -496,6 +591,73 @@ export interface BackendPartyMembersResponse {
   partyId: string;
   includeHistorical: boolean;
   items: BackendPartyMember[];
+}
+
+export interface PoliticianTrustSummaryResponse {
+  politician: Politician;
+  trustSummary: PoliticianTrustSummary;
+}
+
+export interface CanonicalPromiseVoteComparison {
+  linkId: number;
+  canonicalPromiseId: number;
+  voteEventId: number;
+  alignedVoteValue: Exclude<VoteRecordValue, "absent">;
+  comparisonNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  eventTitle: string;
+  eventDate: string;
+  eventSourceUrl: string;
+  eventSourceNote: string | null;
+  externalKey: string | null;
+  countryCode: string;
+  institutionName: string;
+  issue: string | null;
+  politicianVoteRecordId: number | null;
+  politicianVoteValue: VoteRecordValue | null;
+  politicianVoteSourceNote: string | null;
+  alignmentStatus: Exclude<AlignmentStatus, "mixed">;
+}
+
+export interface PromiseFulfillmentAssessment {
+  id: number;
+  canonicalPromiseId: number;
+  status: FulfillmentStatus;
+  summary: string;
+  sourceUrl: string;
+  sourceNote: string | null;
+  evidenceDate: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PromisePartyAlignment {
+  id: number;
+  canonicalPromiseId: number;
+  partyStanceId: number;
+  status: Exclude<PartyLineStatus, "unknown">;
+  reason: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  partyId: string;
+  partyName: string;
+  partyShortName: string;
+  issue: string | null;
+  stanceText: string;
+  sourceUrl: string;
+  sourceNote: string | null;
+  dateSaid: string;
+}
+
+export interface CanonicalPromiseTrustContext {
+  latestFulfillment: PromiseFulfillmentAssessment | null;
+  voteAlignmentSummary: AlignmentStatus;
+  voteComparisons: CanonicalPromiseVoteComparison[];
+  latestPartyAlignment: PromisePartyAlignment | null;
+  partyAlignments: PromisePartyAlignment[];
 }
 
 export interface PartyStanceRecord {

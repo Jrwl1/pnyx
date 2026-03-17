@@ -17,32 +17,32 @@ const SECTIONS: Record<
 > = {
   fulfillment: {
     title: "Fulfillment statuses",
-    intro: "Fulfillment is about whether the promise outcome appears delivered in the public record.",
+    intro: "Fulfillment is based on the latest source-backed assessment record connected to a canonical promise.",
     items: [
-      { label: "Fulfilled", text: "Available evidence shows the promised outcome was delivered." },
-      { label: "Broken", text: "Available evidence shows outcomes that contradict the promise." },
-      { label: "In progress", text: "Evidence points to partial delivery with meaningful work still outstanding." },
-      { label: "Unknown", text: "The evidence is missing, incomplete, inconsistent, or not yet assessed." }
+      { label: "Fulfilled", text: "The latest assessment record says the promised outcome was delivered and links back to a source." },
+      { label: "Broken", text: "The latest assessment record says later evidence contradicts the promise outcome." },
+      { label: "In progress", text: "The latest assessment record says delivery work is underway but not complete." },
+      { label: "Unknown", text: "No fulfillment assessment has been connected yet, or the latest assessment explicitly stays unknown." }
     ]
   },
   votes: {
     title: "Vote alignment",
-    intro: "Vote alignment compares a promise with recorded voting behavior when that comparison exists.",
+    intro: "Vote alignment compares a canonical promise with mapped vote events and the politician's recorded vote on those events.",
     items: [
-      { label: "Aligned", text: "Recorded votes support the direction of the promise." },
-      { label: "Contradicted", text: "Recorded votes conflict with the direction of the promise." },
-      { label: "Mixed", text: "Different vote events support and contradict the promise." },
-      { label: "Unknown", text: "No verified vote comparison has been connected yet." }
+      { label: "Aligned", text: "Mapped vote events exist and the politician voted in the direction marked as aligned for the promise." },
+      { label: "Contradicted", text: "Mapped vote events exist and the politician voted against the direction marked as aligned for the promise." },
+      { label: "Mixed", text: "Some mapped vote events align and others contradict the promise." },
+      { label: "Unknown", text: "No mapped vote events exist yet, or the politician's vote is missing or marked absent." }
     ]
   },
   "party-context": {
     title: "Party stance and party-line context",
-    intro: "Party records and politician records stay separate. PNYX does not collapse them into one signal.",
+    intro: "Party records and politician records stay separate. Party-line context is shown only when a sourced official stance is explicitly assessed against a promise.",
     items: [
-      { label: "Party stance", text: "A sourced official position from a political party on a specific issue." },
-      { label: "Aligned with party line", text: "Shown only when a politician action and a sourced party stance point in the same direction." },
-      { label: "Broke party line", text: "Shown only when a politician action and a sourced party stance point in opposite directions." },
-      { label: "Unknown", text: "Shown when no linked party, no sourced party stance, or no comparison record exists." }
+      { label: "Party stance", text: "A sourced official position from a party, with issue text, date, and source link." },
+      { label: "Aligned with party line", text: "Shown only when a party-alignment assessment says the promise matches the linked official stance." },
+      { label: "Broke party line", text: "Shown only when a party-alignment assessment says the promise conflicts with the linked official stance." },
+      { label: "Unknown", text: "Shown when no linked party, no sourced party stance, or no explicit party-alignment assessment exists." }
     ]
   },
   evidence: {
@@ -50,7 +50,7 @@ const SECTIONS: Record<
     intro: "Every public promise page should let a reader inspect the source trail for themselves.",
     items: [
       { text: "Every promise record links back to the source material for the original claim." },
-      { text: "Evidence quality depends on source credibility, date clarity, and traceable attribution." },
+      { text: "Fulfillment, vote-alignment, and party-line records must each link back to their own source-backed assessment trail." },
       { text: "Evidence review status is not the same thing as fulfillment." },
       { text: "Community support and oppose totals are sentiment, not voting records and not party stances." }
     ]
@@ -77,9 +77,9 @@ const SECTIONS: Record<
 };
 
 const QUICK_RULES = [
-  "Promises, votes, and party context are separate signals.",
+  "Promises, mapped vote events, and official party stances are separate signals.",
   "Unknown means the record is incomplete, not hidden.",
-  "Every public verdict should be traceable to a source."
+  "Every public verdict should be traceable to a source-backed assessment record."
 ];
 
 export const MethodologyPage = (): ReactElement => {

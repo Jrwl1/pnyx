@@ -9,11 +9,29 @@ import { usePublicData } from "../context/PublicDataContext";
 import { castStatementVote, getCanonicalPromiseById, getStatementById, getStatementRevisions } from "../lib/api";
 import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
-import type { StatementDetail, StatementRevision, VoteValue } from "../types";
+import type { PartyLineStatus, StatementDetail, StatementRevision, VoteValue } from "../types";
 
 const buildSignInRedirectLink = (promiseId: number): string => {
   const params = new URLSearchParams({ redirect: `/promises/${promiseId}` });
   return `/sign-in?${params.toString()}`;
+};
+
+const renderPartyLineBadge = (status: PartyLineStatus): ReactElement => {
+  if (status === "aligned") {
+    return (
+      <span className="status-chip" data-status="aligned" aria-label="Party stance comparison: Aligned with party line">
+        Aligned with party line
+      </span>
+    );
+  }
+  if (status === "broke_party_line") {
+    return (
+      <span className="status-chip" data-status="contradicted" aria-label="Party stance comparison: Broke party line">
+        Broke party line
+      </span>
+    );
+  }
+  return <StatusChip status="unknown" prefix="Party stance comparison" />;
 };
 
 export const PromiseDetailPage = (): ReactElement => {
@@ -138,12 +156,18 @@ export const PromiseDetailPage = (): ReactElement => {
   }
 
   const promiseRecord = toPromiseRecord(statement);
+  const trustContext = canonicalDetail?.trustContext;
   const politician = politicians.find((entry) => entry.id === statement.politicianId);
   const linkedPartyShell = findPartyShellForPolitician(politician);
   const partyAffiliationLabel = politician ? getPartyAffiliationLabel(politician) : "Data not yet available";
   const totalSentiment = statement.aggregate.support + statement.aggregate.oppose;
   const supportPercent = totalSentiment > 0 ? (statement.aggregate.support / totalSentiment) * 100 : 0;
   const opposePercent = totalSentiment > 0 ? (statement.aggregate.oppose / totalSentiment) * 100 : 0;
+  const fulfillmentStatus = trustContext?.latestFulfillment?.status ?? promiseRecord.fulfillmentStatus;
+  const fulfillmentSummary = trustContext?.latestFulfillment?.summary ?? promiseRecord.fulfillmentSummary;
+  const voteAlignmentStatus = trustContext?.voteAlignmentSummary ?? promiseRecord.voteAlignment;
+  const latestPartyAlignment = trustContext?.latestPartyAlignment ?? null;
+  const latestAssessmentDate = trustContext?.latestFulfillment?.evidenceDate ?? latestEvidenceDate;
 
   return (
     <div className="stack-lg">
@@ -228,27 +252,62 @@ export const PromiseDetailPage = (): ReactElement => {
       <section className="split-grid">
         <article className="card stack-xs" aria-label="Fulfillment verdict">
           <h2>Fulfillment verdict</h2>
-          <StatusChip status={promiseRecord.fulfillmentStatus} prefix="Fulfillment verdict" />
-          <p>{promiseRecord.fulfillmentSummary}</p>
-          <p className="meta-line">Latest evidence date: {formatDateTime(latestEvidenceDate)}</p>
+          <StatusChip status={fulfillmentStatus} prefix="Fulfillment verdict" />
+          <p>{fulfillmentSummary}</p>
+          <p className="meta-line">Latest evidence date: {formatDateTime(latestAssessmentDate)}</p>
         </article>
 
         <article className="card stack-xs" aria-label="Vote alignment">
           <h2>Vote alignment</h2>
-          <StatusChip status={promiseRecord.voteAlignment} prefix="Vote alignment" />
-          <p>No vote comparison is available for this promise yet.</p>
+          <StatusChip status={voteAlignmentStatus} prefix="Vote alignment" />
+          {trustContext && trustContext.voteComparisons.length > 0 ? (
+            <ul className="timeline-list">
+              {trustContext.voteComparisons.map((comparison) => (
+                <li key={comparison.linkId} className="timeline-item">
+                  <p>{comparison.eventTitle}</p>
+                  <p className="meta-line">
+                    {formatDate(comparison.eventDate)} · aligned vote should be {comparison.alignedVoteValue}
+                  </p>
+                  <p className="meta-line">
+                    Politician vote: {comparison.politicianVoteValue ?? "Not recorded"} · result {comparison.alignmentStatus}
+                  </p>
+                  <p className="meta-line">
+                    Source: <a href={comparison.eventSourceUrl}>{comparison.eventSourceUrl}</a>
+                  </p>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No mapped vote comparison is available for this promise yet.</p>
+          )}
         </article>
       </section>
 
       <section className="card stack-sm" aria-label="Party stance comparison">
         <h2>Party stance comparison</h2>
-        <StatusChip status="unknown" prefix="Party stance comparison" />
         <p>
           Linked party:{" "}
           {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{partyAffiliationLabel}</Link> : partyAffiliationLabel}
         </p>
-        <p>No party stance is recorded for this promise yet.</p>
-        <p className="meta-line">Read methodology for how party stances and politician promises are compared.</p>
+        {latestPartyAlignment ? (
+          <>
+            {renderPartyLineBadge(latestPartyAlignment.status)}
+            <p>{latestPartyAlignment.stanceText}</p>
+            <p className="meta-line">
+              {latestPartyAlignment.issue ?? "General policy position"} · {formatDate(latestPartyAlignment.dateSaid)}
+            </p>
+            <p className="meta-line">
+              Source: <a href={latestPartyAlignment.sourceUrl}>{latestPartyAlignment.sourceUrl}</a>
+            </p>
+            <p className="meta-line">Reason: {latestPartyAlignment.reason ?? "Not provided"}</p>
+          </>
+        ) : (
+          <>
+            <StatusChip status="unknown" prefix="Party stance comparison" />
+            <p>No party stance is recorded for this promise yet.</p>
+            <p className="meta-line">Read methodology for how party stances and politician promises are compared.</p>
+          </>
+        )}
       </section>
 
       <section className="card stack-sm" aria-label="Evidence list">

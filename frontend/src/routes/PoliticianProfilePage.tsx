@@ -6,10 +6,10 @@ import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
-import { listCanonicalPromises } from "../lib/api";
-import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
+import { getPoliticianTrustSummary } from "../lib/api";
+import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
-import type { CanonicalPromiseSummary } from "../types";
+import type { PartyLineStatus, PoliticianTrustSummary as PoliticianTrustSummaryType } from "../types";
 
 type ProfileTab = "promises" | "votes" | "evidence";
 
@@ -31,14 +31,36 @@ const buildSignInRedirectLink = (target: string): string => {
   return `/sign-in?${params.toString()}`;
 };
 
+const formatPercent = (value: number | null | undefined): string => {
+  return value == null ? "Unknown" : `${value}%`;
+};
+
+const renderPartyLineBadge = (status: PartyLineStatus): ReactElement => {
+  if (status === "aligned") {
+    return (
+      <span className="status-chip" data-status="aligned" aria-label="Party line: Aligned with party line">
+        Aligned with party line
+      </span>
+    );
+  }
+  if (status === "broke_party_line") {
+    return (
+      <span className="status-chip" data-status="contradicted" aria-label="Party line: Broke party line">
+        Broke party line
+      </span>
+    );
+  }
+  return <StatusChip status="unknown" prefix="Party line" />;
+};
+
 export const PoliticianProfilePage = (): ReactElement => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const { session } = useAuth();
   const { politicians, statements, loading, error, refresh } = usePublicData();
-  const [canonicalPromises, setCanonicalPromises] = useState<CanonicalPromiseSummary[]>([]);
-  const [canonicalLoading, setCanonicalLoading] = useState<boolean>(true);
-  const [canonicalError, setCanonicalError] = useState<string | null>(null);
+  const [trustSummary, setTrustSummary] = useState<PoliticianTrustSummaryType | null>(null);
+  const [trustLoading, setTrustLoading] = useState<boolean>(true);
+  const [trustError, setTrustError] = useState<string | null>(null);
 
   const politicianId = Number(id);
   const selectedTab = (searchParams.get("tab") as ProfileTab) ?? "promises";
@@ -46,31 +68,31 @@ export const PoliticianProfilePage = (): ReactElement => {
 
   useEffect(() => {
     if (!Number.isFinite(politicianId)) {
-      setCanonicalLoading(false);
+      setTrustLoading(false);
       return;
     }
 
     let cancelled = false;
-    const loadCanonicalPromises = async (): Promise<void> => {
-      setCanonicalLoading(true);
-      setCanonicalError(null);
+    const loadTrustSummary = async (): Promise<void> => {
+      setTrustLoading(true);
+      setTrustError(null);
       try {
-        const items = await listCanonicalPromises(politicianId, session?.token);
+        const response = await getPoliticianTrustSummary(politicianId, session?.token);
         if (!cancelled) {
-          setCanonicalPromises(items);
+          setTrustSummary(response.trustSummary);
         }
       } catch (err) {
         if (!cancelled) {
-          setCanonicalError((err as Error).message || "Unable to load canonical promises.");
+          setTrustError((err as Error).message || "Unable to load trust summary.");
         }
       } finally {
         if (!cancelled) {
-          setCanonicalLoading(false);
+          setTrustLoading(false);
         }
       }
     };
 
-    void loadCanonicalPromises();
+    void loadTrustSummary();
 
     return () => {
       cancelled = true;
@@ -79,15 +101,12 @@ export const PoliticianProfilePage = (): ReactElement => {
 
   const politician = useMemo(() => politicians.find((entry) => entry.id === politicianId), [politicianId, politicians]);
   const linkedPartyShell = useMemo(() => findPartyShellForPolitician(politician), [politician]);
-  const promiseRecords = useMemo(() => {
-    return statements.filter((statement) => statement.politicianId === politicianId).map(toPromiseRecord);
-  }, [politicianId, statements]);
   const rawSubmissionHistory = useMemo(() => {
     return statements.filter((statement) => statement.politicianId === politicianId && !statement.canonicalPromiseId);
   }, [politicianId, statements]);
 
-  const totalPromises = canonicalPromises.length > 0 ? canonicalPromises.length : promiseRecords.length;
-  const unknownCount = canonicalPromises.length > 0 ? canonicalPromises.length : promiseRecords.filter((promise) => promise.fulfillmentStatus === "unknown").length;
+  const totalPromises = trustSummary?.fulfillmentCounts.total ?? 0;
+  const unknownCount = trustSummary?.fulfillmentCounts.unknown ?? 0;
   const tabPanelId = `profile-panel-${activeTab}`;
   const statementContributionTarget = session
     ? `/contribute/statements/new?politicianId=${politicianId}`
@@ -108,12 +127,12 @@ export const PoliticianProfilePage = (): ReactElement => {
     );
   }
 
-  if (loading || canonicalLoading) {
+  if (loading || trustLoading) {
     return <LoadingState label="Loading politician profile..." />;
   }
 
-  if (error || canonicalError) {
-    return <ErrorState message={error ?? canonicalError ?? "Unable to load politician profile."} onRetry={() => void refresh()} />;
+  if (error || trustError) {
+    return <ErrorState message={error ?? trustError ?? "Unable to load politician profile."} onRetry={() => void refresh()} />;
   }
 
   if (!politician) {
@@ -176,15 +195,15 @@ export const PoliticianProfilePage = (): ReactElement => {
         </article>
         <article className="card scorecard">
           <h2>Fulfilled</h2>
-          <p className="score-value">0</p>
+          <p className="score-value">{trustSummary?.fulfillmentCounts.fulfilled ?? 0}</p>
         </article>
         <article className="card scorecard">
           <h2>Broken</h2>
-          <p className="score-value">0</p>
+          <p className="score-value">{trustSummary?.fulfillmentCounts.broken ?? 0}</p>
         </article>
         <article className="card scorecard">
           <h2>In progress</h2>
-          <p className="score-value">0</p>
+          <p className="score-value">{trustSummary?.fulfillmentCounts.inProgress ?? 0}</p>
         </article>
         <article className="card scorecard">
           <h2>Unknown</h2>
@@ -192,8 +211,17 @@ export const PoliticianProfilePage = (): ReactElement => {
         </article>
         <article className="card scorecard">
           <h2>Vote alignment summary</h2>
-          <p className="score-value">Unknown</p>
-          <p className="meta-line">Aligned 0 / Contradicted 0 / Mixed 0 / Unknown {totalPromises}</p>
+          <p className="score-value">
+            A {trustSummary?.voteAlignmentCounts.aligned ?? 0} / C {trustSummary?.voteAlignmentCounts.contradicted ?? 0}
+          </p>
+          <p className="meta-line">
+            Mixed {trustSummary?.voteAlignmentCounts.mixed ?? 0} / Unknown {trustSummary?.voteAlignmentCounts.unknown ?? 0} · known record{" "}
+            {formatPercent(
+              trustSummary?.voteAlignmentPercentages
+                ? 100 - trustSummary.voteAlignmentPercentages.unknown
+                : null
+            )}
+          </p>
         </article>
       </section>
 
@@ -216,8 +244,16 @@ export const PoliticianProfilePage = (): ReactElement => {
 
         <article className="card stack-sm">
           <h2>Party-line alignment</h2>
-          <StatusChip status="unknown" prefix="Party-line alignment" />
-          <p>No party-line comparison is available for this profile yet.</p>
+          <p className="meta-line">
+            Counts first: A {trustSummary?.partyLineCounts.aligned ?? 0} / Break {trustSummary?.partyLineCounts.brokePartyLine ?? 0} / U{" "}
+            {trustSummary?.partyLineCounts.unknown ?? 0}
+          </p>
+          <p className="meta-line">
+            Known party-line record:{" "}
+            {formatPercent(
+              trustSummary?.partyLinePercentages ? 100 - trustSummary.partyLinePercentages.unknown : null
+            )}
+          </p>
           <p className="meta-line">Read methodology for how party records and politician records are compared.</p>
         </article>
       </section>
@@ -272,29 +308,28 @@ export const PoliticianProfilePage = (): ReactElement => {
                   <tr>
                     <th scope="col">Promise statement</th>
                     <th scope="col">Date promised</th>
-                    <th scope="col">Public state</th>
                     <th scope="col">Current fulfillment status</th>
                     <th scope="col">Vote alignment status</th>
+                    <th scope="col">Party-line status</th>
                     <th scope="col">Evidence count</th>
                     <th scope="col">Link to detail</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(canonicalPromises.length > 0 ? canonicalPromises : promiseRecords).map((promise) => {
-                    const isCanonical = "publicStatus" in promise;
-                    const detailId = isCanonical ? promise.primaryStatementId : promise.id;
+                  {(trustSummary?.promises ?? []).map((promise) => {
+                    const detailId = promise.statementId;
                     return (
-                      <tr key={isCanonical ? `canonical-${promise.id}` : `legacy-${promise.id}`}>
+                      <tr key={`canonical-${promise.canonicalPromiseId}`}>
                         <td>{promise.promiseText}</td>
-                        <td>{formatDate(isCanonical ? promise.createdAt : promise.datePromised)}</td>
-                        <td>{isCanonical ? promise.publicStatus : "legacy"}</td>
+                        <td>{formatDate(promise.datePromised)}</td>
                         <td>
-                          <StatusChip status="unknown" prefix="Fulfillment" />
+                          <StatusChip status={promise.fulfillmentStatus} prefix="Fulfillment" />
                         </td>
                         <td>
-                          <StatusChip status="unknown" prefix="Vote alignment" />
+                          <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
                         </td>
-                        <td>{isCanonical ? promise.acceptedSourceCount : promise.evidenceCount}</td>
+                        <td>{renderPartyLineBadge(promise.partyLineStatus)}</td>
+                        <td>{promise.acceptedSourceCount}</td>
                         <td>{detailId ? <Link to={`/promises/${detailId}`}>Open promise</Link> : <span className="meta-line">No compatible detail route</span>}</td>
                       </tr>
                     );
@@ -304,15 +339,20 @@ export const PoliticianProfilePage = (): ReactElement => {
             </div>
 
             <div className="cards-grid cards-grid-1 mobile-only">
-              {(canonicalPromises.length > 0 ? canonicalPromises : promiseRecords).map((promise) => {
-                const isCanonical = "publicStatus" in promise;
-                const detailId = isCanonical ? promise.primaryStatementId : promise.id;
+              {(trustSummary?.promises ?? []).map((promise) => {
+                const detailId = promise.statementId;
                 return (
-                  <article key={isCanonical ? `canonical-${promise.id}` : `legacy-${promise.id}`} className="card stack-xs">
+                  <article key={`canonical-${promise.canonicalPromiseId}`} className="card stack-xs">
                     <h3>{promise.promiseText}</h3>
-                    <p className="meta-line">Date promised: {formatDate(isCanonical ? promise.createdAt : promise.datePromised)}</p>
-                    <p className="meta-line">Public state: {isCanonical ? promise.publicStatus : "legacy"}</p>
-                    <p>Evidence count: {isCanonical ? promise.acceptedSourceCount : promise.evidenceCount}</p>
+                    <p className="meta-line">Date promised: {formatDate(promise.datePromised)}</p>
+                    <p className="meta-line">
+                      Fulfillment: <StatusChip status={promise.fulfillmentStatus} prefix="Fulfillment" />
+                    </p>
+                    <p className="meta-line">
+                      Vote alignment: <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
+                    </p>
+                    <p>Evidence count: {promise.acceptedSourceCount}</p>
+                    {renderPartyLineBadge(promise.partyLineStatus)}
                     {detailId ? <Link to={`/promises/${detailId}`}>Open promise detail</Link> : <p className="meta-line">No compatible detail route.</p>}
                   </article>
                 );
@@ -340,14 +380,15 @@ export const PoliticianProfilePage = (): ReactElement => {
 
           {activeTab === "votes" ? (
             <div className="stack-sm">
-              <p className="data-note">No vote comparison is available for these promises yet.</p>
+              <p className="data-note">Vote alignment now comes from mapped vote events and the politician's recorded vote on those linked events.</p>
               <div className="cards-grid cards-grid-1">
-                {promiseRecords.map((promise) => (
-                  <article key={promise.id} className="card stack-xs">
+                {(trustSummary?.promises ?? []).map((promise) => (
+                  <article key={promise.canonicalPromiseId} className="card stack-xs">
                     <h3>{promise.promiseText}</h3>
                     <p className="meta-line">Promised on {formatDate(promise.datePromised)}</p>
-                    <StatusChip status="unknown" prefix="Vote alignment" />
-                    <p className="meta-line">Data not yet available</p>
+                    <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
+                    <p className="meta-line">Mapped vote events: {promise.voteComparisonCount}</p>
+                    <p className="meta-line">Latest evidence date: {formatDateTime(promise.latestEvidenceDate)}</p>
                   </article>
                 ))}
               </div>
