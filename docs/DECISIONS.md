@@ -23,3 +23,14 @@ Source: `AGENTS.md`, `docs/CANONICAL.md`, archive `C:\Users\john\aios\_archive\P
 **Consequences:** Repo docs and helper rules point to direct MCP tools only. Delegation-specific docs and references were removed from the active repo tree.
 
 Source: `AGENTS.md`, `docs/CANONICAL.md`, `.cursor/skills/security-auditor/SKILL.md`, `.cursor/rules/security-auditor.mdc`
+
+---
+
+## ADR-003: Launch auth will use email-based sessions and remove public shared-secret sign-in
+
+**Date:** 2026-03-17
+**Decision:** For the launchability milestone, replace the current public `/auth/token` shared-secret sign-in model with a launch-safe auth flow aligned to registered email identities. Moderator and admin role provisioning must move out of the public sign-in UX and into secured provisioning paths.
+**Context:** The current completed feature baseline covers the core product graph, contribution flows, canonization, and trust surfaces, but public launch is still blocked by the existing sign-in model, which requires a shared server secret and explicit role selection in the browser.
+**Consequences:** The next sprint prioritizes auth migration, secure role bootstrap, and frontend auth UX changes before deploy orchestration. Launchability work may add new auth/session persistence tables or flows, but must not keep the current shared-secret sign-in path as the public launch mechanism.
+
+Source: `src/server.ts`, `frontend/src/routes/SignInPage.tsx`, `docs/ROADMAP.md`, `docs/SPRINT.md`

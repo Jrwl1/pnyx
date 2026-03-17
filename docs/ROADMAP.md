@@ -6,8 +6,8 @@ Planning baseline:
 
 - Finland-first launch scope
 - Build from current shipped `frontend/`, `src/`, `test/`, and migration reality
-- Expose already-tested backend capability in the frontend before inventing new product layers
-- Separate raw submissions, canonical facts, and derived trust metrics instead of overloading one entity
+- Treat launchability as a separate milestone from feature completeness
+- Keep raw submissions, canonical facts, and derived trust metrics separate
 - Direct MCP tools are preferred for evidence and verification when they materially help
 
 ## M0: Repository OS reset and delegation removal
@@ -57,18 +57,18 @@ Planning baseline:
 
 ## M4: Contribution, party graph, and canonical promise foundation
 
-**Status:** In progress.
+**Status:** Done.
 
 **Done criteria:**
 
 1. Frontend auth and contribution surfaces expose the current backend registration, statement capture, statement voting, and politician-proposal workflows.
-2. Backend-backed parties, aliases, and memberships replace the current frontend-only party placeholders.
+2. Backend-backed parties, aliases, and memberships replace the previous frontend-only party placeholders.
 3. Canonical promises exist beside legacy statements, and public/frontend reads can distinguish raw submissions from canonical public promise records.
 4. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` pass, plus browser verification of new auth, contribution, and party-backed flows.
 
 ## M5: Claim canonization and accountability graph
 
-**Status:** Planned.
+**Status:** Done.
 
 **Done criteria:**
 
@@ -77,9 +77,9 @@ Planning baseline:
 3. Moderation reason codes, audits, and optimistic-lock protections extend from politician proposals into claim canonization flows.
 4. Public methodology and moderation surfaces explain how user submissions become canonical public facts.
 
-## M6: Trust scoring, release hardening, and launch audit
+## M6: Trust scoring, release hardening, and launch audit foundation
 
-**Status:** Planned.
+**Status:** Done.
 
 **Done criteria:**
 
@@ -88,11 +88,32 @@ Planning baseline:
 3. Search, regression coverage, release-readiness docs, and auditability are updated for the expanded accountability graph.
 4. A complete UI audit and manual verification pass succeeds across all public, authenticated, contributor, and moderation flows added in M4-M6.
 
+## M7: Launchability hardening and release orchestration
+
+**Status:** In progress.
+
+**Done criteria:**
+
+1. Shared-secret public sign-in is replaced by a launch-safe auth and session flow aligned to registered email identities, and moderator or admin role provisioning no longer depends on public role or secret entry.
+2. Editorial operations for party stances, vote events, fulfillment assessments, and party-line assessments are reachable through protected product surfaces instead of backend-only APIs or manual seeding.
+3. Durable automated coverage exists for critical public, auth, contributor, moderation, and editorial flows, and the launch proof chain includes those checks.
+4. Release and deploy sequencing, backup and restore rehearsal, observability, smoke checks, and a final go or no-go UI audit are documented and verified from a clean tree.
+
+## M8: Post-launch automation and growth
+
+**Status:** Planned.
+
+**Done criteria:**
+
+1. Finland-first automated ingest from official party and parliamentary sources reduces manual editorial entry for launch-critical record types.
+2. Contributor reputation, moderation ergonomics, and abuse signals evolve beyond the first launch-safe baseline.
+3. Retention, notification, and post-launch operating metrics move beyond the current database-only proxy model.
+
 ## Explicitly out of current scope
 
 1. Delegation or autopilot-based repo execution flows
-2. Cross-country rollout before the Finland-first model is proven in code
-3. Reusing community sentiment votes as truth-validation or vote-alignment data
-4. A single opaque trust score before promise, fulfillment, and party-alignment assessments are backed by sourceable records
-5. Fully automated multi-provider ingest before the first Finland-first manual or admin-backed source path is stable
-6. Launching contribution-heavy public flows without auditability, moderation reasons, and abuse controls
+2. Cross-country rollout before the Finland-first launch path is proven in production
+3. Launching with the current shared-secret public sign-in model
+4. Reusing community sentiment votes as truth-validation or vote-alignment data
+5. A single opaque trust score before promise, fulfillment, and party-alignment assessments are backed by sourceable records
+6. Full automated multi-provider ingest and contributor reputation systems inside the launchability milestone

@@ -54,3 +54,25 @@ Last updated: 2026-03-17
 - Planning resolution:
   - `docs/SPRINT.md` now carries one comprehensive implementation queue from frontend auth and contribution reachability through final UI audit and manual verification.
   - `docs/BACKLOG.md` marks the completed M3 frontend-hardening items done and promotes the party, canonical-promise, canonization, trust-graph, and release-hardening follow-ups into the active queue.
+
+## 2026-03-17 launchability re-baseline
+
+- Current code and sprint evidence now show that M4 through M6 are complete in code, tests, and browser verification:
+  - contribution routes exist in the frontend,
+  - canonical party and promise models exist in schema,
+  - claim canonization and trust summaries exist in the backend and public UI,
+  - release-proof and route-wide audit evidence exists in `docs/SPRINT.md`.
+- Conflict resolved by canonical hierarchy:
+  1. Previous roadmap state still showed M4 in progress and M5-M6 planned.
+     - Winner: current code, current tests, current completed sprint evidence, and clean-tree proof runs.
+     - Resolution: `docs/ROADMAP.md` now marks M4-M6 done and opens a new M7 launchability milestone.
+  2. The original future-direction gap was largely product-shape and data-model focused.
+     - Winner: current code reality.
+     - Resolution: the next planning gap is no longer "can the repo model the product?" but "can this repo launch safely?".
+- Planning resolution:
+  - `docs/PROJECT_STATUS.md` now pivots from completed implementation rows to launch blockers: shared-secret auth, editorial ops reachability, regression depth, and release orchestration.
+  - `docs/BACKLOG.md` marks all completed M4-M6 items done and opens a new launchability epic.
+  - `docs/SPRINT.md` now carries `S-27` through `S-31`, focused on secure auth, protected editorial ops, durable automated coverage, release rehearsal, and final launch audit.
+- Auth decision resolution:
+  - The repo needed a concrete launch-auth assumption rather than an open question.
+  - Resolution: `docs/DECISIONS.md` adds ADR-003, which selects email-based launch auth and removes the current shared-secret public sign-in model from the launch path.

@@ -57,3 +57,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [18:40] DO: add S-26 activity feeds and claim queue metrics (sprint: S-26, links: 0635026, docs/SPRINT.md)
 - [18:51] DO: finish S-26 release proof hardening and full route audit packet (sprint: S-26, links: 51d5751, docs/SPRINT.md)
 - [18:52] REVIEW: accept S-26 release-hardening row (findings: none)
+- [19:59] PLAN: re-baseline from completed S-21..S-26 into the M7 launchability sprint for secure auth, editorial ops, regression depth, release rehearsal, and final launch audit (sprint: S-27..S-31, milestone: M7)

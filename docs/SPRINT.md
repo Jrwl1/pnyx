@@ -1,6 +1,6 @@
 # Sprint
 
-Window: 2026-03-17 to 2026-06-30
+Window: 2026-03-17 to 2026-05-26
 
 Executable DO queue. Execute top-to-bottom.
 Each `Do` checklist must stay flat and each substep must be small enough to complete in one DO run.
@@ -18,272 +18,149 @@ Required substep shape:
 
 ## Goal (this sprint)
 
-Convert Pnyx from a read-first public alpha into a contribution-capable Finland-first accountability product by exposing existing backend workflows in the frontend, replacing placeholder party data with a real party graph, introducing canonical promises and claim canonization, adding source-backed trust dimensions, and closing with a full UI audit and manual verification pass across everything added in this sprint.
+Move Pnyx from a feature-complete-enough accountability product to a launchable Finland-first public service by replacing the current shared-secret auth flow, exposing protected editorial operations for launch-critical trust data, adding durable automated regression coverage, hardening release and deploy orchestration, and ending with a final launch UI audit and go-or-no-go proof pass.
 
 ---
 
 | ID | Do | Files | Acceptance | Evidence | Stop | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| S-21 | Expose auth, contribution, voting, and politician-proposal moderation flows in the frontend. See `S-21` substeps below. | `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `frontend/src/context/**`, `frontend/src/components/**`, `frontend/src/routes/**`, `src/server.ts`, `test/**` | Normal users can register, sign in, sign out, submit politician proposals, submit statements, and cast support or oppose votes from the frontend; moderators can review the existing politician proposal queue from the frontend; auth and rate-limit or duplicate errors are surfaced honestly; static, test, and browser checks pass for the new flows. | Accepted in REVIEW. Packets `bf4b1fe`, `1690950`, `d009cd0`, and `2b9f3ea` landed the frontend auth, contribution, voting, and moderation surfaces; `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; browser verification passed on the fresh `4175 -> 3001` local pair across register, sign-in, proposal submit, moderation claim+approve, statement submit, and promise voting. | Stop if a required frontend flow depends on unsupported backend semantics beyond bounded route or response additions inside the same auth or proposal area. | DONE |
-| S-22 | Replace frontend-only party placeholders with backend-backed party, alias, and membership data. See `S-22` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `test/**` | Backend `parties`, `party_aliases`, and `party_memberships` exist with public read APIs and admin or moderator write paths; home, directory, party, and politician surfaces use backend-backed party data instead of static placeholder shells; migration and browser checks pass. | Accepted in REVIEW. Packets `dbae90a`, `75a861a`, and `ad35bdc` landed the canonical party graph schema, public/admin APIs, politician party enrichment, and frontend route swap; `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; browser verification passed on the seeded `4176 -> 3002` local pair across home, party directory, party profile, and politician party-link surfaces. | Stop if a truthful party page would require inventing membership or affiliation data that cannot be represented through the new backend schema. | DONE |
-| S-23 | Introduce canonical promises beside legacy statements and keep current public reads compatible during the transition. See `S-23` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `test/**` | Canonical promise and accepted-source entities exist beside legacy statements; public/frontend reads can distinguish raw submission history from canonical public promise records; current promise detail and politician profile routes stay functional while the data model changes underneath them; regression and browser checks pass. | Accepted in REVIEW. Packets `d0be3d9` and `6d2a800` landed the canonical promise schema, accepted-source bundles, canonical promise APIs, statement compatibility metadata, and the frontend split between canonical public promise surfaces and raw submission history; `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; seeded browser verification passed on the fresh `4177 -> 3003` local pair across home, politician profile, and promise detail. | Stop if canonical-promise delivery cannot be isolated from the legacy statement surface without a migration or compatibility strategy that would need extra out-of-scope repo changes. | DONE |
-| S-24 | Build claim-source submission, equivalence, and moderator canonization flows for promise records. See `S-24` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/App.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/components/**`, `frontend/src/routes/**`, `test/**` | Contributors can submit promise-source claims, signal same-as or non-match equivalence, and see duplicate assist; moderators can claim, release, review, merge, or canonize claims into canonical promises with audit trails and reason codes; public promise pages expose accepted sources and change history; tests and browser checks pass for the end-to-end canonization loop. | Accepted in REVIEW. Packets `bf70c1d` and `d8365b8` landed promise-claim schema, equivalence signals, claim moderation APIs, contributor claim routes, moderator claim queue UI, and public accepted-source/history rendering; `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; seeded browser verification passed on the fresh `4178 -> 3004` local pair across claim submission, equivalence signaling, moderator merge/canonize, and public accepted-source/history surfaces. | Stop if the claim or equivalence workflow would require reusing community sentiment votes as truth-validation instead of introducing dedicated claim-review entities. | DONE |
-| S-25 | Add source-backed party stances, vote-event mappings, fulfillment assessments, and trust dimensions to public pages. See `S-25` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `test/**` | Party stances, vote events, fulfillment assessments, and party-alignment assessments exist with a first Finland-first source path; politician and party pages show backend-derived promise-trust and party-line-trust dimensions with explicit unknown handling; promise detail and methodology explain the real verdict logic; regression, accessibility, and browser checks pass. | Accepted in REVIEW. Packets `59a7c94`, `493d351`, and `09fd9c7` landed the trust-record schema, Finland-first stance and vote entry paths, backend trust summaries, public trust surfaces, and the final status-chip contrast fix; `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; seeded browser verification passed on the fresh `4179 -> 3005` local pair across home, party directory, party profile, politician profile, promise detail assessed and unknown states, and methodology, with Lighthouse accessibility `100` on `/promises/1`. | Stop if truthful trust computation requires data outside the selected first Finland-first stance and vote source path and cannot be represented as explicit unknowns for this row. | DONE |
-| S-26 | Harden search, auditability, release proof, and complete a full UI audit and manual verification pass across everything added in S-21..S-26. See `S-26` substeps below. | `src/server.ts`, `migrations/**`, `frontend/src/**`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md` | Search and auditability are expanded for the new contribution and canonization graph; release docs and metrics align with implemented behavior; regression coverage is broadened across auth, contribution, party, canonical promise, moderation, and trust flows; full proof commands, browser checks, accessibility checks, and a complete manual UI audit pass across all newly added surfaces. | Accepted in REVIEW. Packets `3cec13e`, `0635026`, and `51d5751` landed backend-backed search results, public activity feeds, claim-queue metrics and filters, release-proof hardening fixes, refreshed docs, and the final route-wide audit support; `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm build`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; seeded browser verification passed on the fresh `4180 -> 3006` local pair across public, auth, contributor, moderation, search, and trust routes with no console errors and no failing document/xhr/fetch requests. | Stop if the final audit exposes a blocking regression outside the scoped contribution, party, canonization, or trust flows that cannot be resolved within the same hardening area. | DONE |
+| S-27 | Replace the current shared-secret public sign-in model with launch-safe email-based sessions and secure role provisioning. See `S-27` substeps below. | `migrations/**`, `src/server.ts`, `src/auth/**`, `frontend/src/App.tsx`, `frontend/src/context/**`, `frontend/src/components/**`, `frontend/src/routes/RegisterPage.tsx`, `frontend/src/routes/SignInPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**` | Public auth no longer requires entering the server token secret or choosing a role in the browser; registered email identities can sign in through a launch-safe session flow; moderator/admin provisioning is kept behind secured paths; regression and browser checks pass for register, sign-in, sign-out, redirect, and protected-route behavior. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the launch-auth and role-provisioning criteria. | Stop if launch-safe auth cannot be delivered without introducing an external provider dependency that is not representable in repo-managed config, tests, or secure bootstrap paths. | TODO |
+| S-28 | Expose protected editorial operations for launch-critical trust records and launch coverage completeness. See `S-28` substeps below. | `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `src/db/**`, `test/**` | Protected product surfaces exist for party stances, vote events, vote records, fulfillment assessments, and party-line assessments; moderators or admins can maintain launch-critical truth data without direct database edits or manual-only seeding; launch completeness views identify gaps in party, politician, promise, and trust coverage; tests and browser checks pass. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the editorial-ops and launch-coverage criteria. | Stop if a launch-critical record type still depends on direct database mutation or non-repeatable manual seeding outside protected product surfaces. | TODO |
+| S-29 | Add durable automated regression coverage for critical public, contributor, moderation, and editorial flows. See `S-29` substeps below. | `package.json`, `frontend/package.json`, `vitest*.ts`, `frontend/**`, `test/**`, `.github/workflows/**` | Critical public routes, auth flows, contributor submission flows, moderator queues, and editorial ops flows are covered by durable automated tests in repo; the launch proof chain includes those checks; workflow changes include the required security-audit note when sensitive files are touched. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the automated-coverage and proof-chain criteria. | Stop if adding the required automated coverage would force a second planning system or rely on external CI services that cannot be represented through repo-managed workflows and docs. | TODO |
+| S-30 | Harden release sequencing, observability, backup/restore rehearsal, and launch runbooks. See `S-30` substeps below. | `src/server.ts`, `package.json`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`, `test/**` | Release docs, smoke checks, observability, backup/restore rehearsal, and deploy sequencing are updated for the completed accountability graph; launch metrics and release evidence are reproducible; any sensitive workflow/config changes ship with the required security-audit note; staging-like release rehearsal passes from a clean tree. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the release-hardening and deploy-rehearsal criteria. | Stop if required deploy orchestration depends on unmanaged platform state that cannot be captured through repo docs, workflows, or repeatable smoke commands. | TODO |
+| S-31 | Run the final launch dry run, route-wide audit, and go-or-no-go proof from the launch-ready baseline. See `S-31` substeps below. | `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md` | Launch candidate data coverage is loaded or verified for the Finland-first slice; the full static, automated, browser, accessibility, and manual UI audit passes from a clean tree; remaining launch risks are documented; a go-or-no-go verdict is supported by evidence rather than assumptions. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the final launch-readiness and route-wide audit criteria. | Stop if the final rehearsal surfaces a blocking regression or content gap that cannot be resolved within the same launchability area. | TODO |
 
-### S-21 substeps
+### S-27 substeps
 
-- [x] Add frontend auth context, token persistence, and protected-route helpers for authenticated and moderator-only surfaces
-  - files: `frontend/src/App.tsx`, `frontend/src/context/**`, `frontend/src/components/**`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck`
-  - evidence: packet:bf4b1fe23b14c395769536da6f5848d5906e94a8 | run:pnpm frontend:typecheck -> pass | files:frontend/src/App.tsx, frontend/src/components/ProtectedRoute.tsx, frontend/src/context/AuthContext.tsx, frontend/src/layout/PublicLayout.tsx, frontend/src/lib/api.ts, frontend/src/routes/RegisterPage.tsx, frontend/src/routes/SignInPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add public register, sign-in, and sign-out UI against the existing backend auth endpoints with honest error states
-  - files: `frontend/src/App.tsx`, `frontend/src/lib/api.ts`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/layout/PublicLayout.tsx`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:bf4b1fe23b14c395769536da6f5848d5906e94a8 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/components/ProtectedRoute.tsx, frontend/src/context/AuthContext.tsx, frontend/src/layout/PublicLayout.tsx, frontend/src/lib/api.ts, frontend/src/routes/RegisterPage.tsx, frontend/src/routes/SignInPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add a frontend politician-proposal submission flow with duplicate, captcha, and rate-limit feedback handling
-  - files: `frontend/src/lib/api.ts`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:1690950afd4822fecba187a2a8c3d81f3985ad0a | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/SubmitPoliticianProposalPage.tsx, frontend/src/routes/SubmitStatementPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add a frontend statement-submission flow for existing politicians with required-field validation and success states
-  - files: `frontend/src/lib/api.ts`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:1690950afd4822fecba187a2a8c3d81f3985ad0a | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/SubmitPoliticianProposalPage.tsx, frontend/src/routes/SubmitStatementPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add authenticated support and oppose voting controls on promise detail without changing the current sentiment semantics
-  - files: `frontend/src/lib/api.ts`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/components/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:d009cd098fff123482223302dd53ad28791bf808 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/statement-detail-viewer-vote.test.ts | docs:N/A | status: clean
-
-- [x] Add a protected moderator route shell and queue listing for the existing politician proposal workflow
-  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `frontend/src/components/**`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:2b9f3ea804b6d3b64ff9988cfb0c6b55ec431265 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/OpsPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add claim, release, review, and duplicate-assist UI for the politician proposal moderation queue
-  - files: `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `frontend/src/components/**`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:2b9f3ea804b6d3b64ff9988cfb0c6b55ec431265 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/OpsPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Run browser verification across register, sign-in, statement submission, proposal submission, voting, and politician-proposal moderation flows
-  - files: `frontend/src/**`
-  - run: `playwright or chrome-devtools verification of the S-21 public and moderator flows`
-  - evidence: packet:2b9f3ea804b6d3b64ff9988cfb0c6b55ec431265 | run:chrome-devtools verification of register, sign-in, proposal submission, moderator claim+approve review, statement submission, and promise voting on http://127.0.0.1:4175 with backend http://127.0.0.1:3001 -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/OpsPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-### S-22 substeps
-
-- [x] Add `parties` and `party_aliases` schema, migrations, and migration tests
-  - files: `migrations/**`, `src/db/**`, `test/**`
-  - run: `pnpm test -- -t "migration"`
-  - evidence: packet:dbae90af80911b59649eb6885080aebf7f98ae30 | run:pnpm test -- -t "migration" -> pass | files:migrations/0004_parties_and_aliases.sql, test/migration.test.ts | docs:N/A | status: clean
-
-- [x] Add `party_memberships` schema plus backend helpers for current and historical politician-party links
-  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
+- [ ] Add launch-safe auth/session schema and backend support aligned to registered email identities
+  - files: `migrations/**`, `src/server.ts`, `src/auth/**`, `test/**`
   - run: `pnpm test`
-  - evidence: packet:75a861ad07735dc4c48c51830266680aacdd5e96 | run:pnpm test -> pass | files:migrations/0005_party_memberships.sql, src/db/party-graph.ts, src/server.ts, test/migration.test.ts, test/party-graph.test.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Add public backend endpoints for party list, party detail, and party member reads
-  - files: `src/server.ts`, `test/**`
+- [ ] Add one-time email login code or equivalent launch-safe session issuance flow and preserve secure sign-out and session restore behavior
+  - files: `migrations/**`, `src/server.ts`, `src/auth/**`, `test/**`
   - run: `pnpm test`
-  - evidence: packet:75a861ad07735dc4c48c51830266680aacdd5e96 | run:pnpm test -> pass | files:migrations/0005_party_memberships.sql, src/db/party-graph.ts, src/server.ts, test/migration.test.ts, test/party-graph.test.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Add admin or moderator write paths for parties, aliases, and memberships so the party graph can be populated without direct database edits
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:75a861ad07735dc4c48c51830266680aacdd5e96 | run:pnpm test -> pass | files:migrations/0005_party_memberships.sql, src/db/party-graph.ts, src/server.ts, test/migration.test.ts, test/party-graph.test.ts | docs:N/A | status: clean
-
-- [x] Update frontend party API clients, shared types, and domain helpers to consume backend-backed party data
-  - files: `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck`
-  - evidence: packet:ad35bdc7c9b24149ed89b60b8b568abb2fb9c237 | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Replace home, party directory, party profile, and politician affiliation surfaces with backend-backed party and membership reads
-  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/types.ts`, `frontend/src/lib/domain.ts`
+- [ ] Remove public role selection and server-secret entry from the register/sign-in UX while keeping safe redirects and protected-route behavior intact
+  - files: `frontend/src/App.tsx`, `frontend/src/context/**`, `frontend/src/components/**`, `frontend/src/routes/RegisterPage.tsx`, `frontend/src/routes/SignInPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:ad35bdc7c9b24149ed89b60b8b568abb2fb9c237 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Run static, test, and browser verification for backend-backed party and membership flows
+- [ ] Add secure moderator/admin provisioning or bootstrap paths outside the public sign-in flow
+  - files: `src/server.ts`, `src/auth/**`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run auth regression and browser verification for register, sign-in, sign-out, redirect, and protected-route flows
   - files: `frontend/src/**`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of party flows`
-  - evidence: packet:ad35bdc7c9b24149ed89b60b8b568abb2fb9c237 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && chrome-devtools verification of /, /parties, /parties/pv20260317161842, and /politicians/3 on http://127.0.0.1:4176 with backend http://127.0.0.1:3002 after seeding canonical party data -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/types.ts | docs:N/A | status: clean
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of launch auth flows`
+  - evidence: Pending.
 
-### S-23 substeps
+### S-28 substeps
 
-- [x] Add canonical promise and accepted-source schema beside the legacy statement model
-  - files: `migrations/**`, `src/db/**`, `test/**`
-  - run: `pnpm test -- -t "migration"`
-  - evidence: packet:d0be3d9d714ac0330f5d9bf871a49c49d3b94b53 | run:pnpm test -> pass | files:migrations/0006_canonical_promises.sql, src/db/canonical-promises.ts, src/server.ts, test/canonical-promises.test.ts, test/migration.test.ts | docs:N/A | status: clean
+- [ ] Add protected ops routes and forms for party stance creation, update, and review-safe maintenance
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [x] Add compatibility helpers or backfill logic so legacy `statements` continue to support public reads while canonical promises are introduced
-  - files: `src/server.ts`, `src/db/**`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:d0be3d9d714ac0330f5d9bf871a49c49d3b94b53 | run:pnpm test -> pass | files:migrations/0006_canonical_promises.sql, src/db/canonical-promises.ts, src/server.ts, test/canonical-promises.test.ts, test/migration.test.ts | docs:N/A | status: clean
+- [ ] Add protected ops routes and forms for vote-event and politician-vote-record entry and maintenance
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [x] Add backend create and read endpoints for canonical promises and accepted source bundles
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:d0be3d9d714ac0330f5d9bf871a49c49d3b94b53 | run:pnpm test -> pass | files:migrations/0006_canonical_promises.sql, src/db/canonical-promises.ts, src/server.ts, test/canonical-promises.test.ts, test/migration.test.ts | docs:N/A | status: clean
+- [ ] Add protected ops routes and forms for fulfillment assessments and party-line assessments
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [x] Expose canonical or public-state metadata alongside existing promise reads without breaking current routes
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:d0be3d9d714ac0330f5d9bf871a49c49d3b94b53 | run:pnpm test -> pass | files:migrations/0006_canonical_promises.sql, src/db/canonical-promises.ts, src/server.ts, test/canonical-promises.test.ts, test/migration.test.ts | docs:N/A | status: clean
+- [ ] Add launch coverage completeness views for target parties, politicians, canonical promises, and trust records
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [x] Update frontend API clients, shared types, and domain mapping so canonical promises and legacy statement history are distinct concepts
-  - files: `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck`
-  - evidence: packet:6d2a800584d9b0e2a7ab3da1efec8ea73f5706c1 | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Update politician profile to distinguish canonical promises from raw or legacy submission history
-  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:6d2a800584d9b0e2a7ab3da1efec8ea73f5706c1 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Update promise detail to show accepted-source bundles and canonical-public markers instead of a single raw statement framing
-  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:6d2a800584d9b0e2a7ab3da1efec8ea73f5706c1 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Run regression and browser verification for canonical-promise compatibility and public reads
+- [ ] Run browser verification for editorial ops and launch coverage views from moderator/admin sessions
   - files: `frontend/src/**`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of canonical promise flows`
-  - evidence: packet:6d2a800584d9b0e2a7ab3da1efec8ea73f5706c1 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && chrome-devtools verification of /, /politicians/4, and /promises/4 on http://127.0.0.1:4177 with backend http://127.0.0.1:3003 after seeding canonical and raw promise data -> pass | files:frontend/src/lib/api.ts, frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of editorial ops flows`
+  - evidence: Pending.
 
-### S-24 substeps
+### S-29 substeps
 
-- [x] Add claim-submission, claim-source, and claim-review schema for user-submitted promise records
-  - files: `migrations/**`, `src/db/**`, `test/**`
-  - run: `pnpm test -- -t "migration"`
-  - evidence: packet:bf70c1db8f7d9f6bbeaee09be1fe83ca9a09ff9b | run:pnpm test -> pass | files:migrations/0007_promise_claims.sql, src/db/promise-claims.ts, src/server.ts, test/migration.test.ts, test/promise-claims.test.ts | docs:N/A | status: clean
+- [ ] Add a durable frontend/browser test harness and repo scripts for launch-critical flows
+  - files: `package.json`, `frontend/package.json`, `vitest*.ts`, `frontend/**`, `test/**`
+  - run: `pnpm lint && pnpm typecheck && pnpm frontend:typecheck`
+  - evidence: Pending.
 
-- [x] Add claim-equivalence proposal and vote schema with reason-code support separate from community sentiment votes
-  - files: `migrations/**`, `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:bf70c1db8f7d9f6bbeaee09be1fe83ca9a09ff9b | run:pnpm test -> pass | files:migrations/0007_promise_claims.sql, src/db/promise-claims.ts, src/server.ts, test/migration.test.ts, test/promise-claims.test.ts | docs:N/A | status: clean
-
-- [x] Add backend queue, claim, release, review, merge, and canonization APIs for claim submissions using the hardened proposal-ops pattern
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:bf70c1db8f7d9f6bbeaee09be1fe83ca9a09ff9b | run:pnpm test -> pass | files:migrations/0007_promise_claims.sql, src/db/promise-claims.ts, src/server.ts, test/migration.test.ts, test/promise-claims.test.ts | docs:N/A | status: clean
-
-- [x] Add duplicate or equivalence assist helpers for new claim submissions and moderator review
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:bf70c1db8f7d9f6bbeaee09be1fe83ca9a09ff9b | run:pnpm test -> pass | files:migrations/0007_promise_claims.sql, src/db/promise-claims.ts, src/server.ts, test/migration.test.ts, test/promise-claims.test.ts | docs:N/A | status: clean
-
-- [x] Add contributor UI for submitting promise-source claims with duplicate and equivalence suggestions before queueing
-  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:d8365b8dd6e3af7922827f3a60e572deae7b85d0 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/PromiseClaimDetailPage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/routes/SubmitPromiseClaimPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add contributor UI for same-as or non-match equivalence signaling on pending claim records
-  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:d8365b8dd6e3af7922827f3a60e572deae7b85d0 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/PromiseClaimDetailPage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/routes/SubmitPromiseClaimPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add moderator queue, review, merge, and canonization UI for claim submissions and equivalence decisions
-  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
+- [ ] Add automated smoke coverage for critical public routes and trust-data rendering states
+  - files: `frontend/**`, `test/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:d8365b8dd6e3af7922827f3a60e572deae7b85d0 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/PromiseClaimDetailPage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/routes/SubmitPromiseClaimPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Expose accepted sources and canonical change history on public promise detail once claims are merged or approved
-  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+- [ ] Add automated auth and contributor-flow coverage for register, sign-in, statement submission, proposal submission, and promise-claim submission
+  - files: `frontend/**`, `test/**`, `src/server.ts`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:d8365b8dd6e3af7922827f3a60e572deae7b85d0 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/PromiseClaimDetailPage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/routes/SubmitPromiseClaimPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Run end-to-end browser verification for claim submission, equivalence signaling, moderator review, and canonization
-  - files: `frontend/src/**`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of claim canonization flows`
-  - evidence: packet:d8365b8dd6e3af7922827f3a60e572deae7b85d0 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && chrome-devtools verification of contributor claim submit + equivalence signal, moderator merge + canonize, and public promise accepted-source/history surfaces on http://127.0.0.1:4178 with backend http://127.0.0.1:3004 after seeding canonical target data -> pass | files:frontend/src/App.tsx, frontend/src/lib/api.ts, frontend/src/routes/PromiseClaimDetailPage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/routes/SubmitPromiseClaimPage.tsx, frontend/src/types.ts | docs:N/A | status: clean
-
-### S-25 substeps
-
-- [x] Add party-stance schema and admin or moderator APIs for entering and reading official party stances
-  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:59a7c94e69cbc0266e57e9b44a632e7dde015f0f | run:pnpm test -> pass | files:migrations/0008_trust_records.sql, src/db/trust-records.ts, src/server.ts, test/migration.test.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Add vote-event and politician-vote-record schema and APIs for Finland-first voting data
-  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:59a7c94e69cbc0266e57e9b44a632e7dde015f0f | run:pnpm test -> pass | files:migrations/0008_trust_records.sql, src/db/trust-records.ts, src/server.ts, test/migration.test.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Add promise-to-vote link, fulfillment-assessment, and party-alignment-assessment schema and backend logic
-  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:59a7c94e69cbc0266e57e9b44a632e7dde015f0f | run:pnpm test -> pass | files:migrations/0008_trust_records.sql, src/db/trust-records.ts, src/server.ts, test/migration.test.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Add a first Finland-first manual or admin-backed source path for party stances and vote events so trust assessments are not blocked on full ingest automation
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:59a7c94e69cbc0266e57e9b44a632e7dde015f0f | run:pnpm test -> pass | files:migrations/0008_trust_records.sql, src/db/trust-records.ts, src/server.ts, test/migration.test.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Expose backend-derived politician and party trust summary reads with counts first, percentages second, and explicit unknown handling
-  - files: `src/server.ts`, `test/**`
-  - run: `pnpm test`
-  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm test -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Update politician profile trust cards and tables to use backend-derived promise-trust and party-line-trust data
-  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Update party directory and party profile to show member trust cards and party-average trust summaries from backend assessments
-  - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Update promise detail and methodology to explain real fulfillment, vote-alignment, and party-stance comparison logic
-  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:493d351d3e246a68db4d36ff315e0ece81131385 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/types.ts, src/server.ts, test/trust-records.test.ts | docs:N/A | status: clean
-
-- [x] Run regression, accessibility, and browser verification for trust-dimension surfaces on politician, party, and promise routes
-  - files: `frontend/src/**`, `src/server.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools accessibility and browser verification of trust flows`
-  - evidence: packet:09fd9c74674dd69bfb9cc8069fd6e22e5930655d | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && chrome-devtools verification of /, /parties, /parties/sdp, /politicians/1, /promises/1, /promises/2, and /methodology on http://127.0.0.1:4179 with backend http://127.0.0.1:3005 after seeding trust data plus Lighthouse accessibility snapshot 100 on /promises/1 -> pass | files:frontend/src/styles.css | docs:N/A | status: clean
-
-### S-26 substeps
-
-- [x] Add backend-backed search improvements for parties, canonical promises, and issue or topic surfaces introduced in S-21..S-25
-  - files: `src/server.ts`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/routes/**`, `test/**`
+- [ ] Add automated moderator/editorial ops coverage for proposal review, claim canonization, party stance entry, vote-event entry, and trust assessment maintenance
+  - files: `frontend/**`, `test/**`, `src/server.ts`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:3cec13e8fe533053729246bd1b0f8df06d37815d | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/types.ts, src/server.ts, test/search.test.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Add public canonical change-history and contributor-activity surfaces for the new claim, promise, and party records
-  - files: `src/server.ts`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:063502633a0ae3ae2fc0da04285155c58ff57a3f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/types.ts, src/server.ts, test/activity-feed.test.ts | docs:N/A | status: clean
+- [ ] Wire the launch proof chain and workflow coverage into the repo with the required security-audit note if sensitive workflow files change
+  - files: `package.json`, `.github/workflows/**`, `docs/security/**`, `test/**`
+  - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm frontend:typecheck`
+  - evidence: Pending.
 
-- [x] Add stronger moderation filters, abuse visibility, and auditability for the expanded contribution and canonization queues
-  - files: `src/server.ts`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:063502633a0ae3ae2fc0da04285155c58ff57a3f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/types.ts, src/server.ts, test/activity-feed.test.ts | docs:N/A | status: clean
+### S-30 substeps
 
-- [x] Expand regression coverage across auth, contribution, party, canonical-promise, canonization, and trust flows
-  - files: `test/**`, `src/server.ts`, `frontend/src/**`
-  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:063502633a0ae3ae2fc0da04285155c58ff57a3f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/types.ts, src/server.ts, test/activity-feed.test.ts | docs:N/A | status: clean
+- [ ] Refresh environment, secret, and launch smoke requirements for staging and production deploys
+  - files: `docs/RELEASE_READINESS_RUNBOOK.md`, `frontend/README.md`
+  - run: `N/A`
+  - evidence: Pending.
 
-- [x] Refresh traceability, release-readiness, success-metrics, and frontend route docs for the implemented behavior delivered in S-21..S-26
+- [ ] Add deploy or release orchestration plus the required security-audit note for any sensitive workflow or config changes
+  - files: `.github/workflows/**`, `docs/security/**`, `package.json`
+  - run: `pnpm lint && pnpm typecheck && pnpm test`
+  - evidence: Pending.
+
+- [ ] Add or harden launch observability and smoke checks for health, search, auth, contributor, moderation, and editorial ops paths
+  - files: `src/server.ts`, `test/**`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Rehearse backup/restore and rollback procedure for the launch database and release path
+  - files: `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`
+  - run: `N/A`
+  - evidence: Pending.
+
+- [ ] Refresh traceability, release evidence, and metrics docs for the launchability baseline
   - files: `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:51d5751d8163e08cf91d1b7671dfdefcab28d7b7 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PromiseClaimsOpsPage.tsx, src/server.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Run the full static and backend proof chain for the expanded product surface
-  - files: `src/server.ts`, `frontend/src/**`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
+- [ ] Run a staging-like release rehearsal from a clean tree using the hardened proof chain and smoke checklist
+  - files: `src/server.ts`, `frontend/src/**`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
   - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:51d5751d8163e08cf91d1b7671dfdefcab28d7b7 | run:pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PromiseClaimsOpsPage.tsx, src/server.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [x] Run browser and accessibility verification across all public, authenticated, contributor, and moderation routes added in S-21..S-26
+### S-31 substeps
+
+- [ ] Load or verify launch-candidate Finland-first data coverage for public parties, politicians, canonical promises, and trust records
+  - files: `frontend/src/**`, `src/server.ts`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/SUCCESS_METRICS_PLAN.md`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Run the full static and automated launch proof chain including the new frontend and browser coverage
+  - files: `package.json`, `frontend/package.json`, `src/server.ts`, `frontend/src/**`, `test/**`, `.github/workflows/**`
+  - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run browser and accessibility verification across all public, auth, contributor, moderator, and editorial routes required for launch
   - files: `frontend/src/**`
-  - run: `playwright or chrome-devtools verification of all routes and flows added in S-21..S-26`
-  - evidence: packet:51d5751d8163e08cf91d1b7671dfdefcab28d7b7 | run:chrome-devtools verification of /, /politicians, /politicians/1, /parties, /parties/sdp, /promises/1, /promises/2, /methodology, /register, /sign-in, /contribute/politicians/new, /contribute/statements/new?politicianId=1, /contribute/promises/new?politicianId=1, /ops, and /ops/claims on http://127.0.0.1:4180 with backend http://127.0.0.1:3006 after seeding public, contributor, and moderation data -> pass | files:frontend/src/routes/PromiseClaimsOpsPage.tsx, src/server.ts | docs:N/A | status: clean
+  - run: `playwright or chrome-devtools verification of all launch-critical routes and flows`
+  - evidence: Pending.
 
-- [x] Complete an end-to-end UI audit of the site and manually check every flow added in S-21..S-26
-  - files: `frontend/src/**`, `src/server.ts`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
-  - run: `ui-audit plus manual playwright or chrome-devtools verification of every public, authenticated, contributor, moderation, and trust flow added in S-21..S-26`
-  - evidence: packet:51d5751d8163e08cf91d1b7671dfdefcab28d7b7 | run:ui-audit plus chrome-devtools sweep of public, contributor, moderator, and trust routes -> pass | files:frontend/src/routes/PromiseClaimsOpsPage.tsx, src/server.ts | docs:N/A | status: clean
+- [ ] Complete the final launch UI audit, manual regression sweep, and go-or-no-go proof across every critical route and flow
+  - files: `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
+  - run: `ui-audit plus manual playwright or chrome-devtools verification of every launch-critical public, contributor, moderator, editorial, and trust flow`
+  - evidence: Pending.

@@ -24,13 +24,13 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 - B-203: Extend politician profile, promise detail, and methodology with party-context surfaces. -- DONE
 - B-204: Add verification coverage for updated public discovery routing, build, and browser-verified trust states. -- DONE
 - B-205: Introduce frontend-local party placeholder data or equivalent honest unknown-state structures until backend party APIs exist. -- DONE
-- B-206: Add backend-ready follow-ups for canonical parties, memberships, and party stances once the hardened public slice is stable. -- IN SPRINT
+- B-206: Add backend-ready follow-ups for canonical parties, memberships, and party stances once the hardened public slice is stable. -- DONE
 
 ## Epic E4: Trust and moderation hardening
 
-- B-301: Audit proposal, moderation, and admin flows against the public discovery model. -- IN SPRINT
-- B-302: Tighten abuse and audit evidence where current tests or docs are thin. -- IN SPRINT
-- B-303: Refresh release-readiness docs once the next public slice lands. -- IN SPRINT
+- B-301: Audit proposal, moderation, and admin flows against the public discovery model. -- DONE
+- B-302: Tighten abuse and audit evidence where current tests or docs are thin. -- DONE
+- B-303: Refresh release-readiness docs once the next public slice lands. -- DONE
 
 ## Epic E5: Frontend trust, editorial, and Finland-first hardening
 
@@ -41,23 +41,39 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 - B-405: Enrich methodology structure and unify missing-data messaging across public routes. -- DONE
 - B-406: Add interaction polish: clickable directory rows, search suggestions, contextual back links, and tab transitions. -- DONE
 - B-407: Verify the hardened public slice with browser and accessibility checks. -- DONE
-- B-408: Replace heuristic evidence counts and frontend-only party/member placeholders with backend-backed data when APIs exist. -- IN SPRINT
-- B-409: Add richer fulfillment and promise-breakdown visualizations once non-unknown status data exists. -- IN SPRINT
+- B-408: Replace heuristic evidence counts and frontend-only party/member placeholders with backend-backed data when APIs exist. -- DONE
+- B-409: Add richer fulfillment and promise-breakdown visualizations once non-unknown status data exists. -- DONE
 
 ## Epic E6: Contribution, party graph, and canonical promise foundation
 
-- B-501: Add frontend auth state, session persistence, and protected-route helpers against the current backend token flow. -- IN SPRINT
-- B-502: Expose politician-proposal submission, statement submission, and statement voting from the frontend. -- IN SPRINT
-- B-503: Add frontend moderation reachability for the existing politician proposal queue, claim/release actions, and review decisions. -- IN SPRINT
-- B-504: Add canonical `parties`, `party_aliases`, and `party_memberships` schema plus public/admin APIs. -- IN SPRINT
-- B-505: Replace frontend-only party placeholder reads with backend-backed party and membership data. -- IN SPRINT
-- B-506: Introduce canonical promises beside legacy `statements` with compatible public/frontend reads. -- IN SPRINT
+- B-501: Add frontend auth state, session persistence, and protected-route helpers against the current backend token flow. -- DONE
+- B-502: Expose politician-proposal submission, statement submission, and statement voting from the frontend. -- DONE
+- B-503: Add frontend moderation reachability for the existing politician proposal queue, claim/release actions, and review decisions. -- DONE
+- B-504: Add canonical `parties`, `party_aliases`, and `party_memberships` schema plus public/admin APIs. -- DONE
+- B-505: Replace frontend-only party placeholder reads with backend-backed party and membership data. -- DONE
+- B-506: Introduce canonical promises beside legacy `statements` with compatible public/frontend reads. -- DONE
 
-## Epic E7: Claim canonization, trust graph, and release hardening
+## Epic E7: Claim canonization, trust graph, and release hardening foundation
 
-- B-601: Add claim/source submission entities and moderation queue flows for promise records. -- IN SPRINT
-- B-602: Add equivalence proposals, user same-as voting, duplicate assist, and moderator merge or canonization decisions. -- IN SPRINT
-- B-603: Expose accepted-source bundles, canonical change history, and public audit context for canonical promises. -- IN SPRINT
-- B-604: Add party stance, vote-event, fulfillment, and party-alignment assessment models with a first Finland-first source path. -- IN SPRINT
-- B-605: Compute politician and party trust dimensions from backend assessments and expose them in public pages. -- IN SPRINT
-- B-606: Add broader regression coverage, release-readiness updates, search and auditability improvements, and a full UI audit/manual verification pass. -- IN SPRINT
+- B-601: Add claim/source submission entities and moderation queue flows for promise records. -- DONE
+- B-602: Add equivalence proposals, user same-as voting, duplicate assist, and moderator merge or canonization decisions. -- DONE
+- B-603: Expose accepted-source bundles, canonical change history, and public audit context for canonical promises. -- DONE
+- B-604: Add party stance, vote-event, fulfillment, and party-alignment assessment models with a first Finland-first source path. -- DONE
+- B-605: Compute politician and party trust dimensions from backend assessments and expose them in public pages. -- DONE
+- B-606: Add broader regression coverage, release-readiness updates, search and auditability improvements, and a full UI audit/manual verification pass. -- DONE
+
+## Epic E8: Launchability hardening and release orchestration
+
+- B-701: Replace the shared-secret public sign-in flow with a launch-safe email-based session flow. -- IN SPRINT
+- B-702: Add secure moderator/admin provisioning and remove public role or secret selection from sign-in UX. -- IN SPRINT
+- B-703: Add protected editorial ops UI for party stances, vote events, vote records, fulfillment assessments, and party-line assessments. -- IN SPRINT
+- B-704: Add launch dataset completeness checks and Finland-first launch coverage reporting for public party, politician, and promise surfaces. -- IN SPRINT
+- B-705: Add durable automated frontend and browser regression coverage to the launch proof chain. -- IN SPRINT
+- B-706: Add deploy sequencing, smoke verification, observability, backup/restore rehearsal, and release runbook hardening. -- IN SPRINT
+- B-707: Run launch dry run, final UI audit, and go or no-go review from a clean tree. -- IN SPRINT
+
+## Epic E9: Post-launch automation and growth
+
+- B-801: Automate ingest from official Finland-first party and parliamentary sources once the manual launch path is stable.
+- B-802: Add contributor reputation and moderation assist layers beyond the first launch-safe baseline.
+- B-803: Add post-launch retention, notification, and operating metrics beyond the current database-only proxy model.
