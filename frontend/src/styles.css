@@ -335,6 +335,14 @@ button {
   color: var(--ink-strong);
 }
 
+.text-input:disabled,
+.select-input:disabled {
+  border-color: #d4dae6;
+  background: #f2f4f8;
+  color: var(--ink-muted);
+  cursor: not-allowed;
+}
+
 .search-form .text-input {
   flex: 1 1 320px;
 }

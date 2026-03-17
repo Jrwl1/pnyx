@@ -1,4 +1,4 @@
-/* WHAT IT DO? Maps API payloads to V3 accountability records with explicit unknown-state handling and directory helpers. */
+/* Maps API payloads to V3 accountability records with explicit unknown-state handling and directory helpers. */
 
 import type {
   AlignmentStats,
@@ -14,14 +14,20 @@ import type {
 import { getPartyRouteShell, PARTY_ROUTE_SHELLS } from "../types";
 import { DATA_NOT_AVAILABLE, normalizeForSearch } from "./format";
 
-export const ISSUE_OPTIONS = ["Economy", "Healthcare", "Climate", "Education", "Public Safety"] as const;
+export const ISSUE_OPTIONS = [
+  "Economy and jobs",
+  "Healthcare and care",
+  "Climate and energy",
+  "Education",
+  "Security and preparedness"
+] as const;
 
 const ISSUE_KEYWORDS: Record<(typeof ISSUE_OPTIONS)[number], string[]> = {
-  Economy: ["economy", "jobs", "tax", "inflation", "wage", "trade", "budget"],
-  Healthcare: ["health", "hospital", "insurance", "medicare", "medicaid", "mental health"],
-  Climate: ["climate", "emission", "energy", "renewable", "environment", "wildfire"],
-  Education: ["school", "education", "teacher", "student", "college", "curriculum"],
-  "Public Safety": ["crime", "safety", "police", "violence", "fire", "emergency"]
+  "Economy and jobs": ["economy", "jobs", "tax", "inflation", "wage", "trade", "budget", "growth", "business"],
+  "Healthcare and care": ["health", "hospital", "care", "clinic", "nurse", "doctor", "social care", "wellbeing"],
+  "Climate and energy": ["climate", "emission", "energy", "renewable", "environment", "nature", "electricity"],
+  Education: ["school", "education", "teacher", "student", "university", "curriculum", "learning", "vocational"],
+  "Security and preparedness": ["security", "defence", "defense", "nato", "border", "police", "emergency", "military", "preparedness"]
 };
 
 export const SORT_OPTIONS = {
