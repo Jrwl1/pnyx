@@ -7,7 +7,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   claimPromiseClaim,
   getAbuseMetrics,
-  getCanonicalPromiseById,
   getPromiseClaimMetrics,
   getPromiseClaimById,
   getPromiseClaimDuplicateAssist,

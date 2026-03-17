@@ -2713,6 +2713,7 @@ app.post("/canonical-promises/:id/vote-links", requireRole("moderator"), (req, r
     res.status(400).json({ error: "voteEventId must be a positive integer" });
     return;
   }
+  const safeVoteEventId = Number(voteEventId);
   const normalizedAlignedVoteValue = alignedVoteValue?.trim().toLowerCase() ?? "";
   if (!isAlignedVoteValue(normalizedAlignedVoteValue)) {
     res.status(400).json({ error: "alignedVoteValue must be for, against, or abstain" });
@@ -2722,7 +2723,7 @@ app.post("/canonical-promises/:id/vote-links", requireRole("moderator"), (req, r
     res.status(404).json({ error: "canonical promise not found" });
     return;
   }
-  if (!getVoteEventById(voteEventId)) {
+  if (!getVoteEventById(safeVoteEventId)) {
     res.status(404).json({ error: "vote event not found" });
     return;
   }
@@ -2736,12 +2737,12 @@ app.post("/canonical-promises/:id/vote-links", requireRole("moderator"), (req, r
       )
       .run(
         canonicalPromiseId,
-        voteEventId,
+        safeVoteEventId,
         normalizedAlignedVoteValue,
         normalizeOptionalText(comparisonNote),
         req.auth.userId ?? "moderation"
       );
-    res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, voteEventId });
+    res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, voteEventId: safeVoteEventId });
   } catch (err) {
     const code = (err as { code?: string }).code;
     const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
@@ -2856,6 +2857,7 @@ app.post("/canonical-promises/:id/party-alignments", requireRole("moderator"), (
     res.status(400).json({ error: "partyStanceId must be a positive integer" });
     return;
   }
+  const safePartyStanceId = Number(partyStanceId);
   const normalizedStatus = status?.trim().toLowerCase() ?? "";
   if (!isPartyAlignmentStatus(normalizedStatus)) {
     res.status(400).json({ error: "status must be aligned or broke_party_line" });
@@ -2867,7 +2869,7 @@ app.post("/canonical-promises/:id/party-alignments", requireRole("moderator"), (
     res.status(404).json({ error: "canonical promise not found" });
     return;
   }
-  const partyStance = getPartyStanceById(partyStanceId);
+  const partyStance = getPartyStanceById(safePartyStanceId);
   if (!partyStance) {
     res.status(404).json({ error: "party stance not found" });
     return;
@@ -2886,12 +2888,12 @@ app.post("/canonical-promises/:id/party-alignments", requireRole("moderator"), (
       )
       .run(
         canonicalPromiseId,
-        partyStanceId,
+        safePartyStanceId,
         normalizedStatus,
         normalizeOptionalText(reason),
         req.auth.userId ?? "moderation"
       );
-    res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, partyStanceId });
+    res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, partyStanceId: safePartyStanceId });
   } catch (err) {
     const code = (err as { code?: string }).code;
     const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
@@ -2956,6 +2958,7 @@ app.post("/promise-claims/duplicate-assist-preview", requireRole("user"), (req, 
     res.status(400).json({ error: "politicianId must be a positive integer" });
     return;
   }
+  const safePoliticianId = Number(politicianId);
   const normalizedClaimText = claimText?.trim() ?? "";
   const normalizedSourceUrl = sourceUrl?.trim() ?? "";
   if (!normalizedClaimText || !normalizedSourceUrl) {
@@ -2965,7 +2968,7 @@ app.post("/promise-claims/duplicate-assist-preview", requireRole("user"), (req, 
 
   res.json(
     buildPromiseClaimDuplicateAssist({
-      politicianId,
+      politicianId: safePoliticianId,
       claimText: normalizedClaimText,
       sourceUrl: normalizedSourceUrl
     })
@@ -3109,6 +3112,7 @@ app.post("/promise-claims/:id/equivalence-signals", requireRole("user"), (req, r
     res.status(400).json({ error: "targetId must be a positive integer" });
     return;
   }
+  const safeTargetId = Number(targetId);
   if (relation !== "same_as" && relation !== "non_match") {
     res.status(400).json({ error: "relation must be same_as or non_match" });
     return;
@@ -3128,13 +3132,13 @@ app.post("/promise-claims/:id/equivalence-signals", requireRole("user"), (req, r
     return;
   }
   if (targetKind === "canonical_promise") {
-    const canonicalPromise = getCanonicalPromiseById(targetId, true);
+    const canonicalPromise = getCanonicalPromiseById(safeTargetId, true);
     if (!canonicalPromise) {
       res.status(404).json({ error: "canonical promise not found" });
       return;
     }
   } else {
-    const targetClaim = getPromiseClaimById(targetId);
+    const targetClaim = getPromiseClaimById(safeTargetId);
     if (!targetClaim) {
       res.status(404).json({ error: "target claim not found" });
       return;
@@ -3149,7 +3153,7 @@ app.post("/promise-claims/:id/equivalence-signals", requireRole("user"), (req, r
          ON CONFLICT(claim_id, actor_id, target_kind, target_id)
          DO UPDATE SET relation = excluded.relation, reason_code = excluded.reason_code, updated_at = datetime('now')`
       )
-      .run(claimId, req.auth.userId ?? "unknown", targetKind, targetId, relation, reasonCode);
+      .run(claimId, req.auth.userId ?? "unknown", targetKind, safeTargetId, relation, reasonCode);
     res.status(201).json({ ok: true, id: Number(result.lastInsertRowid || 0) });
   } catch {
     res.status(500).json({ error: "internal server error" });
@@ -3372,11 +3376,12 @@ app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => 
         if (!Number.isInteger(linkedCanonicalPromiseId) || (linkedCanonicalPromiseId ?? 0) <= 0) {
           throw { status: 400, error: "linkedCanonicalPromiseId is required for merge decision" };
         }
-        const canonicalPromise = getCanonicalPromiseById(linkedCanonicalPromiseId, true);
+        const safeLinkedCanonicalPromiseId = Number(linkedCanonicalPromiseId);
+        const canonicalPromise = getCanonicalPromiseById(safeLinkedCanonicalPromiseId, true);
         if (!canonicalPromise) {
           throw { status: 404, error: "canonical promise not found" };
         }
-        targetCanonicalPromiseId = linkedCanonicalPromiseId;
+        targetCanonicalPromiseId = safeLinkedCanonicalPromiseId;
         nextStatus = "merged";
       } else if (decision === "canonize") {
         const createPromise = db
