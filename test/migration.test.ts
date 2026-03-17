@@ -14,6 +14,7 @@ describe("migration", () => {
     expect(tableNames.has("politician_proposal_audits")).toBe(true);
     expect(tableNames.has("parties")).toBe(true);
     expect(tableNames.has("party_aliases")).toBe(true);
+    expect(tableNames.has("party_memberships")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -29,6 +30,9 @@ describe("migration", () => {
     expect(indexNames.has("idx_parties_short_name_active")).toBe(true);
     expect(indexNames.has("idx_party_aliases_normalized")).toBe(true);
     expect(indexNames.has("idx_party_aliases_party")).toBe(true);
+    expect(indexNames.has("idx_party_memberships_current_politician")).toBe(true);
+    expect(indexNames.has("idx_party_memberships_party_dates")).toBe(true);
+    expect(indexNames.has("idx_party_memberships_politician_dates")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -60,5 +64,15 @@ describe("migration", () => {
     expect(aliasColumnNames.has("party_id")).toBe(true);
     expect(aliasColumnNames.has("alias")).toBe(true);
     expect(aliasColumnNames.has("source_note")).toBe(true);
+
+    const membershipColumns = db
+      .prepare("PRAGMA table_info(party_memberships)")
+      .all() as { name: string }[];
+    const membershipColumnNames = new Set(membershipColumns.map((column) => column.name));
+    expect(membershipColumnNames.has("politician_id")).toBe(true);
+    expect(membershipColumnNames.has("party_id")).toBe(true);
+    expect(membershipColumnNames.has("start_date")).toBe(true);
+    expect(membershipColumnNames.has("end_date")).toBe(true);
+    expect(membershipColumnNames.has("created_by")).toBe(true);
   });
 });

@@ -7,6 +7,7 @@ import { authContext } from "./auth/context.js";
 import { signToken } from "./auth/jwt.js";
 import { requireRole } from "./auth/role-guard.js";
 import { db } from "./db/client.js";
+import { getPartyById, listCurrentPartyContexts, listParties, listPartyAliases, listPartyMembers } from "./db/party-graph.js";
 
 export const app = express();
 app.use(express.json());
@@ -393,8 +394,296 @@ app.get("/politicians", (_req, res) => {
     .prepare(
       "SELECT id, name, region, office, external_id AS externalId, verified, created_at AS createdAt FROM politicians WHERE deleted_at IS NULL ORDER BY created_at DESC"
     )
-    .all();
-  res.json({ items: rows });
+    .all() as Array<{
+      id: number;
+      name: string;
+      region: string | null;
+      office: string | null;
+      externalId: string | null;
+      verified: number;
+      createdAt: string;
+    }>;
+  const currentParties = new Map(listCurrentPartyContexts().map((entry) => [entry.politicianId, entry]));
+  res.json({
+    items: rows.map((row) => {
+      const party = currentParties.get(row.id);
+      return {
+        ...row,
+        partyId: party?.partyId ?? null,
+        partyName: party?.partyName ?? null,
+        partyShortName: party?.partyShortName ?? null
+      };
+    })
+  });
+});
+
+app.get("/parties", (_req, res) => {
+  res.json({ items: listParties().map(serializePartySummary) });
+});
+
+app.get("/parties/:id", (req, res) => {
+  const partyId = req.params.id.trim();
+  const party = getPartyById(partyId);
+  if (!party) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+
+  res.json({
+    party: serializePartySummary(party),
+    aliases: listPartyAliases(partyId),
+    membersUrl: `/parties/${partyId}/members`
+  });
+});
+
+app.get("/parties/:id/members", (req, res) => {
+  const partyId = req.params.id.trim();
+  const party = getPartyById(partyId);
+  if (!party) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+
+  const includeHistorical = String(req.query.includeHistorical ?? "") === "1";
+  res.json({
+    partyId,
+    includeHistorical,
+    items: listPartyMembers(partyId, includeHistorical).map((row) => ({
+      ...row,
+      current: Number(row.current ?? 0)
+    }))
+  });
+});
+
+app.post("/parties", requireRole("moderator"), (req, res) => {
+  const { id, name, shortName, countryCode, description, websiteUrl } = req.body as {
+    id?: string;
+    name?: string;
+    shortName?: string;
+    countryCode?: string;
+    description?: string;
+    websiteUrl?: string;
+  };
+
+  const normalizedId = id?.trim().toLowerCase() ?? "";
+  const normalizedName = name?.trim() ?? "";
+  const normalizedShortName = shortName?.trim() ?? "";
+  const normalizedCountryCode = (countryCode?.trim().toUpperCase() || "FI");
+
+  if (!partyIdPattern.test(normalizedId)) {
+    res.status(400).json({ error: "party id must be lowercase letters, digits, or hyphens" });
+    return;
+  }
+  if (!normalizedName) {
+    res.status(400).json({ error: "name is required" });
+    return;
+  }
+  if (!normalizedShortName) {
+    res.status(400).json({ error: "shortName is required" });
+    return;
+  }
+  if (!/^[A-Z]{2}$/.test(normalizedCountryCode)) {
+    res.status(400).json({ error: "countryCode must be a two-letter uppercase code" });
+    return;
+  }
+
+  try {
+    db.prepare(
+      `INSERT INTO parties (id, name, short_name, country_code, description, website_url, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      normalizedId,
+      normalizedName,
+      normalizedShortName,
+      normalizedCountryCode,
+      normalizeOptionalText(description),
+      normalizeOptionalText(websiteUrl),
+      req.auth.userId ?? "moderation"
+    );
+    res.status(201).json({ id: normalizedId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "party already exists" : "internal server error"
+    });
+  }
+});
+
+app.post("/parties/:id/aliases", requireRole("moderator"), (req, res) => {
+  const partyId = req.params.id.trim();
+  const { alias, sourceNote } = req.body as { alias?: string; sourceNote?: string };
+
+  if (!getPartyById(partyId)) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+  const normalizedAlias = alias?.trim() ?? "";
+  if (!normalizedAlias) {
+    res.status(400).json({ error: "alias is required" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO party_aliases (party_id, alias, source_note, created_by, updated_at)
+         VALUES (?, ?, ?, ?, datetime('now'))`
+      )
+      .run(partyId, normalizedAlias, normalizeOptionalText(sourceNote), req.auth.userId ?? "moderation");
+    res.status(201).json({ id: result.lastInsertRowid as number, partyId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "party alias already exists" : "internal server error"
+    });
+  }
+});
+
+app.post("/party-memberships", requireRole("moderator"), (req, res) => {
+  const { politicianId, partyId, roleTitle, startDate, endDate, sourceNote } = req.body as {
+    politicianId?: number;
+    partyId?: string;
+    roleTitle?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    sourceNote?: string;
+  };
+
+  if (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+  const normalizedPartyId = partyId?.trim().toLowerCase() ?? "";
+  if (!normalizedPartyId) {
+    res.status(400).json({ error: "partyId is required" });
+    return;
+  }
+  const normalizedStartDate = normalizeOptionalDate(startDate);
+  const normalizedEndDate = normalizeOptionalDate(endDate);
+  if (normalizedStartDate === "__INVALID_DATE__" || normalizedEndDate === "__INVALID_DATE__") {
+    res.status(400).json({ error: "startDate and endDate must use YYYY-MM-DD format" });
+    return;
+  }
+  if (normalizedStartDate && normalizedEndDate && normalizedEndDate < normalizedStartDate) {
+    res.status(400).json({ error: "endDate cannot be earlier than startDate" });
+    return;
+  }
+
+  const politician = db.prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(politicianId) as { "1"?: number } | undefined;
+  if (!politician) {
+    res.status(404).json({ error: "politician not found" });
+    return;
+  }
+  if (!getPartyById(normalizedPartyId)) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO party_memberships (politician_id, party_id, role_title, start_date, end_date, source_note, created_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      )
+      .run(
+        politicianId,
+        normalizedPartyId,
+        normalizeOptionalText(roleTitle),
+        normalizedStartDate,
+        normalizedEndDate,
+        normalizeOptionalText(sourceNote),
+        req.auth.userId ?? "moderation"
+      );
+    res.status(201).json({ id: result.lastInsertRowid as number });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "politician already has an active party membership" : "internal server error"
+    });
+  }
+});
+
+app.patch("/party-memberships/:id", requireRole("moderator"), (req, res) => {
+  const membershipId = Number(req.params.id);
+  if (!Number.isInteger(membershipId) || membershipId <= 0) {
+    res.status(400).json({ error: "invalid membership id" });
+    return;
+  }
+
+  const existing = db
+    .prepare(
+      `SELECT id, politician_id AS politicianId, party_id AS partyId, role_title AS roleTitle, start_date AS startDate,
+       end_date AS endDate, source_note AS sourceNote
+       FROM party_memberships WHERE id = ?`
+    )
+    .get(membershipId) as
+    | {
+        id: number;
+        politicianId: number;
+        partyId: string;
+        roleTitle: string | null;
+        startDate: string | null;
+        endDate: string | null;
+        sourceNote: string | null;
+      }
+    | undefined;
+
+  if (!existing) {
+    res.status(404).json({ error: "party membership not found" });
+    return;
+  }
+
+  const hasPartyId = Object.prototype.hasOwnProperty.call(req.body, "partyId");
+  const hasRoleTitle = Object.prototype.hasOwnProperty.call(req.body, "roleTitle");
+  const hasStartDate = Object.prototype.hasOwnProperty.call(req.body, "startDate");
+  const hasEndDate = Object.prototype.hasOwnProperty.call(req.body, "endDate");
+  const hasSourceNote = Object.prototype.hasOwnProperty.call(req.body, "sourceNote");
+
+  const nextPartyId = hasPartyId ? String((req.body as { partyId?: string }).partyId ?? "").trim().toLowerCase() : existing.partyId;
+  if (!nextPartyId) {
+    res.status(400).json({ error: "partyId cannot be empty" });
+    return;
+  }
+  if (!getPartyById(nextPartyId)) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+
+  const nextStartDate = hasStartDate ? normalizeOptionalDate((req.body as { startDate?: string | null }).startDate) : existing.startDate;
+  const nextEndDate = hasEndDate ? normalizeOptionalDate((req.body as { endDate?: string | null }).endDate) : existing.endDate;
+  if (nextStartDate === "__INVALID_DATE__" || nextEndDate === "__INVALID_DATE__") {
+    res.status(400).json({ error: "startDate and endDate must use YYYY-MM-DD format" });
+    return;
+  }
+  if (nextStartDate && nextEndDate && nextEndDate < nextStartDate) {
+    res.status(400).json({ error: "endDate cannot be earlier than startDate" });
+    return;
+  }
+
+  try {
+    db.prepare(
+      `UPDATE party_memberships
+       SET party_id = ?, role_title = ?, start_date = ?, end_date = ?, source_note = ?, updated_at = datetime('now')
+       WHERE id = ?`
+    ).run(
+      nextPartyId,
+      hasRoleTitle ? normalizeOptionalText((req.body as { roleTitle?: string | null }).roleTitle) : existing.roleTitle,
+      nextStartDate,
+      nextEndDate,
+      hasSourceNote ? normalizeOptionalText((req.body as { sourceNote?: string | null }).sourceNote) : existing.sourceNote,
+      membershipId
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "politician already has an active party membership" : "internal server error"
+    });
+  }
 });
 
 app.post("/politicians", politicianCreateLimiter, requireRole("admin"), (req, res) => {
@@ -495,6 +784,32 @@ const parsePageValue = (value: string | undefined, fallback: number, max: number
   }
   return Math.min(Math.floor(parsed), max);
 };
+
+const partyIdPattern = /^[a-z0-9-]{2,40}$/;
+const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+const normalizeOptionalText = (value: unknown): string | null => {
+  if (value == null) {
+    return null;
+  }
+  const trimmed = String(value).trim();
+  return trimmed ? trimmed : null;
+};
+
+const normalizeOptionalDate = (value: unknown): string | null => {
+  const normalized = normalizeOptionalText(value);
+  if (!normalized) {
+    return null;
+  }
+  return datePattern.test(normalized) ? normalized : "__INVALID_DATE__";
+};
+
+const serializePartySummary = (row: ReturnType<typeof listParties>[number]) => ({
+  ...row,
+  aliasCount: Number(row.aliasCount ?? 0),
+  memberCount: Number(row.memberCount ?? 0),
+  currentMemberCount: Number(row.currentMemberCount ?? 0)
+});
 
 type IdentityCandidate = {
   id: number;
