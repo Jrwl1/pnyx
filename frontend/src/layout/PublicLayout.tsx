@@ -2,12 +2,16 @@
 
 import type { ReactElement } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const navClassName = ({ isActive }: { isActive: boolean }): string => {
   return isActive ? "site-nav-link active" : "site-nav-link";
 };
 
 export const PublicLayout = (): ReactElement => {
+  const { session, signOut } = useAuth();
+  const canModerate = session?.role === "moderator" || session?.role === "admin";
+
   return (
     <div className="site-shell">
       <a className="skip-link" href="#main-content">
@@ -26,20 +30,48 @@ export const PublicLayout = (): ReactElement => {
             </div>
           </div>
 
-          <nav className="site-nav" aria-label="Public">
-            <NavLink to="/" className={navClassName} end>
-              Home
-            </NavLink>
-            <NavLink to="/politicians" className={navClassName}>
-              Politicians
-            </NavLink>
-            <NavLink to="/parties" className={navClassName}>
-              Parties
-            </NavLink>
-            <NavLink to="/methodology" className={navClassName}>
-              Methodology
-            </NavLink>
-          </nav>
+          <div className="stack-xs">
+            <nav className="site-nav" aria-label="Public">
+              <NavLink to="/" className={navClassName} end>
+                Home
+              </NavLink>
+              <NavLink to="/politicians" className={navClassName}>
+                Politicians
+              </NavLink>
+              <NavLink to="/parties" className={navClassName}>
+                Parties
+              </NavLink>
+              <NavLink to="/methodology" className={navClassName}>
+                Methodology
+              </NavLink>
+              {canModerate ? (
+                <NavLink to="/ops" className={navClassName}>
+                  Moderation
+                </NavLink>
+              ) : null}
+            </nav>
+
+            <div className="card-link-row">
+              {session ? (
+                <>
+                  <p className="meta-line">Signed in as {session.userId}</p>
+                  <p className="meta-line">Role: {session.role}</p>
+                  <button className="button button-secondary" type="button" onClick={signOut}>
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <NavLink to="/sign-in" className={navClassName}>
+                    Sign in
+                  </NavLink>
+                  <NavLink to="/register" className={navClassName}>
+                    Register
+                  </NavLink>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 

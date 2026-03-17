@@ -1,4 +1,35 @@
-/* Shared frontend types for politicians, promises, evidence, party pages, and derived accountability states. */
+/* Shared frontend types for auth, politicians, promises, evidence, party pages, and derived accountability states. */
+
+export type AuthRole = "anonymous" | "user" | "moderator" | "admin";
+export type AuthenticatedRole = Exclude<AuthRole, "anonymous">;
+
+export interface RegisterAccountInput {
+  email: string;
+  captchaToken?: string;
+}
+
+export interface RegisteredAccount {
+  id: string;
+  email: string;
+  role: AuthenticatedRole;
+}
+
+export interface AuthTokenRequest {
+  userId: string;
+  role: AuthenticatedRole;
+  secret: string;
+}
+
+export interface AuthTokenResponse {
+  token: string;
+}
+
+export interface AuthSession {
+  token: string;
+  userId: string;
+  role: AuthenticatedRole;
+  expiresAt: string | null;
+}
 
 export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknown";
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
