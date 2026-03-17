@@ -3,12 +3,14 @@
 @import url("https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;500;600;700&display=swap");
 
 :root {
-  --bg-page: #f4f1ea;
+  --bg-page: #faf7f2;
   --bg-surface: #ffffff;
-  --ink-strong: #1f2a44;
+  --ink-strong: #1b2a4a;
   --ink-muted: #4f5d78;
   --accent-civic: #1f5fbf;
   --accent-civic-soft: #dfe9fb;
+  --accent-amber: #c8963e;
+  --accent-amber-soft: #faf0dd;
 
   --status-fulfilled: #2f7a4d;
   --status-broken: #b13a2f;
@@ -41,7 +43,7 @@ body {
   font-family: "Source Sans 3", "Segoe UI", sans-serif;
   color: var(--ink-strong);
   background: radial-gradient(circle at 20% -10%, rgba(31, 95, 191, 0.16), transparent 38%),
-    radial-gradient(circle at 100% 0%, rgba(163, 108, 0, 0.11), transparent 28%), var(--bg-page);
+    radial-gradient(circle at 100% 0%, rgba(200, 150, 62, 0.14), transparent 28%), var(--bg-page);
   line-height: 1.55;
 }
 
@@ -584,6 +586,46 @@ button {
   padding: 4px 10px;
   background: var(--accent-civic-soft);
   color: var(--accent-civic);
+}
+
+.party-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: var(--radius-pill);
+  padding: 5px 10px;
+  background: var(--accent-amber-soft);
+  color: #8a5b18;
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.party-badge:hover {
+  background: #f2e1bd;
+}
+
+.claim-block {
+  border-left: 4px solid var(--accent-amber);
+  background: linear-gradient(180deg, #fffdf9, #fbf4e8);
+  border-radius: var(--radius-card);
+}
+
+.claim-block-compact {
+  padding: 14px 16px;
+}
+
+.claim-block a {
+  color: inherit;
+}
+
+.claim-quote {
+  margin: 0;
+  font-size: 1.18rem;
+  line-height: 1.6;
+  font-style: italic;
 }
 
 .metric-pair {

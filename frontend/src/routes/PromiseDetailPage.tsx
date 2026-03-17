@@ -107,20 +107,29 @@ export const PromiseDetailPage = (): ReactElement => {
         <p className="meta-line">
           {politician ? (
             <>
-              <Link to={`/politicians/${politician.id}`}>{politician.name}</Link> - {formatIdentityLine(politician.office, getTerritoryLabel(politician))}
+              <Link to={`/politicians/${politician.id}`}>{politician.name}</Link>
+              {" \u00b7 "}
+              {formatIdentityLine(politician.office, getTerritoryLabel(politician))}
             </>
           ) : (
             <>Linked politician record not available</>
           )}
         </p>
         <p className="meta-line">
-          Party affiliation: {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{partyAffiliationLabel}</Link> : partyAffiliationLabel}
+          Party affiliation:{" "}
+          {linkedPartyShell ? (
+            <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
+              {partyAffiliationLabel}
+            </Link>
+          ) : (
+            partyAffiliationLabel
+          )}
         </p>
       </section>
 
-      <section className="card stack-sm" aria-label="Promise claim">
+      <section className="card stack-sm claim-block" aria-label="Promise claim">
         <h2>Promise claim</h2>
-        <p>{statement.body}</p>
+        <p className="claim-quote">{statement.body}</p>
         <p className="meta-line">Date promised: {formatDate(statement.dateSaid)}</p>
         <p>
           Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>

@@ -186,20 +186,24 @@ export const HomePage = (): ReactElement => {
             latestPromises.map((entry) => (
               <article key={entry.promise.id} className="card promise-feed-card">
                 <p className="mono-inline">Promise record</p>
-                <h3>
-                  <Link to={`/promises/${entry.promise.id}`}>{truncatePromiseText(entry.promise.promiseText)}</Link>
-                </h3>
+                <div className="claim-block claim-block-compact">
+                  <h3>
+                    <Link to={`/promises/${entry.promise.id}`}>{truncatePromiseText(entry.promise.promiseText)}</Link>
+                  </h3>
+                </div>
                 <p className="meta-line">
                   {entry.politician ? (
                     <>
                       <Link to={`/politicians/${entry.politician.id}`}>{entry.politician.name}</Link>
-                      {" · "}
+                      {" \u00b7 "}
                       {entry.linkedParty ? (
-                        <Link to={`/parties/${entry.linkedParty.id}`}>{entry.linkedParty.shortName}</Link>
+                        <Link className="party-badge" to={`/parties/${entry.linkedParty.id}`}>
+                          {entry.linkedParty.shortName}
+                        </Link>
                       ) : (
                         getPartyAffiliationLabel(entry.politician)
                       )}
-                      {" · "}
+                      {" \u00b7 "}
                       {getTerritoryLabel(entry.politician) ?? "Region not provided"}
                     </>
                   ) : (
@@ -253,7 +257,7 @@ export const HomePage = (): ReactElement => {
                     <p className="meta-line">{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</p>
                   </div>
                   <div className="stat-strip" aria-label={`${row.politician.name} summary`}>
-                    <span className="stat-pill">{getPartyAffiliationLabel(row.politician)}</span>
+                    <span className="party-badge">{getPartyAffiliationLabel(row.politician)}</span>
                     <span className="stat-pill">{row.promiseStats.total} promises</span>
                     <span className="stat-pill">Updated {formatDate(row.lastUpdated)}</span>
                   </div>
@@ -284,7 +288,7 @@ export const HomePage = (): ReactElement => {
               <article key={entry.party.id} className="card discovery-card">
                 <div className="stack-xs">
                   <h3>{entry.party.name}</h3>
-                  <p className="meta-line mono-inline">{entry.party.shortName}</p>
+                  <span className="party-badge">{entry.party.shortName}</span>
                   <p>{entry.party.contextLine}</p>
                 </div>
                 <div className="stat-strip" aria-label={`${entry.party.name} summary`}>

@@ -41,9 +41,8 @@ export const PartiesPage = (): ReactElement => {
           {PARTY_ROUTE_SHELLS.map((entry) => (
             <article key={entry.party.id} className="card stack-sm card-interactive">
               <div className="stack-xs">
-                <span className="placeholder-badge mono-inline">Party page</span>
+                <span className="party-badge">{entry.party.shortName}</span>
                 <h3>{entry.party.name}</h3>
-                <p className="meta-line mono-inline">{entry.party.shortName}</p>
                 <p>{entry.party.contextLine}</p>
               </div>
 

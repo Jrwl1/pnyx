@@ -29,7 +29,7 @@ export const PartyProfilePage = (): ReactElement => {
       <section className="hero-panel stack-sm">
         <p className="eyebrow">Party profile</p>
         <h1>{partyShell.party.name}</h1>
-        <p className="meta-line mono-inline">Short name: {partyShell.party.shortName}</p>
+        <span className="party-badge">{partyShell.party.shortName}</span>
         <p className="lede">{partyShell.party.contextLine}</p>
       </section>
 

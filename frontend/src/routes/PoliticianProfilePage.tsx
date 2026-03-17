@@ -81,7 +81,13 @@ export const PoliticianProfilePage = (): ReactElement => {
         <p className="lede">{formatIdentityLine(politician.office, getTerritoryLabel(politician))}</p>
         <p className="meta-line">
           Party affiliation:{" "}
-          {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{getPartyAffiliationLabel(politician)}</Link> : getPartyAffiliationLabel(politician)}
+          {linkedPartyShell ? (
+            <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
+              {getPartyAffiliationLabel(politician)}
+            </Link>
+          ) : (
+            getPartyAffiliationLabel(politician)
+          )}
         </p>
         <p className="meta-line mono-inline">External id: {politician.externalId ?? "Data not yet available"}</p>
       </section>
@@ -118,7 +124,13 @@ export const PoliticianProfilePage = (): ReactElement => {
         <article className="card stack-sm">
           <h2>Party affiliation</h2>
           <p>
-            {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{getPartyAffiliationLabel(politician)}</Link> : getPartyAffiliationLabel(politician)}
+            {linkedPartyShell ? (
+              <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
+                {getPartyAffiliationLabel(politician)}
+              </Link>
+            ) : (
+              getPartyAffiliationLabel(politician)
+            )}
           </p>
           <p className="meta-line">
             {linkedPartyShell ? "Party page available." : "No party affiliation is listed in the current record."}
