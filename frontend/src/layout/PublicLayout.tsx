@@ -46,6 +46,15 @@ export const PublicLayout = (): ReactElement => {
       <main id="main-content" className="content-wrap page-content" tabIndex={-1}>
         <Outlet />
       </main>
+
+      <footer className="site-footer">
+        <div className="content-wrap site-footer-inner">
+          <p className="site-footer-copy">PNYX · Political accountability through public evidence.</p>
+          <NavLink to="/methodology" className="site-footer-link">
+            Read methodology
+          </NavLink>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -27,6 +27,23 @@ export const PartyProfilePage = (): ReactElement => {
   return (
     <div className="stack-lg">
       <section className="hero-panel stack-sm">
+        <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <Link className="breadcrumb-link" to="/">
+            Home
+          </Link>
+          <span className="breadcrumb-separator" aria-hidden="true">
+            /
+          </span>
+          <Link className="breadcrumb-link" to="/parties">
+            Parties
+          </Link>
+          <span className="breadcrumb-separator" aria-hidden="true">
+            /
+          </span>
+          <span className="breadcrumb-current" aria-current="page">
+            {partyShell.party.shortName}
+          </span>
+        </nav>
         <p className="eyebrow">Party profile</p>
         <h1>{partyShell.party.name}</h1>
         <span className="party-badge">{partyShell.party.shortName}</span>

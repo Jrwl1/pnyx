@@ -76,6 +76,23 @@ export const PoliticianProfilePage = (): ReactElement => {
   return (
     <div className="stack-lg">
       <section className="hero-panel stack-sm">
+        <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <Link className="breadcrumb-link" to="/">
+            Home
+          </Link>
+          <span className="breadcrumb-separator" aria-hidden="true">
+            /
+          </span>
+          <Link className="breadcrumb-link" to="/politicians">
+            Politicians
+          </Link>
+          <span className="breadcrumb-separator" aria-hidden="true">
+            /
+          </span>
+          <span className="breadcrumb-current" aria-current="page">
+            {politician.name}
+          </span>
+        </nav>
         <p className="eyebrow">Politician profile</p>
         <h1>{politician.name}</h1>
         <p className="lede">{formatIdentityLine(politician.office, getTerritoryLabel(politician))}</p>

@@ -127,6 +127,32 @@ button {
   padding: var(--space-4) 0 56px;
 }
 
+.site-footer {
+  border-top: 1px solid var(--line-subtle);
+  background: rgba(250, 247, 242, 0.94);
+}
+
+.site-footer-inner {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 18px 0 24px;
+}
+
+.site-footer-copy {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.site-footer-link {
+  color: var(--ink-strong);
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
 .site-header {
   position: sticky;
   top: 0;
@@ -518,6 +544,37 @@ button {
   color: var(--ink-muted);
 }
 
+.breadcrumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.breadcrumb-link,
+.breadcrumb-current {
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  line-height: 1.3;
+}
+
+.breadcrumb-link {
+  color: var(--ink-muted);
+  text-decoration: none;
+}
+
+.breadcrumb-link:hover {
+  color: var(--ink-strong);
+}
+
+.breadcrumb-current {
+  color: var(--ink-strong);
+}
+
+.breadcrumb-separator {
+  color: var(--accent-amber);
+}
+
 .directory-controls {
   border: 1px solid var(--line-subtle);
   border-radius: var(--radius-card);
@@ -733,6 +790,59 @@ button {
   border-radius: 8px;
 }
 
+.sentiment-card {
+  border-color: rgba(200, 150, 62, 0.28);
+  background: linear-gradient(180deg, #fffef9, #fbf4e8);
+}
+
+.sentiment-track {
+  display: flex;
+  width: 100%;
+  min-height: 14px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(27, 42, 74, 0.08);
+}
+
+.sentiment-fill {
+  min-height: 14px;
+}
+
+.sentiment-fill-support {
+  background: rgba(47, 122, 77, 0.78);
+}
+
+.sentiment-fill-oppose {
+  background: rgba(177, 58, 47, 0.78);
+}
+
+.sentiment-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.sentiment-metrics p {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.sentiment-key {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.sentiment-key-support {
+  background: rgba(47, 122, 77, 0.78);
+}
+
+.sentiment-key-oppose {
+  background: rgba(177, 58, 47, 0.78);
+}
+
 .split-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -800,6 +910,12 @@ button {
     align-items: flex-start;
     min-height: auto;
     padding: var(--space-1) 0 var(--space-2);
+  }
+
+  .site-footer-inner {
+    min-height: auto;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .directory-controls {

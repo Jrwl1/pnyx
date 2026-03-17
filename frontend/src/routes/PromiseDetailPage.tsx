@@ -98,10 +98,40 @@ export const PromiseDetailPage = (): ReactElement => {
   const politician = politicians.find((entry) => entry.id === statement.politicianId);
   const linkedPartyShell = findPartyShellForPolitician(politician);
   const partyAffiliationLabel = politician ? getPartyAffiliationLabel(politician) : "Data not yet available";
+  const totalSentiment = statement.aggregate.support + statement.aggregate.oppose;
+  const supportPercent = totalSentiment > 0 ? (statement.aggregate.support / totalSentiment) * 100 : 0;
+  const opposePercent = totalSentiment > 0 ? (statement.aggregate.oppose / totalSentiment) * 100 : 0;
 
   return (
     <div className="stack-lg">
       <section className="hero-panel stack-sm">
+        <nav className="breadcrumbs" aria-label="Breadcrumb">
+          <Link className="breadcrumb-link" to="/">
+            Home
+          </Link>
+          <span className="breadcrumb-separator" aria-hidden="true">
+            /
+          </span>
+          <Link className="breadcrumb-link" to="/politicians">
+            Politicians
+          </Link>
+          {politician ? (
+            <>
+              <span className="breadcrumb-separator" aria-hidden="true">
+                /
+              </span>
+              <Link className="breadcrumb-link" to={`/politicians/${politician.id}`}>
+                {politician.name}
+              </Link>
+            </>
+          ) : null}
+          <span className="breadcrumb-separator" aria-hidden="true">
+            /
+          </span>
+          <span className="breadcrumb-current" aria-current="page">
+            Promise
+          </span>
+        </nav>
         <p className="eyebrow">Promise detail</p>
         <h1>{promiseRecord.promiseText}</h1>
         <p className="meta-line">
@@ -194,16 +224,24 @@ export const PromiseDetailPage = (): ReactElement => {
         </details>
       </section>
 
-      <section className="card stack-sm" aria-label="Community confidence">
+      <section className="card stack-sm sentiment-card" aria-label="Community confidence">
         <h2>Community confidence</h2>
-        <p>
-          Support: <strong>{statement.aggregate.support}</strong>
-        </p>
-        <p>
-          Oppose: <strong>{statement.aggregate.oppose}</strong>
-        </p>
+        <div className="sentiment-track" aria-hidden="true">
+          <div className="sentiment-fill sentiment-fill-support" style={{ width: `${supportPercent}%` }} />
+          <div className="sentiment-fill sentiment-fill-oppose" style={{ width: `${opposePercent}%` }} />
+        </div>
+        <div className="sentiment-metrics" aria-label="Community sentiment totals">
+          <p>
+            <span className="sentiment-key sentiment-key-support" aria-hidden="true" />
+            Support <strong>{statement.aggregate.support}</strong>
+          </p>
+          <p>
+            <span className="sentiment-key sentiment-key-oppose" aria-hidden="true" />
+            Oppose <strong>{statement.aggregate.oppose}</strong>
+          </p>
+        </div>
         <p className="data-note">
-          Community confidence reflects user sentiment and is not a politician roll-call voting record or a party stance record.
+          Community confidence reflects user sentiment. It is separate from vote alignment and separate from any party stance comparison.
         </p>
       </section>
     </div>
