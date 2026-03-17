@@ -75,6 +75,20 @@ export interface SearchResultItem {
   target: string;
 }
 
+export interface ActivityFeedItem {
+  id: string;
+  kind: string;
+  actorId: string;
+  action: string;
+  title: string;
+  description: string;
+  createdAt: string;
+  target: string;
+  partyId: string | null;
+  politicianId: number | null;
+  canonicalPromiseId: number | null;
+}
+
 export interface Politician {
   id: number;
   name: string;
@@ -210,6 +224,41 @@ export interface ProposalQueueMetrics {
     oneTo24h: number;
     gt24h: number;
   };
+}
+
+export interface PromiseClaimQueueMetrics {
+  pending: {
+    total: number;
+    assigned: number;
+    unassigned: number;
+  };
+  statuses: {
+    pending: number;
+    merged: number;
+    canonized: number;
+    rejected: number;
+  };
+}
+
+export interface AbuseMetrics {
+  captcha: {
+    register: {
+      checked: number;
+      passed: number;
+      failed: number;
+      missing: number;
+      skipped: number;
+    };
+    proposalSubmit: {
+      checked: number;
+      passed: number;
+      failed: number;
+      missing: number;
+      skipped: number;
+    };
+  };
+  rateLimit: Record<string, { allowed: number; blocked: number }>;
+  generatedAt: string;
 }
 
 export interface ProposalClaimResult {

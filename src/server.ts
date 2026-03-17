@@ -469,6 +469,109 @@ app.get("/search", (req, res) => {
   });
 });
 
+app.get("/activity", (req, res) => {
+  const limit = parsePageValue(req.query.limit as string | undefined, 10, 50);
+  const canonicalPromiseIdRaw = req.query.canonicalPromiseId as string | undefined;
+  const canonicalPromiseId = canonicalPromiseIdRaw ? Number(canonicalPromiseIdRaw) : undefined;
+  if (canonicalPromiseIdRaw !== undefined && (!Number.isInteger(canonicalPromiseId) || (canonicalPromiseId ?? 0) <= 0)) {
+    res.status(400).json({ error: "canonicalPromiseId must be a positive integer" });
+    return;
+  }
+
+  const partyId = (req.query.partyId as string | undefined)?.trim().toLowerCase() ?? "";
+  const partyFilter = partyId || null;
+
+  const claimItems = db
+    .prepare(
+      `SELECT 'claim-audit-' || pca.id AS id,
+        'claim_activity' AS kind,
+        pca.actor_id AS actorId,
+        pca.action AS action,
+        CASE
+          WHEN pca.action = 'submitted' THEN 'Promise claim submitted'
+          WHEN pca.action = 'merged' THEN 'Canonical promise updated'
+          WHEN pca.action = 'canonized' THEN 'Canonical promise created'
+          ELSE 'Promise activity'
+        END AS title,
+        pc.claim_text AS description,
+        pca.created_at AS createdAt,
+        CASE
+          WHEN cp.primary_statement_id IS NOT NULL THEN '/promises/' || cp.primary_statement_id
+          ELSE '/politicians/' || pc.politician_id
+        END AS target,
+        pm.party_id AS partyId,
+        pc.politician_id AS politicianId,
+        pca.linked_canonical_promise_id AS canonicalPromiseId
+       FROM promise_claim_audits pca
+       JOIN promise_claims pc ON pc.id = pca.claim_id
+       LEFT JOIN canonical_promises cp ON cp.id = pca.linked_canonical_promise_id
+       LEFT JOIN party_memberships pm ON pm.politician_id = pc.politician_id AND pm.end_date IS NULL
+       WHERE pca.action IN ('submitted', 'merged', 'canonized')
+         AND (? IS NULL OR pm.party_id = ?)
+         AND (? IS NULL OR pca.linked_canonical_promise_id = ?)
+       ORDER BY pca.created_at DESC, pca.id DESC
+       LIMIT 50`
+    )
+    .all(partyFilter, partyFilter, canonicalPromiseId ?? null, canonicalPromiseId ?? null) as Array<{
+    id: string;
+    kind: string;
+    actorId: string;
+    action: string;
+    title: string;
+    description: string;
+    createdAt: string;
+    target: string;
+    partyId: string | null;
+    politicianId: number | null;
+    canonicalPromiseId: number | null;
+  }>;
+
+  const partyItems = db
+    .prepare(
+      `SELECT 'party-stance-' || ps.id AS id,
+        'party_activity' AS kind,
+        ps.created_by AS actorId,
+        'party_stance_added' AS action,
+        'Party stance added' AS title,
+        ps.stance_text AS description,
+        ps.created_at AS createdAt,
+        '/parties/' || ps.party_id AS target,
+        ps.party_id AS partyId,
+        NULL AS politicianId,
+        NULL AS canonicalPromiseId
+       FROM party_stances ps
+       WHERE (? IS NULL OR ps.party_id = ?)
+       ORDER BY ps.created_at DESC, ps.id DESC
+       LIMIT 50`
+    )
+    .all(partyFilter, partyFilter) as Array<{
+    id: string;
+    kind: string;
+    actorId: string;
+    action: string;
+    title: string;
+    description: string;
+    createdAt: string;
+    target: string;
+    partyId: string | null;
+    politicianId: number | null;
+    canonicalPromiseId: number | null;
+  }>;
+
+  const items = [...claimItems, ...partyItems]
+    .sort((left, right) => {
+      const rightTime = new Date(right.createdAt).getTime();
+      const leftTime = new Date(left.createdAt).getTime();
+      if (rightTime !== leftTime) {
+        return rightTime - leftTime;
+      }
+      return right.id.localeCompare(left.id);
+    })
+    .slice(0, limit);
+
+  res.json({ items });
+});
+
 app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
   res.json({
     ...buildAbuseMetricsSnapshot(),
@@ -2895,6 +2998,43 @@ app.get("/promise-claims", requireRole("user"), (req, res) => {
     page,
     pageSize,
     total: result.total
+  });
+});
+
+app.get("/promise-claims/metrics", requireRole("moderator"), (_req, res) => {
+  const rows = db
+    .prepare(
+      `SELECT status,
+        COUNT(*) AS total,
+        SUM(CASE WHEN assignee_id IS NOT NULL THEN 1 ELSE 0 END) AS assigned
+       FROM promise_claims
+       GROUP BY status`
+    )
+    .all() as Array<{ status: string; total: number; assigned: number }>;
+
+  const statusCounts = {
+    pending: 0,
+    merged: 0,
+    canonized: 0,
+    rejected: 0
+  };
+  let pendingAssigned = 0;
+  for (const row of rows) {
+    if (row.status === "pending" || row.status === "merged" || row.status === "canonized" || row.status === "rejected") {
+      statusCounts[row.status] = Number(row.total ?? 0);
+      if (row.status === "pending") {
+        pendingAssigned = Number(row.assigned ?? 0);
+      }
+    }
+  }
+
+  res.json({
+    pending: {
+      total: statusCounts.pending,
+      assigned: pendingAssigned,
+      unassigned: Math.max(0, statusCounts.pending - pendingAssigned)
+    },
+    statuses: statusCounts
   });
 });
 

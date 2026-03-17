@@ -6,7 +6,9 @@ import { ErrorState, LoadingState } from "../components/PageState";
 import { useAuth } from "../context/AuthContext";
 import {
   claimPromiseClaim,
+  getAbuseMetrics,
   getCanonicalPromiseById,
+  getPromiseClaimMetrics,
   getPromiseClaimById,
   getPromiseClaimDuplicateAssist,
   listCanonicalPromises,
@@ -18,6 +20,11 @@ import {
 } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 import type { PromiseClaimRecord } from "../types";
+
+const readInt = (value: string | null, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
+};
 
 const withParams = (searchParams: URLSearchParams, updates: Record<string, string | null>): URLSearchParams => {
   const next = new URLSearchParams(searchParams);
@@ -36,7 +43,14 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
   const { session } = useAuth();
   const selectedId = Number(searchParams.get("claimId"));
   const status = (searchParams.get("status") ?? "pending").toLowerCase();
+  const assignee = searchParams.get("assignee") ?? "";
+  const page = readInt(searchParams.get("page"), 1);
   const [claims, setClaims] = useState<PromiseClaimRecord[]>([]);
+  const [queuePage, setQueuePage] = useState<number>(1);
+  const [queuePageSize, setQueuePageSize] = useState<number>(20);
+  const [queueTotal, setQueueTotal] = useState<number>(0);
+  const [metrics, setMetrics] = useState<Awaited<ReturnType<typeof getPromiseClaimMetrics>> | null>(null);
+  const [abuseMetrics, setAbuseMetrics] = useState<Awaited<ReturnType<typeof getAbuseMetrics>> | null>(null);
   const [selectedClaim, setSelectedClaim] = useState<PromiseClaimRecord | null>(null);
   const [canonicalOptions, setCanonicalOptions] = useState<Awaited<ReturnType<typeof listCanonicalPromises>>>([]);
   const [assist, setAssist] = useState<Awaited<ReturnType<typeof getPromiseClaimDuplicateAssist>> | null>(null);
@@ -56,8 +70,27 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
     setLoading(true);
     setError(null);
     try {
-      const response = await listPromiseClaims(session.token, status && status !== "pending" ? `?status=${status}` : "");
+      const params = new URLSearchParams();
+      if (status && status !== "pending") {
+        params.set("status", status);
+      }
+      if (assignee) {
+        params.set("assignee", assignee);
+      }
+      params.set("page", String(page));
+      params.set("pageSize", "20");
+
+      const [response, metricsResponse, abuseResponse] = await Promise.all([
+        listPromiseClaims(session.token, `?${params.toString()}`),
+        getPromiseClaimMetrics(session.token),
+        getAbuseMetrics(session.token)
+      ]);
       setClaims(response.items);
+      setQueuePage(response.page);
+      setQueuePageSize(response.pageSize);
+      setQueueTotal(response.total);
+      setMetrics(metricsResponse);
+      setAbuseMetrics(abuseResponse);
     } catch (err) {
       setError((err as Error).message || "Unable to load promise claim queue.");
     } finally {
@@ -67,7 +100,7 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
 
   useEffect(() => {
     void loadClaims();
-  }, [session, status]);
+  }, [assignee, page, session, status]);
 
   useEffect(() => {
     if (!session || !Number.isFinite(selectedId) || selectedId <= 0) {
@@ -171,16 +204,47 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
         </div>
       </section>
 
+      {metrics ? (
+        <section className="cards-grid cards-grid-3" aria-label="Claim queue metrics">
+          <article className="card stack-xs">
+            <h2>Pending backlog</h2>
+            <p className="score-value">{metrics.pending.total}</p>
+            <p className="meta-line">Assigned {metrics.pending.assigned} · Unassigned {metrics.pending.unassigned}</p>
+          </article>
+          <article className="card stack-xs">
+            <h2>Canonized</h2>
+            <p className="score-value">{metrics.statuses.canonized}</p>
+            <p className="meta-line">Merged {metrics.statuses.merged} · Rejected {metrics.statuses.rejected}</p>
+          </article>
+          <article className="card stack-xs">
+            <h2>Abuse telemetry</h2>
+            <p className="score-value">{abuseMetrics?.rateLimit?.["politician-proposal"]?.blocked ?? 0}</p>
+            <p className="meta-line">Shared backend abuse blocks visible from the moderation dashboard.</p>
+          </article>
+        </section>
+      ) : null}
+
       <section className="directory-controls stack-sm">
-        <label className="field-group" htmlFor="claim-status-filter">
-          <span>Status</span>
-          <select id="claim-status-filter" className="select-input" value={status} onChange={(event) => setSearchParams(withParams(searchParams, { status: event.target.value === "pending" ? null : event.target.value }))}>
-            <option value="pending">Pending</option>
-            <option value="merged">Merged</option>
-            <option value="canonized">Canonized</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </label>
+        <div className="controls-grid">
+          <label className="field-group" htmlFor="claim-status-filter">
+            <span>Status</span>
+            <select id="claim-status-filter" className="select-input" value={status} onChange={(event) => setSearchParams(withParams(searchParams, { status: event.target.value === "pending" ? null : event.target.value, page: "1" }))}>
+              <option value="pending">Pending</option>
+              <option value="merged">Merged</option>
+              <option value="canonized">Canonized</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </label>
+          <label className="field-group" htmlFor="claim-assignee-filter">
+            <span>Assignee</span>
+            <select id="claim-assignee-filter" className="select-input" value={assignee} onChange={(event) => setSearchParams(withParams(searchParams, { assignee: event.target.value || null, page: "1" }))}>
+              <option value="">Anyone</option>
+              <option value="me">Assigned to me</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
+          </label>
+        </div>
+        <p className="data-note">Showing {claims.length} claims on page {queuePage}. Filters map directly to the queue API.</p>
       </section>
 
       <section className="cards-grid cards-grid-1">
@@ -199,6 +263,20 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
           </article>
         ))}
       </section>
+
+      <div className="card-link-row">
+        <button className="button button-secondary" type="button" disabled={queuePage <= 1} onClick={() => setSearchParams(withParams(searchParams, { page: String(Math.max(1, page - 1)) }))}>
+          Previous
+        </button>
+        <button
+          className="button button-secondary"
+          type="button"
+          disabled={queuePage * queuePageSize >= queueTotal}
+          onClick={() => setSearchParams(withParams(searchParams, { page: String(page + 1) }))}
+        >
+          Next
+        </button>
+      </div>
 
       {selectedClaim ? (
         <section className="split-grid">

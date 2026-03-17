@@ -13,10 +13,10 @@ import {
   ISSUE_OPTIONS,
   toPartyRecord
 } from "../lib/domain";
-import { listParties, searchSite } from "../lib/api";
-import { formatDate, formatIdentityLine } from "../lib/format";
+import { listActivityFeed, listParties, searchSite } from "../lib/api";
+import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
 import { usePublicData } from "../context/PublicDataContext";
-import type { BackendPartySummary, SearchResultItem } from "../types";
+import type { ActivityFeedItem, BackendPartySummary, SearchResultItem } from "../types";
 
 const truncatePromiseText = (value: string, maxLength = 156): string => {
   if (value.length <= maxLength) {
@@ -45,9 +45,11 @@ export const HomePage = (): ReactElement => {
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [query, setQuery] = useState<string>("");
   const [parties, setParties] = useState<BackendPartySummary[]>([]);
+  const [activity, setActivity] = useState<ActivityFeedItem[]>([]);
   const [searchSuggestions, setSearchSuggestions] = useState<SearchResultItem[]>([]);
   const [partyLoading, setPartyLoading] = useState<boolean>(true);
   const [partyError, setPartyError] = useState<string | null>(null);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   const loadParties = async (): Promise<void> => {
     setPartyLoading(true);
@@ -63,6 +65,29 @@ export const HomePage = (): ReactElement => {
 
   useEffect(() => {
     void loadParties();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadActivity = async (): Promise<void> => {
+      try {
+        const items = await listActivityFeed("?limit=6");
+        if (!cancelled) {
+          setActivity(items);
+          setActivityError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setActivity([]);
+          setActivityError((err as Error).message || "Unable to load activity feed.");
+        }
+      }
+    };
+
+    void loadActivity();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const latestPromises = useMemo(() => buildLatestPromiseFeed(politicians, statements, 4), [politicians, statements]);
@@ -332,6 +357,31 @@ export const HomePage = (): ReactElement => {
             ))
           )}
         </div>
+      </section>
+
+      <section className="card stack-sm">
+        <div className="section-header">
+          <div className="stack-xs">
+            <h2>Recent contributor activity</h2>
+            <p className="data-note">Public canonization and party-record updates from the current accountability graph.</p>
+          </div>
+        </div>
+        {activityError ? (
+          <p className="meta-line">{activityError}</p>
+        ) : activity.length === 0 ? (
+          <p className="meta-line">No public contributor activity is available yet.</p>
+        ) : (
+          <ul className="timeline-list">
+            {activity.map((item) => (
+              <li key={item.id} className="timeline-item">
+                <p>{item.title}</p>
+                <p className="meta-line">{item.actorId} · {formatDateTime(item.createdAt)}</p>
+                <p className="meta-line">{item.description}</p>
+                <Link to={item.target}>Open related record</Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="panel-grid">

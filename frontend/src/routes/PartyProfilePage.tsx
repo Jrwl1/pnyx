@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
-import { getPartyById, getPartyMembers, getPartyStances } from "../lib/api";
+import { getPartyById, getPartyMembers, getPartyStances, listActivityFeed } from "../lib/api";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
-import type { BackendPartyAlias, BackendPartyMember, BackendPartyStance, BackendPartySummary } from "../types";
+import type { ActivityFeedItem, BackendPartyAlias, BackendPartyMember, BackendPartyStance, BackendPartySummary } from "../types";
 
 const formatPercent = (value: number | null | undefined): string => {
   return value == null ? "Unknown" : `${value}%`;
@@ -26,6 +26,7 @@ export const PartyProfilePage = (): ReactElement => {
   const [aliases, setAliases] = useState<BackendPartyAlias[]>([]);
   const [members, setMembers] = useState<BackendPartyMember[]>([]);
   const [stances, setStances] = useState<BackendPartyStance[]>([]);
+  const [activity, setActivity] = useState<ActivityFeedItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,16 +42,18 @@ export const PartyProfilePage = (): ReactElement => {
       setLoading(true);
       setError(null);
       try {
-        const [partyDetail, memberResponse, stanceItems] = await Promise.all([
+        const [partyDetail, memberResponse, stanceItems, activityItems] = await Promise.all([
           getPartyById(id),
           getPartyMembers(id, true),
-          getPartyStances(id)
+          getPartyStances(id),
+          listActivityFeed(`?partyId=${id}&limit=6`)
         ]);
         if (!cancelled) {
           setParty(partyDetail.party);
           setAliases(partyDetail.aliases);
           setMembers(memberResponse.items);
           setStances(stanceItems);
+          setActivity(activityItems);
         }
       } catch (err) {
         if (!cancelled) {
@@ -186,6 +189,24 @@ export const PartyProfilePage = (): ReactElement => {
               </article>
             ))}
           </div>
+        )}
+      </section>
+
+      <section className="card stack-sm" aria-label="Recent party activity">
+        <h2>Recent party activity</h2>
+        {activity.length === 0 ? (
+          <p className="meta-line">No recent public party activity is connected yet.</p>
+        ) : (
+          <ul className="timeline-list">
+            {activity.map((item) => (
+              <li key={item.id} className="timeline-item">
+                <p>{item.title}</p>
+                <p className="meta-line">{item.actorId} · {formatDateTime(item.createdAt)}</p>
+                <p className="meta-line">{item.description}</p>
+                <Link to={item.target}>Open related record</Link>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

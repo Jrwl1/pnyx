@@ -1,6 +1,8 @@
 /* WHAT IT DO? Wraps backend fetch calls for auth, politicians, statements, statement detail, and revision history. */
 
 import type {
+  AbuseMetrics,
+  ActivityFeedItem,
   AuthTokenRequest,
   AuthTokenResponse,
   BackendPartyDetailResponse,
@@ -15,6 +17,7 @@ import type {
   PromiseClaimAudit,
   PromiseClaimDuplicateAssist,
   PromiseClaimListResponse,
+  PromiseClaimQueueMetrics,
   PromiseClaimRecord,
   PromiseClaimReviewInput,
   PromiseClaimSubmissionInput,
@@ -150,6 +153,11 @@ export const searchSite = async (query: string): Promise<SearchResultItem[]> => 
   return response.items;
 };
 
+export const listActivityFeed = async (query = ""): Promise<ActivityFeedItem[]> => {
+  const response = await fetchJson<{ items: ActivityFeedItem[] }>(`/activity${query}`);
+  return response.items;
+};
+
 export const listParties = async (): Promise<BackendPartySummary[]> => {
   const response = await fetchJson<{ items: BackendPartySummary[] }>("/parties");
   return response.items;
@@ -204,6 +212,10 @@ export const previewPromiseClaimDuplicateAssist = async (
 
 export const listPromiseClaims = async (token: string, query = ""): Promise<PromiseClaimListResponse> => {
   return fetchJson<PromiseClaimListResponse>(`/promise-claims${query}`, { token });
+};
+
+export const getPromiseClaimMetrics = async (token: string): Promise<PromiseClaimQueueMetrics> => {
+  return fetchJson<PromiseClaimQueueMetrics>("/promise-claims/metrics", { token });
 };
 
 export const getPromiseClaimById = async (token: string, id: number): Promise<{ claim: PromiseClaimRecord }> => {
@@ -312,6 +324,10 @@ export const listPoliticianProposals = async (token: string, filters: ProposalQu
 
 export const getPoliticianProposalMetrics = async (token: string): Promise<ProposalQueueMetrics> => {
   return fetchJson<ProposalQueueMetrics>("/politician-proposals/metrics", { token });
+};
+
+export const getAbuseMetrics = async (token: string): Promise<AbuseMetrics> => {
+  return fetchJson<AbuseMetrics>("/abuse/metrics", { token });
 };
 
 export const claimPoliticianProposal = async (
