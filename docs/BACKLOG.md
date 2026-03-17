@@ -71,6 +71,7 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 - B-705: Add durable automated frontend and browser regression coverage to the launch proof chain. -- IN SPRINT
 - B-706: Add deploy sequencing, smoke verification, observability, backup/restore rehearsal, and release runbook hardening. -- IN SPRINT
 - B-707: Run launch dry run, final UI audit, and go or no-go review from a clean tree. -- IN SPRINT
+- B-708: Decide whether launch browser automation should use a new repo dependency or a different Windows-safe process model after the repo-native harness attempt failed under Vitest. -- NEW
 
 ## Epic E9: Post-launch automation and growth
 

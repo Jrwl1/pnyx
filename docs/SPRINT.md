@@ -89,7 +89,7 @@ Move Pnyx from a feature-complete-enough accountability product to a launchable 
 - [ ] Add a durable frontend/browser test harness and repo scripts for launch-critical flows
   - files: `package.json`, `frontend/package.json`, `vitest*.ts`, `frontend/**`, `test/**`
   - run: `pnpm lint && pnpm typecheck && pnpm frontend:typecheck`
-  - evidence: Pending.
+  - evidence: GATE BLOCKED: repo-native headless Chrome harness work was attempted without adding new dependencies, but `pnpm test:ui` could not bring the frontend child process up reliably under Vitest on Windows even after same-area spawn and process-model fixes, while the equivalent manual command worked outside the runner.
 
 - [ ] Add automated smoke coverage for critical public routes and trust-data rendering states
   - files: `frontend/**`, `test/**`
