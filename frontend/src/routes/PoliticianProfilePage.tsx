@@ -1,4 +1,4 @@
-/* WHAT IT DO? Implements V3 politician profile with scorecards, required tabs, and promise-level accountability fields. */
+/* Politician profile with scorecards, required tabs, and promise-level accountability fields. */
 
 import { useMemo, type ReactElement } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
@@ -110,19 +110,15 @@ export const PoliticianProfilePage = (): ReactElement => {
             {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{getPartyAffiliationLabel(politician)}</Link> : getPartyAffiliationLabel(politician)}
           </p>
           <p className="meta-line">
-            {linkedPartyShell
-              ? "Linked to the frontend-local party shell until canonical party membership APIs exist."
-              : "No party affiliation field is available from the connected public dataset yet."}
+            {linkedPartyShell ? "Party page available." : "No party affiliation is listed in the current record."}
           </p>
         </article>
 
         <article className="card stack-sm">
           <h2>Party-line alignment</h2>
           <StatusChip status="unknown" prefix="Party-line alignment" />
-          <p>PNYX does not infer party-line behavior without a linked party, sourced party stance records, and mapped politician comparisons.</p>
-          <p className="meta-line">
-            Until those records exist, this profile keeps party-line alignment explicit as Unknown rather than implying support or a break.
-          </p>
+          <p>No party-line comparison is available for this profile yet.</p>
+          <p className="meta-line">Read methodology for how party records and politician records are compared.</p>
         </article>
       </section>
 
@@ -141,9 +137,7 @@ export const PoliticianProfilePage = (): ReactElement => {
 
         {activeTab === "promises" ? (
           <>
-            <p className="data-note">
-              Fulfillment, vote alignment, and party-line comparison fields are currently Unknown until backend accountability mappings are available.
-            </p>
+            <p className="data-note">These promise statuses are still Unknown. Read methodology for how they will be assessed.</p>
 
             <div className="table-wrapper desktop-only">
               <table className="data-table">
@@ -199,9 +193,7 @@ export const PoliticianProfilePage = (): ReactElement => {
 
         {activeTab === "votes" ? (
           <div className="stack-sm">
-            <p className="data-note">
-              Politician roll-call vote events and party-line comparisons are not yet available in the backend. Alignment remains Unknown for every promise.
-            </p>
+            <p className="data-note">No vote comparison is available for these promises yet.</p>
             <div className="cards-grid cards-grid-1">
               {promiseRecords.map((promise) => (
                 <article key={promise.id} className="card stack-xs">
@@ -227,7 +219,7 @@ export const PoliticianProfilePage = (): ReactElement => {
                   <p>
                     Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
                   </p>
-                  <p className="meta-line">verificationStatus: {statement.verificationStatus} (evidence confidence, not fulfillment)</p>
+                  <p className="meta-line">Review status: {statement.verificationStatus}</p>
                   <Link to={`/promises/${statement.id}`}>Review full promise record</Link>
                 </article>
               ))}

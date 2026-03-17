@@ -1,4 +1,4 @@
-/* WHAT IT DO? Implements the Finland-first politician directory with explicit party-affiliation unknown states and public-discovery filters. */
+/* Finland-first politician directory with public-discovery filters. */
 
 import { useMemo, type ChangeEvent, type ReactElement } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -173,16 +173,17 @@ export const PoliticiansPage = (): ReactElement => {
     return <ErrorState message={error} onRetry={() => void refresh()} />;
   }
 
-  const sortNotice = sort === SORT_OPTIONS.fulfillmentRate && !hasKnownFulfillmentData
-    ? "Fulfillment-rate sorting remains provisional because every current promise record is still Unknown."
-    : null;
+  const sortNotice =
+    sort === SORT_OPTIONS.fulfillmentRate && !hasKnownFulfillmentData
+      ? "Fulfillment sorting is limited right now because every promise is still marked Unknown."
+      : null;
 
   return (
     <div className="stack-lg">
       <section className="stack-sm">
         <h1>Finnish politician directory</h1>
         <p className="lede">
-          Browse documented politicians, filter by constituency or region, and keep party affiliation gaps explicit until the backend exposes real membership mappings.
+          Browse documented politicians, filter by constituency or region, and follow promises, evidence, and visible gaps in the public record.
         </p>
       </section>
 
@@ -262,14 +263,14 @@ export const PoliticiansPage = (): ReactElement => {
         <p id="party-filter-note" className="data-note">
           {hasPartyData
             ? "Party filters use connected affiliation fields when the dataset provides them."
-            : "Party filter state is wired for Finland-first discovery, but politician-to-party mappings are not available from the backend yet."}
+            : "Party filtering will be available once politician-to-party links are connected."}
         </p>
-        <p className="data-note">Issue filtering is keyword-based until backend issue tagging becomes available.</p>
+        <p className="data-note">Issue filters currently use keyword matching. Read methodology for how labels are handled.</p>
         {party && !hasPartyData ? (
           <p className="data-note">
             {selectedPartyShell
-              ? `Party filter selected: ${selectedPartyShell.party.shortName}. Results stay unfiltered until politician-party mappings exist. Open ${selectedPartyShell.party.name} at /parties/${selectedPartyShell.party.id}.`
-              : `Party filter selected: ${party}. Results stay unfiltered until politician-party mappings exist.`}
+              ? `Party filter selected: ${selectedPartyShell.party.shortName}. Results stay unchanged until membership links are added. View ${selectedPartyShell.party.name} in the party directory.`
+              : `Party filter selected: ${party}. Results stay unchanged until membership links are added.`}
           </p>
         ) : null}
         {sortNotice ? <p className="data-note">{sortNotice}</p> : null}
@@ -299,7 +300,6 @@ export const PoliticiansPage = (): ReactElement => {
                   <td>{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</td>
                   <td>
                     <span>{getPartyAffiliationLabel(row.politician)}</span>
-                    {!hasPartyData ? <span className="meta-line">Frontend shows Unknown until affiliations ship.</span> : null}
                   </td>
                   <td>
                     F {row.promiseStats.fulfilled} / B {row.promiseStats.broken} / P {row.promiseStats.inProgress} / U {row.promiseStats.unknown}

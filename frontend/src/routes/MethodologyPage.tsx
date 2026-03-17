@@ -1,4 +1,4 @@
-/* WHAT IT DO? Documents V3 methodology: status definitions, evidence standards, uncertainty handling, and update cadence. */
+/* Methodology page for status definitions, evidence standards, uncertainty handling, and update cadence. */
 
 import type { ReactElement } from "react";
 
@@ -8,7 +8,7 @@ export const MethodologyPage = (): ReactElement => {
       <section className="hero-panel stack-sm">
         <p className="eyebrow">Methodology</p>
         <h1>How PNYX evaluates promises, party context, evidence, and uncertainty</h1>
-        <p className="lede">This page explains the logic behind every public status shown in the accountability views, including party stance and party-line comparison.</p>
+        <p className="lede">This page explains what each public status means, what counts as evidence, and how missing information is handled.</p>
       </section>
 
       <section className="card stack-sm">
@@ -77,11 +77,11 @@ export const MethodologyPage = (): ReactElement => {
       <section className="card stack-sm">
         <h2>Handling missing data and uncertainty</h2>
         <ul>
-          <li>When fulfillment fields are absent, PNYX shows Unknown with the explicit label Data not yet available.</li>
-          <li>PNYX does not infer fulfillment from evidence verification status.</li>
-          <li>PNYX does not infer vote alignment from community support or oppose aggregates.</li>
-          <li>PNYX does not infer party stance from party branding, rhetoric, or unsourced summaries.</li>
-          <li>PNYX does not infer party-line alignment when a linked party or sourced party stance record is missing.</li>
+          <li>Unknown means the evidence is missing, incomplete, inconsistent, or not yet assessed.</li>
+          <li>PNYX does not treat evidence review status as proof of fulfillment.</li>
+          <li>Community sentiment does not count as a voting record or a party stance.</li>
+          <li>Party stance is shown only when a sourced party position is connected.</li>
+          <li>Party-line alignment is shown only when the relevant comparison record exists.</li>
         </ul>
       </section>
 

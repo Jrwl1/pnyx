@@ -1,4 +1,4 @@
-/* WHAT IT DO? Implements V3 promise detail with claim, fulfillment, alignment, evidence, revisions, and confidence blocks. */
+/* Promise detail with claim, fulfillment, alignment, evidence, revisions, and confidence blocks. */
 
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
@@ -134,10 +134,7 @@ export const PromiseDetailPage = (): ReactElement => {
         <article className="card stack-xs" aria-label="Vote alignment">
           <h2>Vote alignment</h2>
           <StatusChip status={promiseRecord.voteAlignment} prefix="Vote alignment" />
-          <p>Data not yet available</p>
-          <ul>
-            <li>No roll-call vote events are currently available from the backend.</li>
-          </ul>
+          <p>No vote comparison is available for this promise yet.</p>
         </article>
       </section>
 
@@ -148,10 +145,8 @@ export const PromiseDetailPage = (): ReactElement => {
           Linked party:{" "}
           {linkedPartyShell ? <Link to={`/parties/${linkedPartyShell.party.id}`}>{partyAffiliationLabel}</Link> : partyAffiliationLabel}
         </p>
-        <p>No official party stance record is mapped to this promise yet.</p>
-        <p className="meta-line">
-          PNYX only compares a promise against party stance when a linked party and a sourced party stance record both exist. Until then, this block remains explicit about Unknown state.
-        </p>
+        <p>No party stance is recorded for this promise yet.</p>
+        <p className="meta-line">Read methodology for how party stances and politician promises are compared.</p>
       </section>
 
       <section className="card stack-sm" aria-label="Evidence list">
