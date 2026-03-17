@@ -35,3 +35,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [15:12] PLAN: close M3 and open the S-21..S-26 implementation sprint for contribution, party graph, canonical promises, trust dimensions, and full UI audit (sprint: S-21..S-26, milestone: M4)
 - [15:34] DO: add frontend auth routes and session guards (sprint: S-21, links: bf4b1fe, docs/SPRINT.md)
 - [15:38] DO: add contributor proposal and statement routes (sprint: S-21, links: 1690950, docs/SPRINT.md)
+- [15:41] DO: add promise voting controls (sprint: S-21, links: d009cd0, docs/SPRINT.md)
