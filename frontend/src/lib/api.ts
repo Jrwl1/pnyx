@@ -12,7 +12,9 @@ import type {
   StatementSubmissionInput,
   StatementSubmissionResult,
   StatementRevision,
-  StatementSummary
+  StatementSummary,
+  VoteSubmissionResult,
+  VoteValue
 } from "../types";
 
 const API_BASE = (import.meta.env.VITE_API_BASE ?? "/api").replace(/\/$/, "");
@@ -122,11 +124,19 @@ export const listStatements = async (): Promise<StatementSummary[]> => {
   return response.items;
 };
 
-export const getStatementById = async (id: number): Promise<StatementDetail> => {
-  return fetchJson<StatementDetail>(`/statements/${id}`);
+export const getStatementById = async (id: number, token?: string): Promise<StatementDetail> => {
+  return fetchJson<StatementDetail>(`/statements/${id}`, { token });
 };
 
 export const getStatementRevisions = async (id: number): Promise<StatementRevision[]> => {
   const response = await fetchJson<{ items: StatementRevision[] }>(`/statements/${id}/revisions`);
   return response.items;
+};
+
+export const castStatementVote = async (token: string, statementId: number, value: VoteValue): Promise<VoteSubmissionResult> => {
+  return fetchJson<VoteSubmissionResult>(`/statements/${statementId}/votes`, {
+    method: "POST",
+    token,
+    body: { value }
+  });
 };

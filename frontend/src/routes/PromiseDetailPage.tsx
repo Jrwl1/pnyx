@@ -4,21 +4,30 @@ import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
+import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
-import { getStatementById, getStatementRevisions } from "../lib/api";
+import { castStatementVote, getStatementById, getStatementRevisions } from "../lib/api";
 import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
-import type { StatementDetail, StatementRevision } from "../types";
+import type { StatementDetail, StatementRevision, VoteValue } from "../types";
+
+const buildSignInRedirectLink = (promiseId: number): string => {
+  const params = new URLSearchParams({ redirect: `/promises/${promiseId}` });
+  return `/sign-in?${params.toString()}`;
+};
 
 export const PromiseDetailPage = (): ReactElement => {
   const { id } = useParams();
   const promiseId = Number(id);
+  const { session } = useAuth();
   const { politicians, loading: publicDataLoading, error: publicDataError, refresh } = usePublicData();
 
   const [statement, setStatement] = useState<StatementDetail | null>(null);
   const [revisions, setRevisions] = useState<StatementRevision[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [votePending, setVotePending] = useState<boolean>(false);
+  const [voteError, setVoteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!Number.isFinite(promiseId)) {
@@ -35,7 +44,7 @@ export const PromiseDetailPage = (): ReactElement => {
 
       try {
         const [statementPayload, revisionPayload] = await Promise.all([
-          getStatementById(promiseId),
+          getStatementById(promiseId, session?.token),
           getStatementRevisions(promiseId)
         ]);
 
@@ -59,7 +68,35 @@ export const PromiseDetailPage = (): ReactElement => {
     return () => {
       isCancelled = true;
     };
-  }, [promiseId]);
+  }, [promiseId, session?.token]);
+
+  const onVote = async (value: VoteValue): Promise<void> => {
+    if (!session || !statement) {
+      return;
+    }
+
+    setVotePending(true);
+    setVoteError(null);
+
+    try {
+      const result = await castStatementVote(session.token, statement.id, value);
+      setStatement((current) => {
+        if (!current) {
+          return current;
+        }
+
+        return {
+          ...current,
+          aggregate: result.aggregate,
+          viewerVote: result.viewerVote
+        };
+      });
+    } catch (err) {
+      setVoteError((err as Error).message || "Unable to record your vote.");
+    } finally {
+      setVotePending(false);
+    }
+  };
 
   const latestEvidenceDate = useMemo(() => {
     if (!statement) {
@@ -248,6 +285,43 @@ export const PromiseDetailPage = (): ReactElement => {
         <p className="data-note">
           Community confidence reflects user sentiment. It is separate from vote alignment and separate from any party stance comparison.
         </p>
+        <div className="card-link-row">
+          {session ? (
+            <>
+              <button
+                className={statement.viewerVote === "support" ? "button button-primary" : "button button-secondary"}
+                type="button"
+                disabled={votePending}
+                onClick={() => void onVote("support")}
+              >
+                Support
+              </button>
+              <button
+                className={statement.viewerVote === "oppose" ? "button button-primary" : "button button-secondary"}
+                type="button"
+                disabled={votePending}
+                onClick={() => void onVote("oppose")}
+              >
+                Oppose
+              </button>
+            </>
+          ) : (
+            <Link className="button button-secondary" to={buildSignInRedirectLink(promiseId)}>
+              Sign in to vote
+            </Link>
+          )}
+        </div>
+        {session ? (
+          <p className="meta-line">
+            {statement.viewerVote ? `Your current vote: ${statement.viewerVote}.` : "You have not voted on this promise yet."}
+          </p>
+        ) : null}
+        {votePending ? <p className="meta-line">Saving your vote...</p> : null}
+        {voteError ? (
+          <p className="meta-line" role="alert">
+            {voteError}
+          </p>
+        ) : null}
       </section>
     </div>
   );

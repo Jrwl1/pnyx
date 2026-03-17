@@ -1276,10 +1276,16 @@ app.get("/statements/:id", (req, res) => {
   const revisionMeta = db
     .prepare("SELECT COUNT(*) AS revisionCount FROM revision_audits WHERE statement_id = ?")
     .get(statementId) as { revisionCount: number };
+  const viewerVote = req.auth.userId
+    ? ((db
+        .prepare("SELECT value FROM votes WHERE statement_id = ? AND user_id = ? LIMIT 1")
+        .get(statementId, req.auth.userId) as { value: "support" | "oppose" } | undefined)?.value ?? null)
+    : null;
 
   res.json({
     ...row,
     aggregate,
+    viewerVote,
     revisionCount: revisionMeta.revisionCount,
     revisionHistoryUrl: `/statements/${statementId}/revisions`
   });
@@ -1511,7 +1517,7 @@ app.post("/statements/:id/votes", voteLimiter, requireRole("user"), (req, res) =
     )
     .get(statementId);
 
-  res.json({ ok: true, aggregate: agg });
+  res.json({ ok: true, aggregate: agg, viewerVote: value });
 });
 
 app.post("/statements/:id/pending-delete", requireRole("moderator"), (req, res) => {

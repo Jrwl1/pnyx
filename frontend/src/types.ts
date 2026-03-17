@@ -57,6 +57,8 @@ export interface StatementSubmissionResult {
   verificationStatus: string;
 }
 
+export type VoteValue = "support" | "oppose";
+
 export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknown";
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
 export type PartyLineStatus = "aligned" | "broke_party_line" | "unknown";
@@ -93,6 +95,7 @@ export interface StatementDetail extends StatementSummary {
     support: number;
     oppose: number;
   };
+  viewerVote: VoteValue | null;
   revisionCount: number;
   revisionHistoryUrl: string;
 }
@@ -106,6 +109,15 @@ export interface StatementRevision {
   toValue: string | null;
   reason: string | null;
   createdAt: string;
+}
+
+export interface VoteSubmissionResult {
+  ok: boolean;
+  aggregate: {
+    support: number;
+    oppose: number;
+  };
+  viewerVote: VoteValue;
 }
 
 export interface PromiseRecord {
