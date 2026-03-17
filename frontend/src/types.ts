@@ -14,6 +14,30 @@ export interface RegisteredAccount {
   role: AuthenticatedRole;
 }
 
+export interface EmailCodeRequestInput {
+  email: string;
+}
+
+export interface EmailCodeRequestResponse {
+  ok: true;
+  expiresInMinutes: number;
+  deliveryMode: "email" | "inline";
+  codePreview: string | null;
+}
+
+export interface EmailCodeVerifyInput {
+  email: string;
+  code: string;
+}
+
+export interface EmailCodeVerifyResponse {
+  ok: true;
+  token: string;
+  userId: string;
+  email: string;
+  role: AuthenticatedRole;
+}
+
 export interface AuthTokenRequest {
   userId: string;
   role: AuthenticatedRole;
@@ -27,8 +51,21 @@ export interface AuthTokenResponse {
 export interface AuthSession {
   token: string;
   userId: string;
+  email: string | null;
   role: AuthenticatedRole;
   expiresAt: string | null;
+}
+
+export interface RoleGrantInput {
+  email: string;
+  role: AuthenticatedRole;
+}
+
+export interface RoleGrantResult {
+  ok: true;
+  id: string;
+  email: string;
+  role: AuthenticatedRole;
 }
 
 export interface PoliticianProposalInput {

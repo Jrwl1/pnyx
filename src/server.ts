@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import express from "express";
 
 import { authContext } from "./auth/context.js";
+import { issueEmailLoginCode, verifyEmailLoginCode } from "./auth/email-login.js";
 import { signToken } from "./auth/jwt.js";
 import { requireRole } from "./auth/role-guard.js";
 import {
@@ -181,7 +182,7 @@ const loginLimiter = createRateLimiter(
     max: readPositiveIntEnv("RATE_LIMIT_LOGIN_MAX", 30),
     windowMs: RATE_LIMIT_WINDOW_MS
   },
-  (req) => (req.body as { userId?: string }).userId ?? req.ip ?? "anonymous"
+  (req) => (req.body as { userId?: string; email?: string }).userId ?? (req.body as { email?: string }).email ?? req.ip ?? "anonymous"
 );
 const registerLimiter = createRateLimiter({
   name: "register",
@@ -412,6 +413,43 @@ app.post("/auth/token", loginLimiter, (req, res) => {
   res.json({ token });
 });
 
+app.post("/auth/request-code", loginLimiter, async (req, res) => {
+  const normalizedEmail = (req.body as { email?: string }).email?.trim().toLowerCase();
+  if (!normalizedEmail) {
+    res.status(400).json({ error: "email is required" });
+    return;
+  }
+
+  try {
+    const issued = await issueEmailLoginCode(normalizedEmail);
+    res.status(202).json(issued);
+  } catch (err) {
+    res.status(500).json({
+      error: "email_delivery_failed",
+      message: (err as Error).message || "Unable to deliver sign-in code"
+    });
+  }
+});
+
+app.post("/auth/verify-code", loginLimiter, (req, res) => {
+  const { email, code } = req.body as { email?: string; code?: string };
+  const normalizedEmail = email?.trim().toLowerCase();
+  const trimmedCode = code?.trim() ?? "";
+
+  if (!normalizedEmail || !trimmedCode) {
+    res.status(400).json({ error: "email and code are required" });
+    return;
+  }
+
+  const verified = verifyEmailLoginCode(normalizedEmail, trimmedCode);
+  if (!verified.ok) {
+    res.status(401).json({ error: verified.error });
+    return;
+  }
+
+  res.json(verified);
+});
+
 app.post("/auth/register", registerLimiter, (req, res) => {
   const { email, role } = req.body as { email?: string; role?: string };
   const normalizedEmail = email?.trim().toLowerCase();
@@ -450,6 +488,37 @@ app.post("/auth/register", registerLimiter, (req, res) => {
       error: isUniqueness ? "email already registered" : "internal server error"
     });
   }
+});
+
+app.post("/auth/role-grants", requireRole("admin"), (req, res) => {
+  const { email, role } = req.body as { email?: string; role?: string };
+  const normalizedEmail = email?.trim().toLowerCase();
+  const normalizedRole = role?.trim().toLowerCase();
+
+  if (!normalizedEmail || !normalizedRole) {
+    res.status(400).json({ error: "email and role are required" });
+    return;
+  }
+  if (!["user", "moderator", "admin"].includes(normalizedRole)) {
+    res.status(400).json({ error: "role must be user, moderator, or admin" });
+    return;
+  }
+
+  const user = db
+    .prepare("SELECT id FROM users WHERE email = ? LIMIT 1")
+    .get(normalizedEmail) as { id: string } | undefined;
+  if (!user) {
+    res.status(404).json({ error: "user not found" });
+    return;
+  }
+
+  db.prepare("UPDATE users SET role = ?, updated_at = datetime('now') WHERE id = ?").run(normalizedRole, user.id);
+  res.json({
+    ok: true,
+    id: user.id,
+    email: normalizedEmail,
+    role: normalizedRole
+  });
 });
 
 app.get("/health", (_req, res) => {

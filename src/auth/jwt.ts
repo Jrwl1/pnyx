@@ -8,6 +8,7 @@ const secret = process.env.JWT_SECRET ?? "dev-secret-do-not-use-in-production";
 export type JwtPayload = {
   userId: string;
   role: Role;
+  email?: string;
   iat?: number;
   exp?: number;
 };

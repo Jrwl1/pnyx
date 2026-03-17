@@ -3,6 +3,10 @@
 import type {
   AbuseMetrics,
   ActivityFeedItem,
+  EmailCodeRequestInput,
+  EmailCodeRequestResponse,
+  EmailCodeVerifyInput,
+  EmailCodeVerifyResponse,
   AuthTokenRequest,
   AuthTokenResponse,
   BackendPartyDetailResponse,
@@ -36,6 +40,8 @@ import type {
   PoliticianProposalRecord,
   RegisterAccountInput,
   RegisteredAccount,
+  RoleGrantInput,
+  RoleGrantResult,
   SearchResultItem,
   StatementDetail,
   StatementSubmissionInput,
@@ -114,6 +120,20 @@ export const requestAuthToken = async (input: AuthTokenRequest): Promise<AuthTok
   });
 };
 
+export const requestEmailLoginCode = async (input: EmailCodeRequestInput): Promise<EmailCodeRequestResponse> => {
+  return fetchJson<EmailCodeRequestResponse>("/auth/request-code", {
+    method: "POST",
+    body: input
+  });
+};
+
+export const verifyEmailLoginCode = async (input: EmailCodeVerifyInput): Promise<EmailCodeVerifyResponse> => {
+  return fetchJson<EmailCodeVerifyResponse>("/auth/verify-code", {
+    method: "POST",
+    body: input
+  });
+};
+
 export const registerAccount = async (input: RegisterAccountInput): Promise<RegisteredAccount> => {
   return fetchJson<RegisteredAccount>("/auth/register", {
     method: "POST",
@@ -121,6 +141,14 @@ export const registerAccount = async (input: RegisterAccountInput): Promise<Regi
       email: input.email,
       captchaToken: input.captchaToken
     }
+  });
+};
+
+export const grantUserRole = async (token: string, input: RoleGrantInput): Promise<RoleGrantResult> => {
+  return fetchJson<RoleGrantResult>("/auth/role-grants", {
+    method: "POST",
+    token,
+    body: input
   });
 };
 

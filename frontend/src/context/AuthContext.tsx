@@ -1,18 +1,20 @@
 /* WHAT IT DO? Restores and persists the frontend bearer session, then exposes sign-in and sign-out helpers. */
 
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { requestAuthToken } from "../lib/api";
-import type { AuthSession, AuthTokenRequest, AuthenticatedRole } from "../types";
+import { requestEmailLoginCode, verifyEmailLoginCode } from "../lib/api";
+import type { AuthSession, EmailCodeRequestResponse, EmailCodeVerifyInput, AuthenticatedRole } from "../types";
 
 interface AuthContextState {
   isReady: boolean;
   session: AuthSession | null;
-  signIn: (credentials: AuthTokenRequest) => Promise<AuthSession>;
+  requestSignInCode: (email: string) => Promise<EmailCodeRequestResponse>;
+  signIn: (credentials: EmailCodeVerifyInput) => Promise<AuthSession>;
   signOut: () => void;
 }
 
 type TokenPayload = {
   exp?: number;
+  email?: string;
   role?: string;
   userId?: string;
 };
@@ -51,6 +53,7 @@ const decodeSessionToken = (token: string): AuthSession | null => {
     return {
       token,
       userId: payload.userId,
+      email: payload.email ?? null,
       role: payload.role,
       expiresAt
     };
@@ -106,12 +109,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
     };
   }, []);
 
-  const signIn = async (credentials: AuthTokenRequest): Promise<AuthSession> => {
-    const response = await requestAuthToken(credentials);
+  const requestSignInCode = async (email: string): Promise<EmailCodeRequestResponse> => {
+    return requestEmailLoginCode({ email });
+  };
+
+  const signIn = async (credentials: EmailCodeVerifyInput): Promise<AuthSession> => {
+    const response = await verifyEmailLoginCode(credentials);
     const nextSession = decodeSessionToken(response.token);
     if (!nextSession) {
       throw new Error("Received an unusable auth token.");
     }
+
+    nextSession.email = response.email;
 
     persistSession(nextSession);
     setSession(nextSession);
@@ -127,6 +136,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }): JSX.Element
     () => ({
       isReady: true,
       session,
+      requestSignInCode,
       signIn,
       signOut
     }),

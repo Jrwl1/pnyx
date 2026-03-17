@@ -26,6 +26,7 @@ describe("migration", () => {
     expect(tableNames.has("canonical_promise_vote_links")).toBe(true);
     expect(tableNames.has("promise_fulfillment_assessments")).toBe(true);
     expect(tableNames.has("party_alignment_assessments")).toBe(true);
+    expect(tableNames.has("auth_login_codes")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -65,6 +66,9 @@ describe("migration", () => {
     expect(indexNames.has("idx_promise_fulfillment_assessments_promise")).toBe(true);
     expect(indexNames.has("idx_party_alignment_assessments_promise")).toBe(true);
     expect(indexNames.has("idx_party_alignment_assessments_stance")).toBe(true);
+    expect(indexNames.has("idx_auth_login_codes_email_created")).toBe(true);
+    expect(indexNames.has("idx_auth_login_codes_user_created")).toBe(true);
+    expect(indexNames.has("idx_auth_login_codes_expires_state")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -203,5 +207,16 @@ describe("migration", () => {
     expect(partyAlignmentColumnNames.has("party_stance_id")).toBe(true);
     expect(partyAlignmentColumnNames.has("status")).toBe(true);
     expect(partyAlignmentColumnNames.has("reason")).toBe(true);
+
+    const authLoginCodeColumns = db
+      .prepare("PRAGMA table_info(auth_login_codes)")
+      .all() as { name: string }[];
+    const authLoginCodeColumnNames = new Set(authLoginCodeColumns.map((column) => column.name));
+    expect(authLoginCodeColumnNames.has("user_id")).toBe(true);
+    expect(authLoginCodeColumnNames.has("email")).toBe(true);
+    expect(authLoginCodeColumnNames.has("code_hash")).toBe(true);
+    expect(authLoginCodeColumnNames.has("delivery_state")).toBe(true);
+    expect(authLoginCodeColumnNames.has("expires_at")).toBe(true);
+    expect(authLoginCodeColumnNames.has("consumed_at")).toBe(true);
   });
 });

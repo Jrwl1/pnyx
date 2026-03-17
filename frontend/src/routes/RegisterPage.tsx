@@ -1,4 +1,4 @@
-/* WHAT IT DO? Exposes the public registration flow and preserves the returned user ID for the current backend auth model. */
+/* WHAT IT DO? Exposes the public registration flow and hands off to the email-code sign-in path. */
 
 import { useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
@@ -25,8 +25,7 @@ export const RegisterPage = (): ReactElement => {
     }
 
     const params = new URLSearchParams({
-      userId: createdAccount.id,
-      role: createdAccount.role
+      email: createdAccount.email
     });
     if (redirectTarget !== "/") {
       params.set("redirect", redirectTarget);
@@ -60,7 +59,7 @@ export const RegisterPage = (): ReactElement => {
         <p className="eyebrow">Register</p>
         <h1>Create a contributor account</h1>
         <p className="lede">
-          Public registration creates a user record only. The current backend auth model still signs sessions by user ID, role, and server token secret.
+          Public registration creates a user identity tied to your email address. Sign-in now uses a one-time email code instead of asking for a shared server secret.
         </p>
       </section>
 
@@ -70,9 +69,8 @@ export const RegisterPage = (): ReactElement => {
           <p>
             Account created for <strong>{createdAccount.email}</strong>.
           </p>
-          <p className="meta-line">User ID: {createdAccount.id}</p>
           <p className="meta-line">Role: {createdAccount.role}</p>
-          <p className="data-note">Keep this user ID available. You will need it on the current sign-in screen.</p>
+          <p className="data-note">Continue to sign in and request a one-time code for this email address.</p>
           <div className="card-link-row">
             <button className="button button-primary" type="button" onClick={() => navigate(signInTarget)}>
               Continue to sign in
@@ -127,7 +125,7 @@ export const RegisterPage = (): ReactElement => {
               {submitting ? "Creating account..." : "Register"}
             </button>
             <Link className="button button-link" to="/sign-in">
-              Already have a user ID? Sign in
+              Already have an account? Sign in
             </Link>
           </div>
         </form>

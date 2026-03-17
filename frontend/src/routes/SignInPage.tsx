@@ -1,15 +1,8 @@
-/* WHAT IT DO? Signs users into the current token-minting backend flow and persists the bearer session in the browser. */
+/* WHAT IT DO? Signs users in through launch-safe email codes and restores the persisted bearer session in the browser. */
 
 import { useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import type { AuthenticatedRole } from "../types";
-
-const AUTH_ROLES: AuthenticatedRole[] = ["user", "moderator", "admin"];
-
-const readRole = (value: string | null): AuthenticatedRole => {
-  return AUTH_ROLES.includes(value as AuthenticatedRole) ? (value as AuthenticatedRole) : "user";
-};
 
 const getSafeRedirect = (value: string | null): string => {
   return value && value.startsWith("/") ? value : "/";
@@ -18,25 +11,48 @@ const getSafeRedirect = (value: string | null): string => {
 export const SignInPage = (): ReactElement => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { session, signIn, signOut } = useAuth();
-  const [userId, setUserId] = useState<string>(searchParams.get("userId") ?? "");
-  const [role, setRole] = useState<AuthenticatedRole>(() => readRole(searchParams.get("role")));
-  const [secret, setSecret] = useState<string>("");
+  const { session, requestSignInCode, signIn, signOut } = useAuth();
+  const [email, setEmail] = useState<string>(searchParams.get("email") ?? "");
+  const [code, setCode] = useState<string>("");
+  const [codeRequested, setCodeRequested] = useState<boolean>(false);
+  const [codePreview, setCodePreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
 
   const redirectTarget = useMemo(() => getSafeRedirect(searchParams.get("redirect")), [searchParams]);
 
-  const onSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+  const onRequestCode = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    setSubmitting(true);
+    setError(null);
+    setMessage(null);
+
+    try {
+      const response = await requestSignInCode(email);
+      setCodeRequested(true);
+      setCodePreview(response.codePreview);
+      setMessage(
+        response.codePreview
+          ? `A sign-in code was issued for ${email}. Local delivery preview is shown below because inline delivery is enabled.`
+          : `If ${email} is registered, a sign-in code was sent.`
+      );
+    } catch (err) {
+      setError((err as Error).message || "Unable to send sign-in code.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const onVerifyCode = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
 
     try {
       await signIn({
-        userId,
-        role,
-        secret
+        email,
+        code
       });
       navigate(redirectTarget, { replace: true });
     } catch (err) {
@@ -57,7 +73,7 @@ export const SignInPage = (): ReactElement => {
 
         <section className="card stack-sm">
           <p>
-            Signed in as <strong>{session.userId}</strong>.
+            Signed in as <strong>{session.email ?? session.userId}</strong>.
           </p>
           <p className="meta-line">Role: {session.role}</p>
           <p className="meta-line">Expires: {session.expiresAt ?? "Not provided by token"}</p>
@@ -78,64 +94,33 @@ export const SignInPage = (): ReactElement => {
     <div className="stack-lg">
       <section className="hero-panel stack-sm">
         <p className="eyebrow">Sign in</p>
-        <h1>Restore a contributor or moderator session</h1>
+        <h1>Restore your session by email</h1>
         <p className="lede">
-          The current backend auth endpoint mints a token from your user ID, role, and the server token secret. This screen reflects that model directly.
+          Enter the email address tied to your PNYX account. The backend will issue a one-time sign-in code instead of requiring a shared server secret.
         </p>
       </section>
 
       <section className="card stack-sm">
-        <form className="stack-sm" onSubmit={(event) => void onSubmit(event)}>
-          <div className="controls-grid">
-            <label className="field-group" htmlFor="sign-in-user-id">
-              <span>User ID</span>
-              <input
-                id="sign-in-user-id"
-                className="text-input"
-                type="text"
-                value={userId}
-                onChange={(event) => setUserId(event.target.value)}
-                placeholder="Paste the registered or provisioned user ID"
-                autoComplete="username"
-                required
-              />
-            </label>
-
-            <label className="field-group" htmlFor="sign-in-role">
-              <span>Role</span>
-              <select
-                id="sign-in-role"
-                className="select-input"
-                value={role}
-                onChange={(event) => setRole(readRole(event.target.value))}
-              >
-                {AUTH_ROLES.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="field-group" htmlFor="sign-in-secret">
-              <span>Token secret</span>
-              <input
-                id="sign-in-secret"
-                className="text-input"
-                type="password"
-                value={secret}
-                onChange={(event) => setSecret(event.target.value)}
-                placeholder="Current backend JWT secret"
-                autoComplete="current-password"
-                required
-              />
-            </label>
-          </div>
+        <form className="stack-sm" onSubmit={(event) => void onRequestCode(event)}>
+          <label className="field-group" htmlFor="sign-in-email">
+            <span>Email</span>
+            <input
+              id="sign-in-email"
+              className="text-input"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="name@example.fi"
+              autoComplete="email"
+              required
+            />
+          </label>
 
           <p className="data-note">
-            Moderation access still depends on signing in with a provisioned moderator or admin identity. Public registration only creates user accounts.
+            Moderator and admin access depends on a provisioned role attached to this email identity. Public sign-in no longer asks you to choose a role in the browser.
           </p>
 
+          {message ? <p className="meta-line">{message}</p> : null}
           {error ? (
             <p className="meta-line" role="alert">
               {error}
@@ -144,14 +129,47 @@ export const SignInPage = (): ReactElement => {
 
           <div className="card-link-row">
             <button className="button button-primary" type="submit" disabled={submitting}>
-              {submitting ? "Signing in..." : "Sign in"}
+              {submitting ? "Sending code..." : "Send sign-in code"}
             </button>
             <Link className="button button-link" to="/register">
-              Need a user account? Register
+              Need an account? Register
             </Link>
           </div>
         </form>
       </section>
+
+      {codeRequested ? (
+        <section className="card stack-sm">
+          <form className="stack-sm" onSubmit={(event) => void onVerifyCode(event)}>
+            <label className="field-group" htmlFor="sign-in-code">
+              <span>One-time code</span>
+              <input
+                id="sign-in-code"
+                className="text-input"
+                type="text"
+                value={code}
+                onChange={(event) => setCode(event.target.value)}
+                placeholder="Enter the 6-digit code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+              />
+            </label>
+
+            {codePreview ? (
+              <p className="data-note">
+                Local delivery preview: <strong>{codePreview}</strong>
+              </p>
+            ) : null}
+
+            <div className="card-link-row">
+              <button className="button button-primary" type="submit" disabled={submitting}>
+                {submitting ? "Signing in..." : "Verify code and sign in"}
+              </button>
+            </div>
+          </form>
+        </section>
+      ) : null}
     </div>
   );
 };

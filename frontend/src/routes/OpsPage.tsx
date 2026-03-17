@@ -6,6 +6,7 @@ import { ErrorState, LoadingState } from "../components/PageState";
 import { useAuth } from "../context/AuthContext";
 import {
   claimPoliticianProposal,
+  grantUserRole,
   getPoliticianProposalDuplicateAssist,
   getPoliticianProposalMetrics,
   listPoliticianProposals,
@@ -74,6 +75,11 @@ export const OpsPage = (): ReactElement => {
   const [reason, setReason] = useState<string>("");
   const [reasonCode, setReasonCode] = useState<string>("");
   const [linkedPoliticianId, setLinkedPoliticianId] = useState<string>("");
+  const [grantEmail, setGrantEmail] = useState<string>("");
+  const [grantRole, setGrantRole] = useState<"user" | "moderator" | "admin">("moderator");
+  const [grantPending, setGrantPending] = useState<boolean>(false);
+  const [grantMessage, setGrantMessage] = useState<string | null>(null);
+  const [grantError, setGrantError] = useState<string | null>(null);
 
   const loadQueue = async (): Promise<void> => {
     if (!session) {
@@ -242,6 +248,29 @@ export const OpsPage = (): ReactElement => {
     }, `Applied ${decision} decision to proposal #${selectedProposal.id}.`);
   };
 
+  const onGrantRole = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (!session || session.role !== "admin") {
+      return;
+    }
+
+    setGrantPending(true);
+    setGrantError(null);
+    setGrantMessage(null);
+    try {
+      const response = await grantUserRole(session.token, {
+        email: grantEmail,
+        role: grantRole
+      });
+      setGrantMessage(`Updated ${response.email} to ${response.role}.`);
+      setGrantEmail("");
+    } catch (err) {
+      setGrantError((err as Error).message || "Unable to update user role.");
+    } finally {
+      setGrantPending(false);
+    }
+  };
+
   if (!session) {
     return <LoadingState label="Restoring moderator session..." />;
   }
@@ -279,6 +308,52 @@ export const OpsPage = (): ReactElement => {
             <p className="score-value">{metrics.ageBuckets.gt24h}</p>
             <p className="meta-line">More than 24 hours old</p>
           </article>
+        </section>
+      ) : null}
+
+      {session.role === "admin" ? (
+        <section className="card stack-sm" aria-label="Role provisioning">
+          <h2>Role provisioning</h2>
+          <p className="meta-line">Grant moderator or admin access outside the public sign-in flow by updating the stored role on a registered email identity.</p>
+          <form className="stack-sm" onSubmit={(event) => void onGrantRole(event)}>
+            <div className="controls-grid">
+              <label className="field-group" htmlFor="role-grant-email">
+                <span>Email</span>
+                <input
+                  id="role-grant-email"
+                  className="text-input"
+                  type="email"
+                  value={grantEmail}
+                  onChange={(event) => setGrantEmail(event.target.value)}
+                  placeholder="moderator@example.fi"
+                  autoComplete="email"
+                  required
+                />
+              </label>
+              <label className="field-group" htmlFor="role-grant-role">
+                <span>Role</span>
+                <select
+                  id="role-grant-role"
+                  className="select-input"
+                  value={grantRole}
+                  onChange={(event) => setGrantRole(event.target.value as "user" | "moderator" | "admin")}
+                >
+                  <option value="user">user</option>
+                  <option value="moderator">moderator</option>
+                  <option value="admin">admin</option>
+                </select>
+              </label>
+            </div>
+            {grantMessage ? <p className="meta-line">{grantMessage}</p> : null}
+            {grantError ? (
+              <p className="meta-line" role="alert">
+                {grantError}
+              </p>
+            ) : null}
+            <button className="button button-secondary" type="submit" disabled={grantPending}>
+              {grantPending ? "Saving..." : "Apply role"}
+            </button>
+          </form>
         </section>
       ) : null}
 

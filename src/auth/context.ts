@@ -8,6 +8,7 @@ import { verifyToken } from "./jwt.js";
 export type AuthContext = {
   role: Role;
   userId?: string;
+  email?: string;
 };
 
 // Express type augmentation requires global namespace; no ES module equivalent.
@@ -40,7 +41,8 @@ export const authContext = (req: Request, _res: Response, next: NextFunction): v
 
   req.auth = {
     role: payload.role,
-    userId: payload.userId
+    userId: payload.userId,
+    email: payload.email
   };
   next();
 };
