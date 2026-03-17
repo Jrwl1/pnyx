@@ -41,3 +41,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [16:01] REVIEW: accept S-21 frontend contribution and moderation row (findings: none)
 - [16:04] DO: add party and alias schema foundation (sprint: S-22, links: dbae90a, docs/SPRINT.md)
 - [16:11] DO: add party membership reads and write paths (sprint: S-22, links: 75a861a, docs/SPRINT.md)
+- [16:19] DO: connect frontend party surfaces and verify seeded party flows (sprint: S-22, links: ad35bdc, docs/SPRINT.md)
