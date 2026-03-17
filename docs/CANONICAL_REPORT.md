@@ -20,12 +20,21 @@ Last updated: 2026-03-17
 
 ## Reconciliation update
 
-- The frontend public-discovery spec in `docs/FRONTEND_V3_SPEC.md` has now been absorbed into the active canonical direction for Finland-first party-aware public discovery.
-- Current shipped frontend reality remains narrower than the absorbed spec:
-  - `frontend/src/App.tsx` and `frontend/src/layout/PublicLayout.tsx` still expose only `Home | Politicians | Methodology`.
-  - No `frontend/src/routes/PartiesPage.tsx` or `frontend/src/routes/PartyProfilePage.tsx` exists yet.
-  - Current home, directory, profile, promise, and methodology pages remain politician-only and do not implement party-context surfaces.
+- The previous `PLAN` run absorbed `docs/FRONTEND_V3_SPEC.md` into the active canonical direction and opened the first frontend public-discovery queue.
+- That queue is now complete in code: `frontend/` ships public nav plus routes for `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, `/methodology`, and optional `/ops`.
+- A 2026-03-17 source audit (`design/FRONTEND_AUDIT.md`) plus direct review of `frontend/src/**` found that the shipped M2 slice is structurally present but still under the intended trust and editorial bar:
+  - Public copy still exposes implementation-state language (`route shell`, `frontend-local`, `canonical party API`) instead of citizen-facing product language.
+  - Home still hides live promise content below explanatory filler.
+  - `frontend/src/lib/format.ts` formats public dates with `en-US`, and `frontend/src/lib/domain.ts` still uses US-centric issue keywords.
+  - `frontend/src/routes/PoliticiansPage.tsx` exposes party and fulfillment controls that can imply unavailable behavior.
+  - `frontend/src/routes/PromiseDetailPage.tsx` depends on shared politician context without waiting for the shared provider to finish.
 - Resolution by canonical hierarchy:
-  - Code wins for "what exists now".
-  - `docs/FRONTEND_V3_SPEC.md` + `docs/ROADMAP.md` win for "what must be delivered next".
-- This `PLAN` run resolves the previous placeholder sprint by converting it into an implementation-ready frontend queue grounded in current code and the absorbed public-discovery spec.
+  - Code and prior worklog entries win for what is already shipped: the M2 public-discovery foundation is real.
+  - `docs/ROADMAP.md`, `docs/SPRINT.md`, and `docs/FRONTEND_V3_SPEC.md` win for what must be delivered next: M3 now targets public trust, editorial refinement, and Finland-first hardening.
+- Audit-vs-spec conflict resolved:
+  1. The audit recommends deleting the home `What PNYX is / is not` section.
+     - Winner: `docs/FRONTEND_V3_SPEC.md`, which explicitly requires a trust section on home.
+     - Resolution: keep the trust block, but rewrite it in citizen-facing language instead of dev-facing negative definitions.
+  2. Several audit suggestions depend on backend data that does not exist yet.
+     - Winner: current code and backend reality.
+     - Resolution: keep backend-dependent upgrades in backlog while the active sprint fixes the frontend-only trust, IA, locale, and design gaps now.

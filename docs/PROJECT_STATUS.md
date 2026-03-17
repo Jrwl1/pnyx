@@ -8,27 +8,28 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 
 ## Active milestone
 
-**M2: Public discovery implementation** (see `docs/ROADMAP.md`).
+**M3: Public trust, editorial refinement, and Finland-first hardening** (see `docs/ROADMAP.md`).
 
 ## Current state
 
-- The old always-on `ai/` repository OS has been removed from the repo and replaced with an opt-in `PLAN` / `DO` / `RUNSPRINT` / `REVIEW` contract.
-- Backend moderation and proposal flows exist in `src/` and `test/`.
-- A public Frontend V3 already exists in `frontend/` with routes for `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, `/methodology`, and optional `/ops`.
-- `docs/FRONTEND_V3_SPEC.md` is now absorbed into the Finland-first, party-aware public discovery target.
-- Sprint rows `S-11` through `S-14` are complete: the public discovery slice is implemented, statically proved, and browser-verified across Home, Politicians, Parties, and Methodology.
+- The M2 public discovery foundation is shipped in `frontend/` and the route set now matches the Finland-first public IA.
+- A 2026-03-17 source audit of `frontend/src/` found that the current public slice still reads like implementation notes instead of a citizen-facing product.
+- Highest-impact issues are developer-facing copy, a home page that hides live promise content below explanatory filler, and party routes that describe placeholders instead of presenting honest unknowns cleanly.
+- Finland-first correctness is incomplete: public dates still format with `en-US`, issue tagging still contains US-centric keywords, and some directory controls imply filtering or sorting behavior the current data cannot support honestly.
+- Visual and navigation drift remains on key public routes: no amber party identity, no footer, no breadcrumbs, generic claim styling, flat methodology structure, and weak contextual/back-link behavior.
+- Promise detail also depends on shared politician context without waiting for the shared provider to finish, which can drop linked politician or party context on direct loads.
 
 ## Top blockers
 
-1. No blockers remain inside the completed public-discovery sprint queue.
-2. Backend party, membership, and stance APIs are still future follow-up work, but they are no longer blocking the shipped honest unknown-state slice.
-3. A future `PLAN` pass is still needed to roll the completed slice into the next milestone queue and close out roadmap/backlog status.
+1. Public-facing implementation jargon and redundant unknown-state explanations reduce trust on every major route.
+2. The home page does not yet surface the strongest available content signal: real promise records.
+3. Finland-first formatting, taxonomy, and several public interaction states still misrepresent product readiness.
 
 ## Next actions
 
-1. Run `PLAN` to roll the completed public-discovery slice into roadmap/backlog status and open the next executable queue.
-2. Prioritize M3 trust, moderation, and release-readiness work now that the public slice is verified.
-3. Schedule backend-ready follow-up work for canonical parties, memberships, and party stances when that delivery track is ready.
+1. Execute `S-15` through `S-19` to rewrite copy, foreground live promise content, fix Finland-first correctness, and close design/interaction drift.
+2. Execute `S-20` to prove the hardened public slice with static, browser, and accessibility checks.
+3. Keep backend-ready follow-ups for real party, membership, stance, and evidence data in backlog while shipping honest frontend states now.
 
 ## Key links
 

@@ -1,6 +1,6 @@
 # Sprint
 
-Window: 2026-03-17 to 2026-04-06
+Window: 2026-03-17 to 2026-04-14
 
 Executable DO queue. Execute top-to-bottom.
 Each `Do` checklist must stay flat and each substep must be small enough to complete in one DO run.
@@ -18,76 +18,122 @@ Required substep shape:
 
 ## Goal (this sprint)
 
-Implement the first Finland-first public discovery UI slice against the shipped Frontend V3, starting with route shell, nav, and party-aware public surfaces that remain honest about missing backend data.
+Harden the shipped public discovery frontend into a citizen-facing, Finland-first product by removing developer jargon, foregrounding live promise content, fixing correctness gaps, and closing key design and interaction drift.
 
 ---
 
 | ID | Do | Files | Acceptance | Evidence | Stop | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| S-11 | Add Finland-first route shell and public nav for party-aware discovery. See `S-11` substeps below. | `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts` | Public nav is `Home | Politicians | Parties | Methodology`, routes `/parties` and `/parties/:id` exist, and the frontend build/typecheck pass. | REVIEW PASS: packet `c537be9` satisfies the route-shell acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if route-shell changes require backend or API changes beyond frontend-local placeholder/unknown-state handling. | DONE |
-| S-12 | Refresh home and politician directory for Finland-first public discovery. See `S-12` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Home keeps politician search as the dominant CTA, adds party-aware discovery context, and politician directory reflects Finland-first labels and party-aware filtering states without faking data. | REVIEW PASS: packet `4b8f29c` satisfies the Finland-first home/directory acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if the slice requires canonical changes or backend data not already covered by honest unknown-state handling. | DONE |
-| S-13 | Add party-context surfaces to politician detail, promise detail, and methodology. See `S-13` substeps below. | `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Politician and promise detail pages include party-context sections, methodology defines party stance and party-line logic, and all missing data is rendered as explicit unknown states. | REVIEW PASS: packet `864104a` satisfies the detail-party-context acceptance gate and records `pnpm frontend:typecheck` plus `pnpm frontend:build` proof. | Stop if detail-page party context requires invented alignment or fabricated backend values. | DONE |
-| S-14 | Verify the first public discovery slice against build and browser expectations. See `S-14` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and a browser pass across Home / Politicians / Parties / Methodology complete with no blocking UI regression. | REVIEW PASS: packet `827b1aa` satisfies the final verification gate with clean `pnpm frontend:typecheck`, `pnpm frontend:build`, and Playwright route verification across `/`, `/politicians`, `/parties`, and `/methodology`. | Stop if required verification reveals frontend behavior that cannot be fixed within the same frontend area. | DONE |
+| S-15 | Rewrite public trust copy and shared placeholder language for citizen-facing discovery. See `S-15` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/types.ts` | No public route shows `route shell`, `frontend-local`, `canonical API`, or `Placeholder shell` copy; the home trust section remains but is rewritten in citizen-facing language; unknown states are concise and point to methodology instead of implementation notes. | Pending DO packet evidence. | Stop if the rewrite would require changing backend semantics or contradict `docs/FRONTEND_V3_SPEC.md`. | TODO |
+| S-16 | Rebuild home hierarchy around live promise content and denser discovery modules. See `S-16` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Home keeps search primary, surfaces latest promise content above generic filler, uses denser politician and party discovery modules, and presents "How this works" as a short visual explainer. | Pending DO packet evidence. | Stop if current APIs cannot support a truthful live promise feed without inventing metadata. | TODO |
+| S-17 | Fix Finland-first correctness and misleading public-state behavior. See `S-17` substeps below. | `frontend/src/lib/format.ts`, `frontend/src/lib/domain.ts`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css` | Public dates and taxonomy are Finland-first, party and sort controls do not imply unavailable behavior, promise detail waits for shared context before rendering linked politician or party data, and raw internal evidence jargon is removed from public views. | Pending DO packet evidence. | Stop if honest behavior requires new backend fields rather than frontend gating or copy fixes. | TODO |
+| S-18 | Close design-system and navigation drift on public routes. See `S-18` substeps below. | `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css` | Critical public routes use amber party identity, claim styling, footer, breadcrumbs, and a visual sentiment treatment that distinguishes community sentiment from voting records. | Pending DO packet evidence. | Stop if the design work causes responsive or accessibility regressions that cannot be resolved within the same frontend area. | TODO |
+| S-19 | Enrich methodology structure and interaction polish for public discovery. See `S-19` substeps below. | `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css` | Methodology has a richer editorial structure with a sticky TOC, directory rows and key navigation surfaces are easier to traverse, and search suggestions, back links, and tab motion work without breaking keyboard flow. | Pending DO packet evidence. | Stop if interaction work requires new backend endpoints instead of client-side navigation or search behavior. | TODO |
+| S-20 | Verify the hardened public slice with static, browser, and accessibility proof. See `S-20` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and browser/accessibility verification pass across `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, and `/methodology` with no blocking regressions. | Pending DO packet evidence. | Stop if required verification exposes regressions that cannot be fixed within the same frontend area. | TODO |
 
-### S-11 substeps
+### S-15 substeps
 
-- [x] Add `Parties` to the shared public nav and route table
-  - files: `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`
+- [ ] Rewrite home hero, trust section, and party discovery labels in citizen-facing language
+  - files: `frontend/src/routes/HomePage.tsx`
   - run: `pnpm frontend:typecheck`
-  - evidence: packet:c537be9 | run:pnpm frontend:typecheck -> pass | files:frontend/src/App.tsx, frontend/src/layout/PublicLayout.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-- [x] Add route-shell page components for party directory and party profile
-  - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:c537be9 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/layout/PublicLayout.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Keep the new route shell honest about missing backend party APIs by using explicit unknown or placeholder states only
+- [ ] Remove placeholder-shell terminology from shared party seed data and party-route copy
   - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/types.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Collapse verbose unknown-state explanations across politician, promise, and methodology surfaces into concise public wording
+  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`
   - run: `pnpm frontend:build`
-  - evidence: packet:c537be9 | run:pnpm frontend:build -> pass | files:frontend/src/App.tsx, frontend/src/layout/PublicLayout.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-### S-12 substeps
+### S-16 substeps
 
-- [x] Replace politician-only home-page copy and sections with Finland-first discovery copy while keeping politician search as the primary CTA
+- [ ] Add a latest-promises feed on home using current statement data and linked politician context
+  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`
+  - run: `pnpm frontend:typecheck`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Replace sparse politician summary cards with denser discovery modules and richer browse-by-party cards
+  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts`
+  - run: `pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Rework the home "How this works" block into a compact visual explainer that supports the search CTA instead of competing with it
   - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/styles.css`
-  - run: `pnpm frontend:typecheck`
-  - evidence: packet:4b8f29c | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
-
-- [x] Add party-aware discovery modules to home using honest local placeholder or unknown-state structures
-  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
   - run: `pnpm frontend:build`
-  - evidence: packet:4b8f29c | run:pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-- [x] Refresh the politician directory for Finland-first labels and party-aware filter behavior
-  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:4b8f29c | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+### S-17 substeps
 
-### S-13 substeps
-
-- [x] Add party affiliation and party-line context to the politician profile without inventing alignment data
-  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
+- [ ] Switch public date and time formatting plus identity separators to Finland-first conventions
+  - files: `frontend/src/lib/format.ts`
   - run: `pnpm frontend:typecheck`
-  - evidence: packet:864104a | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-- [x] Add party stance comparison to promise detail with explicit unknown-state handling
-  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/styles.css`
+- [ ] Replace US-centric issue keywords and labels with Finland-relevant taxonomy used consistently across home and directory filters
+  - files: `frontend/src/lib/domain.ts`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:864104a | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-- [x] Extend methodology copy to define party stance and party-line comparison alongside fulfillment and vote alignment
-  - files: `frontend/src/routes/MethodologyPage.tsx`
+- [ ] Gate or disable party filtering and fulfillment sorting when the current dataset cannot support truthful results
+  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Keep promise detail and evidence timeline waiting on shared context instead of rendering missing politician-party links or raw verification jargon
+  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+### S-18 substeps
+
+- [ ] Add missing amber tokens and reusable party-badge and claim-block styling aligned with the spec
+  - files: `frontend/src/styles.css`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`
   - run: `pnpm frontend:build`
-  - evidence: packet:864104a | run:pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-### S-14 substeps
+- [ ] Add a public footer and breadcrumbs across politician, party, and promise detail routes
+  - files: `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
 
-- [x] Run frontend static proof for the updated public discovery slice
+- [ ] Turn the community sentiment block into a simple visual treatment that stays clearly separate from vote alignment
+  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+### S-19 substeps
+
+- [ ] Rebuild methodology into a richer editorial page with a sticky TOC and clearer section hierarchy
+  - files: `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Make directory rows and key navigation surfaces easier to traverse with full-row links and contextual back links
+  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Add search suggestions and tab-motion polish without breaking keyboard accessibility or URL-state behavior
+  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending DO packet evidence.
+
+### S-20 substeps
+
+- [ ] Run static proof for the hardened public slice
   - files: `frontend/**`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:827b1aa | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/main.tsx | docs:N/A | status: clean
+  - evidence: Pending DO packet evidence.
 
-- [x] Verify the updated public route shell in a browser across Home, Politicians, Parties, and Methodology
+- [ ] Browser-verify the hardened public routes across discovery, profile, and methodology flows
   - files: `frontend/**`
-  - run: `playwright MCP verification of /, /politicians, /parties, /methodology`
-  - evidence: packet:827b1aa | run:playwright MCP verification of /, /politicians, /parties, /methodology on http://127.0.0.1:4174 -> pass | files:frontend/src/main.tsx | docs:N/A | status: clean
+  - run: `playwright MCP verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /promises/:id, /methodology`
+  - evidence: Pending DO packet evidence.
+
+- [ ] Run focused accessibility checks for keyboard flow, sticky controls, breadcrumbs, TOC, and responsive card-table fallbacks
+  - files: `frontend/**`
+  - run: `playwright or chrome-devtools accessibility verification of the critical public routes`
+  - evidence: Pending DO packet evidence.
