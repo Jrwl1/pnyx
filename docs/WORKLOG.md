@@ -46,3 +46,5 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [16:25] DO: add canonical promise schema, APIs, and statement compatibility metadata (sprint: S-23, links: d0be3d9, docs/SPRINT.md)
 - [16:30] DO: connect canonical promise surfaces and verify seeded canonical/public reads (sprint: S-23, links: 6d2a800, docs/SPRINT.md)
 - [16:31] REVIEW: accept S-23 canonical promise compatibility row (findings: none)
+- [16:41] DO: add promise claim schema, moderation APIs, and equivalence signals (sprint: S-24, links: bf70c1d, docs/SPRINT.md)
+- [16:54] DO: connect promise claim routes and verify merge/canonize flows in browser (sprint: S-24, links: d8365b8, docs/SPRINT.md)
