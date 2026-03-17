@@ -280,6 +280,44 @@ button {
   padding-left: var(--space-2);
 }
 
+.explainer-grid {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.explainer-step {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border: 1px solid var(--line-subtle);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff, #f7f9fd);
+}
+
+.explainer-step h3 {
+  font-size: 1.05rem;
+}
+
+.explainer-step p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--ink-muted);
+}
+
+.explainer-step-index {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent-civic-soft);
+  color: var(--accent-civic);
+  font-family: "IBM Plex Mono", Menlo, monospace;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .search-form {
   display: flex;
   flex-wrap: wrap;
@@ -393,6 +431,10 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.cards-grid-2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .cards-grid-1 {
   grid-template-columns: 1fr;
 }
@@ -411,6 +453,45 @@ button {
 .card-interactive:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-soft);
+}
+
+.promise-feed-grid,
+.party-discovery-grid {
+  align-items: stretch;
+}
+
+.promise-feed-card,
+.discovery-card {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.promise-feed-card h3 a,
+.discovery-card h3 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.promise-feed-card h3 a:hover,
+.discovery-card h3 a:hover {
+  text-decoration: underline;
+}
+
+.stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c8d1e1;
+  border-radius: var(--radius-pill);
+  background: #f7f9fd;
+  color: var(--ink-strong);
+  padding: 5px 10px;
+  font-size: 0.92rem;
 }
 
 .section-header {
@@ -638,6 +719,7 @@ button {
 }
 
 @media (max-width: 1024px) {
+  .cards-grid-2,
   .cards-grid-3,
   .scorecards-grid,
   .panel-grid {
@@ -684,6 +766,7 @@ button {
     display: grid;
   }
 
+  .cards-grid-2,
   .cards-grid-3,
   .scorecards-grid,
   .split-grid,

@@ -1,17 +1,34 @@
-/* Finland-first home page with politician search, party discovery, and trust framing. */
+/* Finland-first home page with politician search, live promise discovery, and trust framing. */
 
 import { useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
-import { buildDirectoryRows, findPartyShellByQuery, getPartyAffiliationLabel, getTerritoryLabel, ISSUE_OPTIONS } from "../lib/domain";
-import { formatDateTime, formatIdentityLine } from "../lib/format";
+import {
+  buildDirectoryRows,
+  buildHomePartyCards,
+  buildLatestPromiseFeed,
+  findPartyShellByQuery,
+  getPartyAffiliationLabel,
+  getTerritoryLabel,
+  ISSUE_OPTIONS
+} from "../lib/domain";
+import { formatDate, formatIdentityLine } from "../lib/format";
 import { usePublicData } from "../context/PublicDataContext";
-import { PARTY_ROUTE_SHELLS } from "../types";
+
+const truncatePromiseText = (value: string, maxLength = 156): string => {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return `${value.slice(0, maxLength).trimEnd()}...`;
+};
 
 export const HomePage = (): ReactElement => {
   const navigate = useNavigate();
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [query, setQuery] = useState<string>("");
+
+  const latestPromises = useMemo(() => buildLatestPromiseFeed(politicians, statements, 4), [politicians, statements]);
 
   const featuredRows = useMemo(() => {
     return buildDirectoryRows(politicians, statements)
@@ -28,10 +45,10 @@ export const HomePage = (): ReactElement => {
 
         return a.politician.name.localeCompare(b.politician.name);
       })
-      .slice(0, 6);
+      .slice(0, 4);
   }, [politicians, statements]);
 
-  const featuredParties = useMemo(() => PARTY_ROUTE_SHELLS.slice(0, 4), []);
+  const featuredParties = useMemo(() => buildHomePartyCards(politicians, statements).slice(0, 4), [politicians, statements]);
   const exactPartyMatch = useMemo(() => findPartyShellByQuery(query), [query]);
 
   const onSearchSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -128,64 +145,162 @@ export const HomePage = (): ReactElement => {
 
         <aside className="col-span-4 stack-sm info-panel" aria-label="How this works">
           <h2>How this works</h2>
-          <ul>
-            <li>Each promise starts with a public statement and a source you can inspect.</li>
-            <li>Politician records and party records are shown separately so the gaps stay visible.</li>
-            <li>When evidence is missing, PNYX says so directly instead of guessing.</li>
-          </ul>
+          <div className="explainer-grid">
+            <article className="explainer-step">
+              <span className="explainer-step-index">1</span>
+              <h3>Search</h3>
+              <p>Start with a politician, party, office, or issue.</p>
+            </article>
+            <article className="explainer-step">
+              <span className="explainer-step-index">2</span>
+              <h3>Open the record</h3>
+              <p>Read the original promise and the linked public evidence.</p>
+            </article>
+            <article className="explainer-step">
+              <span className="explainer-step-index">3</span>
+              <h3>Check the gaps</h3>
+              <p>Unknowns stay visible until the missing context is connected.</p>
+            </article>
+          </div>
         </aside>
       </section>
 
       <section className="stack-sm">
         <div className="section-header">
-          <h2>Recently documented politicians</h2>
-          <p className="data-note">Ordered by latest statement activity, then promise coverage.</p>
+          <div className="stack-xs">
+            <h2>Latest documented promises</h2>
+            <p className="data-note">Recent promise records from the current public dataset, with linked politician context.</p>
+          </div>
+          <Link className="button button-secondary" to="/politicians">
+            Browse all politicians
+          </Link>
         </div>
 
-        <div className="cards-grid cards-grid-3">
-          {featuredRows.length === 0 ? (
+        <div className="cards-grid cards-grid-2 promise-feed-grid">
+          {latestPromises.length === 0 ? (
             <article className="card">
-              <h3>No politician profiles yet</h3>
-              <p>Start by adding public statements and evidence records in the backend workflow.</p>
+              <h3>No promise records yet</h3>
+              <p>Promise entries will appear here as public statements are added to the dataset.</p>
             </article>
           ) : (
-            featuredRows.map((row) => (
-              <article key={row.politician.id} className="card card-interactive">
-                <h3>{row.politician.name}</h3>
-                <p className="meta-line">{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</p>
-                <p className="meta-line">Party affiliation: {getPartyAffiliationLabel(row.politician)}</p>
-                <p>
-                  <strong>{row.promiseStats.total}</strong> promises tracked
+            latestPromises.map((entry) => (
+              <article key={entry.promise.id} className="card promise-feed-card">
+                <p className="mono-inline">Promise record</p>
+                <h3>
+                  <Link to={`/promises/${entry.promise.id}`}>{truncatePromiseText(entry.promise.promiseText)}</Link>
+                </h3>
+                <p className="meta-line">
+                  {entry.politician ? (
+                    <>
+                      <Link to={`/politicians/${entry.politician.id}`}>{entry.politician.name}</Link>
+                      {" · "}
+                      {entry.linkedParty ? (
+                        <Link to={`/parties/${entry.linkedParty.id}`}>{entry.linkedParty.shortName}</Link>
+                      ) : (
+                        getPartyAffiliationLabel(entry.politician)
+                      )}
+                      {" · "}
+                      {getTerritoryLabel(entry.politician) ?? "Region not provided"}
+                    </>
+                  ) : (
+                    <>Politician record not available</>
+                  )}
                 </p>
-                <p className="meta-line">Last documented activity: {formatDateTime(row.lastUpdated)}</p>
-                <Link className="button button-link" to={`/politicians/${row.politician.id}`}>
-                  Open profile
-                </Link>
+                <div className="stat-strip" aria-label="Promise summary">
+                  <span className="stat-pill">Promised {formatDate(entry.publishedAt)}</span>
+                  <span className="stat-pill">Evidence {entry.promise.evidenceCount}</span>
+                  <span className="stat-pill">Status Unknown</span>
+                </div>
+                <div className="card-link-row">
+                  <Link className="button button-link" to={`/promises/${entry.promise.id}`}>
+                    View promise
+                  </Link>
+                  {entry.politician ? (
+                    <Link className="button button-link" to={`/politicians/${entry.politician.id}`}>
+                      View politician
+                    </Link>
+                  ) : null}
+                </div>
               </article>
             ))
           )}
         </div>
       </section>
 
-      <section className="stack-sm">
-        <div className="section-header">
-          <h2>Political parties</h2>
-          <p className="data-note">Open party pages to see the current public context, key gaps, and linked politicians.</p>
-        </div>
+      <section className="panel-grid">
+        <article className="card stack-sm">
+          <div className="section-header">
+            <div className="stack-xs">
+              <h2>Politicians to start with</h2>
+              <p className="data-note">A denser view of the most recently updated profiles.</p>
+            </div>
+            <Link className="button button-link" to="/politicians">
+              Open directory
+            </Link>
+          </div>
 
-        <div className="cards-grid cards-grid-3">
-          {featuredParties.map((entry) => (
-            <article key={entry.party.id} className="card stack-xs card-interactive">
-              <span className="placeholder-badge mono-inline">Party profile</span>
-              <h3>{entry.party.name}</h3>
-              <p className="meta-line mono-inline">{entry.party.shortName}</p>
-              <p>{entry.party.contextLine}</p>
-              <Link className="button button-link" to={`/parties/${entry.party.id}`}>
-                View party profile
-              </Link>
-            </article>
-          ))}
-        </div>
+          <div className="cards-grid cards-grid-2">
+            {featuredRows.length === 0 ? (
+              <article className="card">
+                <h3>No politician profiles yet</h3>
+                <p>Profiles will appear here as public statements are connected to politicians.</p>
+              </article>
+            ) : (
+              featuredRows.map((row) => (
+                <article key={row.politician.id} className="card discovery-card">
+                  <div className="stack-xs">
+                    <h3>{row.politician.name}</h3>
+                    <p className="meta-line">{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</p>
+                  </div>
+                  <div className="stat-strip" aria-label={`${row.politician.name} summary`}>
+                    <span className="stat-pill">{getPartyAffiliationLabel(row.politician)}</span>
+                    <span className="stat-pill">{row.promiseStats.total} promises</span>
+                    <span className="stat-pill">Updated {formatDate(row.lastUpdated)}</span>
+                  </div>
+                  <div className="card-link-row">
+                    <Link className="button button-link" to={`/politicians/${row.politician.id}`}>
+                      Open profile
+                    </Link>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </article>
+
+        <article className="card stack-sm">
+          <div className="section-header">
+            <div className="stack-xs">
+              <h2>Browse by party</h2>
+              <p className="data-note">Party pages already show public context and make missing data visible.</p>
+            </div>
+            <Link className="button button-link" to="/parties">
+              Open party directory
+            </Link>
+          </div>
+
+          <div className="cards-grid cards-grid-2 party-discovery-grid">
+            {featuredParties.map((entry) => (
+              <article key={entry.party.id} className="card discovery-card">
+                <div className="stack-xs">
+                  <h3>{entry.party.name}</h3>
+                  <p className="meta-line mono-inline">{entry.party.shortName}</p>
+                  <p>{entry.party.contextLine}</p>
+                </div>
+                <div className="stat-strip" aria-label={`${entry.party.name} summary`}>
+                  <span className="stat-pill">{entry.linkedPoliticians} linked politicians</span>
+                  <span className="stat-pill">{entry.promisesTracked} promises tracked</span>
+                  <span className="stat-pill">Latest {formatDate(entry.latestActivity)}</span>
+                </div>
+                <div className="card-link-row">
+                  <Link className="button button-link" to={`/parties/${entry.party.id}`}>
+                    View party profile
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </article>
       </section>
 
       <section className="panel-grid">

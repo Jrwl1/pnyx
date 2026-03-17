@@ -3,6 +3,8 @@
 import type {
   AlignmentStats,
   DirectoryRow,
+  LatestPromiseFeedItem,
+  PartyDiscoveryCard,
   PartyProfileShell,
   Politician,
   PromiseRecord,
@@ -103,6 +105,10 @@ export const getIssueTagsForStatement = (statement: StatementSummary): string[] 
   return ISSUE_OPTIONS.filter((issue) => ISSUE_KEYWORDS[issue].some((keyword) => body.includes(keyword)));
 };
 
+const getStatementActivityDate = (statement: StatementSummary): string => {
+  return statement.dateSaid || statement.createdAt;
+};
+
 const buildPromiseStats = (promises: PromiseRecord[]): PromiseStats => {
   return promises.reduce<PromiseStats>(
     (stats, promise) => {
@@ -173,7 +179,7 @@ export const buildDirectoryRows = (politicians: Politician[], statements: Statem
 
     let latestDate: string | null = null;
     for (const statement of politicianStatements) {
-      const candidate = statement.createdAt || statement.dateSaid;
+      const candidate = getStatementActivityDate(statement);
       if (!latestDate || new Date(candidate).getTime() > new Date(latestDate).getTime()) {
         latestDate = candidate;
       }
@@ -207,4 +213,90 @@ export const buildSearchText = (row: DirectoryRow): string => {
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+};
+
+export const buildLatestPromiseFeed = (
+  politicians: Politician[],
+  statements: StatementSummary[],
+  limit = 4
+): LatestPromiseFeedItem[] => {
+  const politiciansById = new Map(politicians.map((politician) => [politician.id, politician]));
+
+  return statements
+    .map((statement) => {
+      const politician = politiciansById.get(statement.politicianId) ?? null;
+      const linkedParty = findPartyShellForPolitician(politician)?.party ?? null;
+
+      return {
+        promise: toPromiseRecord(statement),
+        politician,
+        linkedParty,
+        publishedAt: getStatementActivityDate(statement)
+      };
+    })
+    .sort((left, right) => new Date(right.publishedAt).getTime() - new Date(left.publishedAt).getTime())
+    .slice(0, limit);
+};
+
+export const buildHomePartyCards = (politicians: Politician[], statements: StatementSummary[]): PartyDiscoveryCard[] => {
+  const politiciansById = new Map(politicians.map((politician) => [politician.id, politician]));
+  const rollups = new Map(
+    PARTY_ROUTE_SHELLS.map((entry) => [
+      entry.party.id,
+      {
+        linkedPoliticianIds: new Set<number>(),
+        promisesTracked: 0,
+        latestActivity: null as string | null
+      }
+    ])
+  );
+
+  for (const politician of politicians) {
+    const linkedParty = findPartyShellForPolitician(politician);
+    if (!linkedParty) {
+      continue;
+    }
+
+    rollups.get(linkedParty.party.id)?.linkedPoliticianIds.add(politician.id);
+  }
+
+  for (const statement of statements) {
+    const politician = politiciansById.get(statement.politicianId);
+    const linkedParty = findPartyShellForPolitician(politician);
+    if (!linkedParty) {
+      continue;
+    }
+
+    const rollup = rollups.get(linkedParty.party.id);
+    if (!rollup) {
+      continue;
+    }
+
+    rollup.promisesTracked += 1;
+    const candidate = getStatementActivityDate(statement);
+    if (!rollup.latestActivity || new Date(candidate).getTime() > new Date(rollup.latestActivity).getTime()) {
+      rollup.latestActivity = candidate;
+    }
+  }
+
+  return PARTY_ROUTE_SHELLS.map((entry) => {
+    const rollup = rollups.get(entry.party.id);
+
+    return {
+      party: entry.party,
+      linkedPoliticians: rollup?.linkedPoliticianIds.size ?? 0,
+      promisesTracked: rollup?.promisesTracked ?? 0,
+      latestActivity: rollup?.latestActivity ?? null
+    };
+  }).sort((left, right) => {
+    if (right.promisesTracked !== left.promisesTracked) {
+      return right.promisesTracked - left.promisesTracked;
+    }
+
+    if (right.linkedPoliticians !== left.linkedPoliticians) {
+      return right.linkedPoliticians - left.linkedPoliticians;
+    }
+
+    return left.party.name.localeCompare(right.party.name);
+  });
 };

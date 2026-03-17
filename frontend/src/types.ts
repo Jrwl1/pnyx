@@ -123,6 +123,20 @@ export interface PartyProfileShell {
   members: PartyMemberRecord[];
 }
 
+export interface LatestPromiseFeedItem {
+  promise: PromiseRecord;
+  politician: Politician | null;
+  linkedParty: PartyRecord | null;
+  publishedAt: string;
+}
+
+export interface PartyDiscoveryCard {
+  party: PartyRecord;
+  linkedPoliticians: number;
+  promisesTracked: number;
+  latestActivity: string | null;
+}
+
 export const PARTY_ROUTE_SHELLS: PartyProfileShell[] = [
   {
     party: {
