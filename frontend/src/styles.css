@@ -538,6 +538,44 @@ button {
   flex-wrap: wrap;
 }
 
+.methodology-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: var(--space-2);
+  align-items: start;
+}
+
+.methodology-toc {
+  position: sticky;
+  top: 104px;
+}
+
+.methodology-toc-links {
+  display: grid;
+  gap: 10px;
+}
+
+.methodology-toc-link {
+  color: var(--ink-strong);
+  text-decoration: none;
+}
+
+.methodology-toc-link:hover {
+  color: var(--accent-civic);
+}
+
+.methodology-section {
+  scroll-margin-top: 104px;
+}
+
+.methodology-highlight-grid {
+  align-items: stretch;
+}
+
+.methodology-highlight-card p:last-child {
+  margin: 0;
+}
+
 .data-note,
 .meta-line {
   margin: 0;
@@ -897,6 +935,14 @@ button {
 
   .field-group {
     grid-column: span 12;
+  }
+
+  .methodology-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .methodology-toc {
+    position: static;
   }
 }
 

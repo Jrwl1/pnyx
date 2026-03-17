@@ -2,97 +2,139 @@
 
 import type { ReactElement } from "react";
 
+const SECTION_ORDER = [
+  "fulfillment",
+  "votes",
+  "party-context",
+  "evidence",
+  "uncertainty",
+  "updates"
+] as const;
+
+const SECTIONS: Record<
+  (typeof SECTION_ORDER)[number],
+  { title: string; intro: string; items: Array<{ label?: string; text: string }> }
+> = {
+  fulfillment: {
+    title: "Fulfillment statuses",
+    intro: "Fulfillment is about whether the promise outcome appears delivered in the public record.",
+    items: [
+      { label: "Fulfilled", text: "Available evidence shows the promised outcome was delivered." },
+      { label: "Broken", text: "Available evidence shows outcomes that contradict the promise." },
+      { label: "In progress", text: "Evidence points to partial delivery with meaningful work still outstanding." },
+      { label: "Unknown", text: "The evidence is missing, incomplete, inconsistent, or not yet assessed." }
+    ]
+  },
+  votes: {
+    title: "Vote alignment",
+    intro: "Vote alignment compares a promise with recorded voting behavior when that comparison exists.",
+    items: [
+      { label: "Aligned", text: "Recorded votes support the direction of the promise." },
+      { label: "Contradicted", text: "Recorded votes conflict with the direction of the promise." },
+      { label: "Mixed", text: "Different vote events support and contradict the promise." },
+      { label: "Unknown", text: "No verified vote comparison has been connected yet." }
+    ]
+  },
+  "party-context": {
+    title: "Party stance and party-line context",
+    intro: "Party records and politician records stay separate. PNYX does not collapse them into one signal.",
+    items: [
+      { label: "Party stance", text: "A sourced official position from a political party on a specific issue." },
+      { label: "Aligned with party line", text: "Shown only when a politician action and a sourced party stance point in the same direction." },
+      { label: "Broke party line", text: "Shown only when a politician action and a sourced party stance point in opposite directions." },
+      { label: "Unknown", text: "Shown when no linked party, no sourced party stance, or no comparison record exists." }
+    ]
+  },
+  evidence: {
+    title: "Evidence standards",
+    intro: "Every public promise page should let a reader inspect the source trail for themselves.",
+    items: [
+      { text: "Every promise record links back to the source material for the original claim." },
+      { text: "Evidence quality depends on source credibility, date clarity, and traceable attribution." },
+      { text: "Evidence review status is not the same thing as fulfillment." },
+      { text: "Community support and oppose totals are sentiment, not voting records and not party stances." }
+    ]
+  },
+  uncertainty: {
+    title: "Handling missing data and uncertainty",
+    intro: "Unknown is a transparency rule. It is used to avoid fake precision when the record is incomplete.",
+    items: [
+      { text: "PNYX does not infer fulfillment from evidence-review labels." },
+      { text: "PNYX does not infer vote alignment from community sentiment." },
+      { text: "PNYX does not infer party stance from branding, rhetoric, or unsourced summaries." },
+      { text: "PNYX does not infer party-line alignment when the mapped comparison record is missing." }
+    ]
+  },
+  updates: {
+    title: "Change log and update cadence",
+    intro: "The public methodology changes when the product definitions or evidence standards change.",
+    items: [
+      { text: "Public data sync and moderation updates happen continuously as evidence is reviewed." },
+      { text: "Methodology text is revised when definitions, schemas, or evidence standards change." },
+      { text: "Major methodology updates are tracked in repository docs and release notes." }
+    ]
+  }
+};
+
+const QUICK_RULES = [
+  "Promises, votes, and party context are separate signals.",
+  "Unknown means the record is incomplete, not hidden.",
+  "Every public verdict should be traceable to a source."
+];
+
 export const MethodologyPage = (): ReactElement => {
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
+      <section className="hero-panel stack-md">
         <p className="eyebrow">Methodology</p>
-        <h1>How PNYX evaluates promises, party context, evidence, and uncertainty</h1>
-        <p className="lede">This page explains what each public status means, what counts as evidence, and how missing information is handled.</p>
+        <h1>How PNYX reads promises, evidence, party context, and uncertainty</h1>
+        <p className="lede">
+          This page explains how public promise records are interpreted, when a status stays Unknown, and how party context is kept separate from an individual politician's record.
+        </p>
+
+        <div className="cards-grid cards-grid-3 methodology-highlight-grid" aria-label="Quick methodology rules">
+          {QUICK_RULES.map((rule, index) => (
+            <article key={rule} className="card methodology-highlight-card">
+              <p className="mono-inline">Rule {index + 1}</p>
+              <p>{rule}</p>
+            </article>
+          ))}
+        </div>
       </section>
 
-      <section className="card stack-sm">
-        <h2>Fulfillment status definitions</h2>
-        <ul>
-          <li>
-            <strong>Fulfilled:</strong> Available evidence shows the promise outcome was delivered.
-          </li>
-          <li>
-            <strong>Broken:</strong> Available evidence shows outcomes contradict the promise.
-          </li>
-          <li>
-            <strong>In progress:</strong> Evidence suggests partial implementation with outstanding commitments.
-          </li>
-          <li>
-            <strong>Unknown:</strong> Data not yet available, inconsistent, or insufficient for a verdict.
-          </li>
-        </ul>
-      </section>
+      <div className="methodology-layout">
+        <aside className="card stack-sm methodology-toc" aria-label="Methodology table of contents">
+          <p className="mono-inline">On this page</p>
+          <nav className="methodology-toc-links">
+            {SECTION_ORDER.map((sectionId) => (
+              <a key={sectionId} className="methodology-toc-link" href={`#${sectionId}`}>
+                {SECTIONS[sectionId].title}
+              </a>
+            ))}
+          </nav>
+        </aside>
 
-      <section className="card stack-sm">
-        <h2>Vote-alignment status definitions</h2>
-        <ul>
-          <li>
-            <strong>Aligned:</strong> Recorded votes support the promise direction.
-          </li>
-          <li>
-            <strong>Contradicted:</strong> Recorded votes conflict with the promise direction.
-          </li>
-          <li>
-            <strong>Mixed:</strong> Voting behavior supports and contradicts the promise in different events.
-          </li>
-          <li>
-            <strong>Unknown:</strong> No verified roll-call vote mapping is available.
-          </li>
-        </ul>
-      </section>
+        <div className="stack-lg">
+          {SECTION_ORDER.map((sectionId) => {
+            const section = SECTIONS[sectionId];
 
-      <section className="card stack-sm">
-        <h2>Party stance and party-line definitions</h2>
-        <ul>
-          <li>
-            <strong>Party stance:</strong> A sourced official position from a political party. It is separate from the personal stance of an individual politician.
-          </li>
-          <li>
-            <strong>Aligned with party line:</strong> PNYX shows this only when a politician action can be mapped against a sourced party stance in the same direction.
-          </li>
-          <li>
-            <strong>Broke party line:</strong> PNYX shows this only when a sourced party stance and a mapped politician action point in opposite directions.
-          </li>
-          <li>
-            <strong>Unknown:</strong> No linked party, no sourced party stance, or no mapped comparison record is available.
-          </li>
-        </ul>
-      </section>
-
-      <section className="card stack-sm">
-        <h2>Evidence quality rules</h2>
-        <ul>
-          <li>Every promise record links to source material for the original claim.</li>
-          <li>Evidence quality depends on source credibility, date clarity, and traceable attribution.</li>
-          <li>Community support and oppose totals represent sentiment, not formal legislative voting records or party stance evidence.</li>
-        </ul>
-      </section>
-
-      <section className="card stack-sm">
-        <h2>Handling missing data and uncertainty</h2>
-        <ul>
-          <li>Unknown means the evidence is missing, incomplete, inconsistent, or not yet assessed.</li>
-          <li>PNYX does not treat evidence review status as proof of fulfillment.</li>
-          <li>Community sentiment does not count as a voting record or a party stance.</li>
-          <li>Party stance is shown only when a sourced party position is connected.</li>
-          <li>Party-line alignment is shown only when the relevant comparison record exists.</li>
-        </ul>
-      </section>
-
-      <section className="card stack-sm">
-        <h2>Change log and update cadence</h2>
-        <ul>
-          <li>Public data sync and moderation updates occur continuously as evidence is reviewed.</li>
-          <li>Methodology text is revised when definitions, schemas, or evidence standards change.</li>
-          <li>Major methodology updates are tracked in repository docs and release notes.</li>
-        </ul>
-      </section>
+            return (
+              <section key={sectionId} id={sectionId} className="card stack-sm methodology-section" aria-labelledby={`${sectionId}-title`}>
+                <p className="mono-inline">Section</p>
+                <h2 id={`${sectionId}-title`}>{section.title}</h2>
+                <p>{section.intro}</p>
+                <ul className="placeholder-list">
+                  {section.items.map((item) => (
+                    <li key={`${sectionId}-${item.label ?? item.text}`}>
+                      {item.label ? <strong>{item.label}:</strong> : null} {item.text}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 };
