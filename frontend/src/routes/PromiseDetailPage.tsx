@@ -6,7 +6,7 @@ import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
-import { castStatementVote, getStatementById, getStatementRevisions } from "../lib/api";
+import { castStatementVote, getCanonicalPromiseById, getStatementById, getStatementRevisions } from "../lib/api";
 import { findPartyShellForPolitician, getPartyAffiliationLabel, getTerritoryLabel, toPromiseRecord } from "../lib/domain";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
 import type { StatementDetail, StatementRevision, VoteValue } from "../types";
@@ -28,6 +28,7 @@ export const PromiseDetailPage = (): ReactElement => {
   const [error, setError] = useState<string | null>(null);
   const [votePending, setVotePending] = useState<boolean>(false);
   const [voteError, setVoteError] = useState<string | null>(null);
+  const [canonicalDetail, setCanonicalDetail] = useState<Awaited<ReturnType<typeof getCanonicalPromiseById>> | null>(null);
 
   useEffect(() => {
     if (!Number.isFinite(promiseId)) {
@@ -51,6 +52,11 @@ export const PromiseDetailPage = (): ReactElement => {
         if (!isCancelled) {
           setStatement(statementPayload);
           setRevisions(revisionPayload);
+          if (statementPayload.canonical) {
+            setCanonicalDetail(await getCanonicalPromiseById(statementPayload.canonical.id, session?.token));
+          } else {
+            setCanonicalDetail(null);
+          }
         }
       } catch (err) {
         if (!isCancelled) {
@@ -201,6 +207,9 @@ export const PromiseDetailPage = (): ReactElement => {
           <Link className="button button-link" to={politician ? `/politicians/${politician.id}` : "/politicians"}>
             {politician ? "Back to politician profile" : "Back to politician directory"}
           </Link>
+          <Link className="button button-secondary" to={`/contribute/promises/new?politicianId=${statement.politicianId}`}>
+            Submit source claim
+          </Link>
         </div>
       </section>
 
@@ -284,6 +293,22 @@ export const PromiseDetailPage = (): ReactElement => {
           )}
         </details>
       </section>
+
+      {canonicalDetail?.history && canonicalDetail.history.length > 0 ? (
+        <section className="card stack-sm" aria-label="Canonical change history">
+          <h2>Canonical change history</h2>
+          <ul className="timeline-list">
+            {canonicalDetail.history.map((entry) => (
+              <li key={entry.id} className="timeline-item">
+                <p>{entry.action} by {entry.actorId}</p>
+                <p className="meta-line">{entry.claimText}</p>
+                <p className="meta-line">Source: {entry.sourceUrl}</p>
+                <p className="meta-line">Reason: {entry.reason ?? "Not provided"}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="card stack-sm sentiment-card" aria-label="Community confidence">
         <h2>Community confidence</h2>

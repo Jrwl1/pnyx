@@ -267,6 +267,111 @@ export interface ProposalAuditResponse {
   total: number;
 }
 
+export type PromiseClaimStatus = "pending" | "merged" | "canonized" | "rejected";
+
+export interface PromiseClaimRecord {
+  id: number;
+  submittedBy: string;
+  politicianId: number;
+  claimText: string;
+  sourceUrl: string;
+  dateSaid: string;
+  sourceNote: string | null;
+  status: PromiseClaimStatus;
+  assigneeId: string | null;
+  assignedAt: string | null;
+  decisionBy: string | null;
+  decisionReason: string | null;
+  decisionCode: string | null;
+  linkedCanonicalPromiseId: number | null;
+  reviewVersion: number;
+  createdAt: string;
+  decidedAt: string | null;
+}
+
+export interface PromiseClaimSubmissionInput {
+  politicianId: number;
+  claimText: string;
+  sourceUrl: string;
+  dateSaid: string;
+  sourceNote?: string;
+}
+
+export interface PromiseClaimSubmissionResult {
+  id: number;
+  status: PromiseClaimStatus;
+}
+
+export interface PromiseClaimListResponse {
+  items: PromiseClaimRecord[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface PromiseClaimDuplicateAssist {
+  canonicalMatches: Array<{
+    id: number;
+    politicianId: number;
+    promiseText: string;
+    publicStatus: "draft" | "public";
+    acceptedSourceCount: number;
+    matchOn: string[];
+  }>;
+  pendingClaimMatches: Array<{
+    id: number;
+    politicianId: number;
+    claimText: string;
+    sourceUrl: string;
+    matchOn: string[];
+  }>;
+  fuzzyHints: {
+    canonical: Array<{ id: number; politicianId: number; promiseText: string; score: number }>;
+    pendingClaims: Array<{ id: number; politicianId: number; claimText: string; score: number }>;
+  };
+}
+
+export interface ClaimEquivalenceSignal {
+  id: number;
+  claimId: number;
+  actorId: string;
+  targetKind: "canonical_promise" | "claim";
+  targetId: number;
+  relation: "same_as" | "non_match";
+  reasonCode: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ClaimEquivalenceSignalInput {
+  targetKind: "canonical_promise" | "claim";
+  targetId: number;
+  relation: "same_as" | "non_match";
+  reasonCode: "same_claim" | "same_promise" | "different_subject" | "different_scope";
+}
+
+export interface PromiseClaimAudit {
+  id: number;
+  claimId: number;
+  actorId: string;
+  action: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+  reason: string | null;
+  reasonCode: string | null;
+  linkedCanonicalPromiseId: number | null;
+  createdAt: string;
+}
+
+export interface PromiseClaimReviewInput {
+  decision: "merge" | "canonize" | "reject";
+  reason?: string;
+  reasonCode?: string;
+  linkedCanonicalPromiseId?: number;
+  publicStatus?: "draft" | "public";
+  expectedVersion?: number;
+}
+
 export interface PromiseRecord {
   id: number;
   politicianId: number;
@@ -294,6 +399,19 @@ export interface CanonicalPromiseSummary {
 export interface CanonicalPromiseDetailResponse {
   promise: CanonicalPromiseSummary;
   acceptedSources: CanonicalPromiseSource[];
+  history?: CanonicalPromiseHistoryEntry[];
+}
+
+export interface CanonicalPromiseHistoryEntry {
+  id: number;
+  action: "merged" | "canonized";
+  actorId: string;
+  claimId: number;
+  claimText: string;
+  sourceUrl: string;
+  reason: string | null;
+  reasonCode: string | null;
+  createdAt: string;
 }
 
 export interface PromiseStats {

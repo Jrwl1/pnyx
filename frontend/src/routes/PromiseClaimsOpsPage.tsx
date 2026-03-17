@@ -1,0 +1,280 @@
+/* WHAT IT DO? Provides a moderator claim queue for merge, canonize, and reject decisions on promise-source claims. */
+
+import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { ErrorState, LoadingState } from "../components/PageState";
+import { useAuth } from "../context/AuthContext";
+import {
+  claimPromiseClaim,
+  getCanonicalPromiseById,
+  getPromiseClaimById,
+  getPromiseClaimDuplicateAssist,
+  listCanonicalPromises,
+  listClaimEquivalenceSignals,
+  listPromiseClaimAudits,
+  listPromiseClaims,
+  releasePromiseClaim,
+  reviewPromiseClaim
+} from "../lib/api";
+import { formatDateTime } from "../lib/format";
+import type { PromiseClaimRecord } from "../types";
+
+const withParams = (searchParams: URLSearchParams, updates: Record<string, string | null>): URLSearchParams => {
+  const next = new URLSearchParams(searchParams);
+  for (const [key, value] of Object.entries(updates)) {
+    if (!value) {
+      next.delete(key);
+    } else {
+      next.set(key, value);
+    }
+  }
+  return next;
+};
+
+export const PromiseClaimsOpsPage = (): ReactElement => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { session } = useAuth();
+  const selectedId = Number(searchParams.get("claimId"));
+  const status = (searchParams.get("status") ?? "pending").toLowerCase();
+  const [claims, setClaims] = useState<PromiseClaimRecord[]>([]);
+  const [selectedClaim, setSelectedClaim] = useState<PromiseClaimRecord | null>(null);
+  const [canonicalOptions, setCanonicalOptions] = useState<Awaited<ReturnType<typeof listCanonicalPromises>>>([]);
+  const [assist, setAssist] = useState<Awaited<ReturnType<typeof getPromiseClaimDuplicateAssist>> | null>(null);
+  const [signals, setSignals] = useState<Awaited<ReturnType<typeof listClaimEquivalenceSignals>>["items"]>([]);
+  const [audits, setAudits] = useState<Awaited<ReturnType<typeof listPromiseClaimAudits>>["items"]>([]);
+  const [decision, setDecision] = useState<"merge" | "canonize" | "reject">("merge");
+  const [reason, setReason] = useState<string>("");
+  const [reasonCode, setReasonCode] = useState<string>("same_promise");
+  const [linkedCanonicalPromiseId, setLinkedCanonicalPromiseId] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadClaims = async (): Promise<void> => {
+    if (!session) {
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await listPromiseClaims(session.token, status && status !== "pending" ? `?status=${status}` : "");
+      setClaims(response.items);
+    } catch (err) {
+      setError((err as Error).message || "Unable to load promise claim queue.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadClaims();
+  }, [session, status]);
+
+  useEffect(() => {
+    if (!session || !Number.isFinite(selectedId) || selectedId <= 0) {
+      setSelectedClaim(null);
+      return;
+    }
+    let cancelled = false;
+    const loadDetail = async (): Promise<void> => {
+      try {
+        const [claimResponse, assistResponse, signalResponse, auditResponse, canonicalList] = await Promise.all([
+          getPromiseClaimById(session.token, selectedId),
+          getPromiseClaimDuplicateAssist(session.token, selectedId),
+          listClaimEquivalenceSignals(session.token, selectedId),
+          listPromiseClaimAudits(session.token, selectedId),
+          listCanonicalPromises(undefined, session.token)
+        ]);
+        if (!cancelled) {
+          setSelectedClaim(claimResponse.claim);
+          setAssist(assistResponse);
+          setSignals(signalResponse.items);
+          setAudits(auditResponse.items);
+          setCanonicalOptions(canonicalList);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError((err as Error).message || "Unable to load claim detail.");
+        }
+      }
+    };
+    void loadDetail();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedId, session]);
+
+  const runRefresh = async (): Promise<void> => {
+    await loadClaims();
+    if (session && selectedId) {
+      const detail = await getPromiseClaimById(session.token, selectedId);
+      setSelectedClaim(detail.claim);
+      setAssist(await getPromiseClaimDuplicateAssist(session.token, selectedId));
+      setSignals((await listClaimEquivalenceSignals(session.token, selectedId)).items);
+      setAudits((await listPromiseClaimAudits(session.token, selectedId)).items);
+    }
+  };
+
+  const onClaim = async (): Promise<void> => {
+    if (!session || !selectedClaim) {
+      return;
+    }
+    await claimPromiseClaim(session.token, selectedClaim.id, selectedClaim.reviewVersion);
+    await runRefresh();
+  };
+
+  const onRelease = async (): Promise<void> => {
+    if (!session || !selectedClaim) {
+      return;
+    }
+    await releasePromiseClaim(session.token, selectedClaim.id, selectedClaim.reviewVersion);
+    await runRefresh();
+  };
+
+  const onReview = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
+    event.preventDefault();
+    if (!session || !selectedClaim) {
+      return;
+    }
+    await reviewPromiseClaim(session.token, selectedClaim.id, {
+      decision,
+      reason: reason || undefined,
+      reasonCode: reasonCode || undefined,
+      linkedCanonicalPromiseId: decision === "merge" && linkedCanonicalPromiseId ? Number(linkedCanonicalPromiseId) : undefined,
+      publicStatus: decision === "canonize" ? "public" : undefined,
+      expectedVersion: selectedClaim.reviewVersion
+    });
+    await runRefresh();
+  };
+
+  const canonicalOptionList = useMemo(() => canonicalOptions.map((promise) => ({ id: promise.id, label: promise.promiseText })), [canonicalOptions]);
+
+  if (!session) {
+    return <LoadingState label="Restoring moderator session..." />;
+  }
+
+  if (loading) {
+    return <LoadingState label="Loading promise claim queue..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={() => void loadClaims()} />;
+  }
+
+  return (
+    <div className="stack-lg">
+      <section className="hero-panel stack-sm">
+        <p className="eyebrow">Claim moderation</p>
+        <h1>Promise claim queue</h1>
+        <div className="card-link-row">
+          <Link to="/ops">Open politician proposal queue</Link>
+          <Link to="/contribute/promises/new">Open contributor claim form</Link>
+        </div>
+      </section>
+
+      <section className="directory-controls stack-sm">
+        <label className="field-group" htmlFor="claim-status-filter">
+          <span>Status</span>
+          <select id="claim-status-filter" className="select-input" value={status} onChange={(event) => setSearchParams(withParams(searchParams, { status: event.target.value === "pending" ? null : event.target.value }))}>
+            <option value="pending">Pending</option>
+            <option value="merged">Merged</option>
+            <option value="canonized">Canonized</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </label>
+      </section>
+
+      <section className="cards-grid cards-grid-1">
+        {claims.map((claim) => (
+          <article key={claim.id} className="card stack-sm">
+            <div className="section-header">
+              <div className="stack-xs">
+                <h2>{claim.claimText}</h2>
+                <p className="meta-line">{claim.sourceUrl}</p>
+              </div>
+              <button className={selectedClaim?.id === claim.id ? "button button-primary" : "button button-secondary"} type="button" onClick={() => setSearchParams(withParams(searchParams, { claimId: String(claim.id) }))}>
+                {selectedClaim?.id === claim.id ? "Selected" : "Open"}
+              </button>
+            </div>
+            <p className="meta-line">Status {claim.status} · Submitted by {claim.submittedBy}</p>
+          </article>
+        ))}
+      </section>
+
+      {selectedClaim ? (
+        <section className="split-grid">
+          <article className="card stack-sm">
+            <h2>Selected claim #{selectedClaim.id}</h2>
+            <p className="meta-line">Source: {selectedClaim.sourceUrl}</p>
+            <div className="card-link-row">
+              <button className="button button-secondary" type="button" onClick={() => void onClaim()}>
+                Claim
+              </button>
+              <button className="button button-secondary" type="button" onClick={() => void onRelease()}>
+                Release
+              </button>
+            </div>
+            <form className="stack-sm" onSubmit={(event) => void onReview(event)}>
+              <label className="field-group" htmlFor="claim-review-decision">
+                <span>Decision</span>
+                <select id="claim-review-decision" className="select-input" value={decision} onChange={(event) => setDecision(event.target.value as "merge" | "canonize" | "reject")}>
+                  <option value="merge">Merge into canonical promise</option>
+                  <option value="canonize">Canonize as new promise</option>
+                  <option value="reject">Reject</option>
+                </select>
+              </label>
+              {decision === "merge" ? (
+                <label className="field-group" htmlFor="claim-review-target">
+                  <span>Canonical promise target</span>
+                  <select id="claim-review-target" className="select-input" value={linkedCanonicalPromiseId} onChange={(event) => setLinkedCanonicalPromiseId(event.target.value)} required>
+                    <option value="">Choose a canonical promise</option>
+                    {canonicalOptionList.map((option) => (
+                      <option key={option.id} value={String(option.id)}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+              <label className="field-group" htmlFor="claim-review-reason">
+                <span>Reason note</span>
+                <textarea id="claim-review-reason" className="text-input" value={reason} onChange={(event) => setReason(event.target.value)} rows={4} style={{ minHeight: "132px", padding: "12px" }} />
+              </label>
+              <label className="field-group" htmlFor="claim-review-reason-code">
+                <span>Reason code</span>
+                <input id="claim-review-reason-code" className="text-input" type="text" value={reasonCode} onChange={(event) => setReasonCode(event.target.value)} />
+              </label>
+              <button className="button button-primary" type="submit">
+                Apply moderation decision
+              </button>
+            </form>
+          </article>
+
+          <article className="card stack-sm">
+            <h2>Equivalence and duplicate assist</h2>
+            {assist ? (
+              <div className="stack-sm">
+                <p className="meta-line">Canonical matches {assist.canonicalMatches.length} · Pending claim matches {assist.pendingClaimMatches.length}</p>
+                <p className="meta-line">Signals recorded {signals.length}</p>
+              </div>
+            ) : (
+              <p className="meta-line">No duplicate assist loaded.</p>
+            )}
+            <h3>Audit history</h3>
+            {audits.length === 0 ? (
+              <p className="meta-line">No audit rows yet.</p>
+            ) : (
+              <ul className="timeline-list">
+                {audits.map((audit) => (
+                  <li key={audit.id} className="timeline-item">
+                    <p>{audit.action}</p>
+                    <p className="meta-line">{audit.actorId} · {formatDateTime(audit.createdAt)}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </article>
+        </section>
+      ) : null}
+    </div>
+  );
+};

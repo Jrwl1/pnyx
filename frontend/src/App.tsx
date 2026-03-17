@@ -11,11 +11,14 @@ import { NotFoundPage } from "./routes/NotFoundPage";
 import { OpsPage } from "./routes/OpsPage";
 import { PartiesPage } from "./routes/PartiesPage";
 import { PartyProfilePage } from "./routes/PartyProfilePage";
+import { PromiseClaimDetailPage } from "./routes/PromiseClaimDetailPage";
+import { PromiseClaimsOpsPage } from "./routes/PromiseClaimsOpsPage";
 import { PoliticianProfilePage } from "./routes/PoliticianProfilePage";
 import { PoliticiansPage } from "./routes/PoliticiansPage";
 import { PromiseDetailPage } from "./routes/PromiseDetailPage";
 import { RegisterPage } from "./routes/RegisterPage";
 import { SignInPage } from "./routes/SignInPage";
+import { SubmitPromiseClaimPage } from "./routes/SubmitPromiseClaimPage";
 import { SubmitPoliticianProposalPage } from "./routes/SubmitPoliticianProposalPage";
 import { SubmitStatementPage } from "./routes/SubmitStatementPage";
 
@@ -31,13 +34,16 @@ export const App = (): ReactElement => {
           <Route path="/politicians/:id" element={<PoliticianProfilePage />} />
           <Route path="/parties" element={<PartiesPage />} />
           <Route path="/parties/:id" element={<PartyProfilePage />} />
+          <Route path="/claims/:id" element={<PromiseClaimDetailPage />} />
           <Route path="/promises/:id" element={<PromiseDetailPage />} />
           <Route path="/methodology" element={<MethodologyPage />} />
           <Route element={<RequireAuthRoute />}>
             <Route path="/contribute/politicians/new" element={<SubmitPoliticianProposalPage />} />
+            <Route path="/contribute/promises/new" element={<SubmitPromiseClaimPage />} />
             <Route path="/contribute/statements/new" element={<SubmitStatementPage />} />
             <Route element={<RequireRoleRoute minimumRole="moderator" />}>
               <Route path="/ops" element={<OpsPage />} />
+              <Route path="/ops/claims" element={<PromiseClaimsOpsPage />} />
             </Route>
           </Route>
           <Route path="/home" element={<Navigate to="/" replace />} />

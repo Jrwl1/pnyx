@@ -6,9 +6,18 @@ import type {
   BackendPartyDetailResponse,
   BackendPartyMembersResponse,
   BackendPartySummary,
+  ClaimEquivalenceSignal,
+  ClaimEquivalenceSignalInput,
   CanonicalPromiseDetailResponse,
   CanonicalPromiseSummary,
   Politician,
+  PromiseClaimAudit,
+  PromiseClaimDuplicateAssist,
+  PromiseClaimListResponse,
+  PromiseClaimRecord,
+  PromiseClaimReviewInput,
+  PromiseClaimSubmissionInput,
+  PromiseClaimSubmissionResult,
   ProposalAuditResponse,
   ProposalClaimResult,
   ProposalDuplicateAssist,
@@ -155,6 +164,81 @@ export const listCanonicalPromises = async (politicianId?: number, token?: strin
 
 export const getCanonicalPromiseById = async (id: number, token?: string): Promise<CanonicalPromiseDetailResponse> => {
   return fetchJson<CanonicalPromiseDetailResponse>(`/canonical-promises/${id}`, { token });
+};
+
+export const submitPromiseClaim = async (token: string, input: PromiseClaimSubmissionInput): Promise<PromiseClaimSubmissionResult> => {
+  return fetchJson<PromiseClaimSubmissionResult>("/promise-claims", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const previewPromiseClaimDuplicateAssist = async (
+  token: string,
+  input: Pick<PromiseClaimSubmissionInput, "politicianId" | "claimText" | "sourceUrl">
+): Promise<PromiseClaimDuplicateAssist> => {
+  return fetchJson<PromiseClaimDuplicateAssist>("/promise-claims/duplicate-assist-preview", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const listPromiseClaims = async (token: string, query = ""): Promise<PromiseClaimListResponse> => {
+  return fetchJson<PromiseClaimListResponse>(`/promise-claims${query}`, { token });
+};
+
+export const getPromiseClaimById = async (token: string, id: number): Promise<{ claim: PromiseClaimRecord }> => {
+  return fetchJson<{ claim: PromiseClaimRecord }>(`/promise-claims/${id}`, { token });
+};
+
+export const getPromiseClaimDuplicateAssist = async (token: string, id: number): Promise<PromiseClaimDuplicateAssist> => {
+  return fetchJson<PromiseClaimDuplicateAssist>(`/promise-claims/${id}/duplicate-assist`, { token });
+};
+
+export const listClaimEquivalenceSignals = async (token: string, id: number): Promise<{ items: ClaimEquivalenceSignal[] }> => {
+  return fetchJson<{ items: ClaimEquivalenceSignal[] }>(`/promise-claims/${id}/equivalence-signals`, { token });
+};
+
+export const submitClaimEquivalenceSignal = async (
+  token: string,
+  id: number,
+  input: ClaimEquivalenceSignalInput
+): Promise<{ ok: boolean; id: number }> => {
+  return fetchJson<{ ok: boolean; id: number }>(`/promise-claims/${id}/equivalence-signals`, {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const claimPromiseClaim = async (token: string, id: number, expectedVersion: number): Promise<{ ok: boolean; assigneeId: string; reviewVersion: number }> => {
+  return fetchJson<{ ok: boolean; assigneeId: string; reviewVersion: number }>(`/promise-claims/${id}/claim`, {
+    method: "POST",
+    token,
+    body: { expectedVersion }
+  });
+};
+
+export const releasePromiseClaim = async (token: string, id: number, expectedVersion: number): Promise<{ ok: boolean; reviewVersion: number }> => {
+  return fetchJson<{ ok: boolean; reviewVersion: number }>(`/promise-claims/${id}/release`, {
+    method: "POST",
+    token,
+    body: { expectedVersion }
+  });
+};
+
+export const reviewPromiseClaim = async (token: string, id: number, input: PromiseClaimReviewInput): Promise<{ ok: boolean; status: string; canonicalPromiseId: number | null; reviewVersion: number }> => {
+  return fetchJson<{ ok: boolean; status: string; canonicalPromiseId: number | null; reviewVersion: number }>(`/promise-claims/${id}/review`, {
+    method: "PATCH",
+    token,
+    body: input
+  });
+};
+
+export const listPromiseClaimAudits = async (token: string, id: number): Promise<{ items: PromiseClaimAudit[] }> => {
+  return fetchJson<{ items: PromiseClaimAudit[] }>(`/promise-claims/${id}/audits`, { token });
 };
 
 export const listStatements = async (): Promise<StatementSummary[]> => {
