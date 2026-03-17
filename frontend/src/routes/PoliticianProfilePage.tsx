@@ -12,6 +12,17 @@ type ProfileTab = "promises" | "votes" | "evidence";
 
 const PROFILE_TABS: ProfileTab[] = ["promises", "votes", "evidence"];
 
+const REVIEW_STATUS_LABELS: Record<string, string> = {
+  pending: "Pending review",
+  verified: "Verified",
+  disputed: "Disputed",
+  rejected: "Rejected"
+};
+
+const formatReviewStatus = (value: string): string => {
+  return REVIEW_STATUS_LABELS[value.toLowerCase()] ?? value.replace(/_/g, " ");
+};
+
 export const PoliticianProfilePage = (): ReactElement => {
   const { id } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -219,7 +230,7 @@ export const PoliticianProfilePage = (): ReactElement => {
                   <p>
                     Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
                   </p>
-                  <p className="meta-line">Review status: {statement.verificationStatus}</p>
+                  <p className="meta-line">Evidence review: {formatReviewStatus(statement.verificationStatus)}</p>
                   <Link to={`/promises/${statement.id}`}>Review full promise record</Link>
                 </article>
               ))}

@@ -13,7 +13,7 @@ import type { StatementDetail, StatementRevision } from "../types";
 export const PromiseDetailPage = (): ReactElement => {
   const { id } = useParams();
   const promiseId = Number(id);
-  const { politicians } = usePublicData();
+  const { politicians, loading: publicDataLoading, error: publicDataError, refresh } = usePublicData();
 
   const [statement, setStatement] = useState<StatementDetail | null>(null);
   const [revisions, setRevisions] = useState<StatementRevision[]>([]);
@@ -78,8 +78,12 @@ export const PromiseDetailPage = (): ReactElement => {
     });
   }, [revisions, statement]);
 
-  if (loading) {
+  if (loading || publicDataLoading) {
     return <LoadingState label="Loading promise detail..." />;
+  }
+
+  if (publicDataError) {
+    return <ErrorState message={publicDataError} onRetry={() => void refresh()} />;
   }
 
   if (error) {
@@ -106,7 +110,7 @@ export const PromiseDetailPage = (): ReactElement => {
               <Link to={`/politicians/${politician.id}`}>{politician.name}</Link> - {formatIdentityLine(politician.office, getTerritoryLabel(politician))}
             </>
           ) : (
-            <>Politician id {statement.politicianId}</>
+            <>Linked politician record not available</>
           )}
         </p>
         <p className="meta-line">
