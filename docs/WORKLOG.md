@@ -44,3 +44,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [16:19] DO: connect frontend party surfaces and verify seeded party flows (sprint: S-22, links: ad35bdc, docs/SPRINT.md)
 - [16:20] REVIEW: accept S-22 backend-backed party graph row (findings: none)
 - [16:25] DO: add canonical promise schema, APIs, and statement compatibility metadata (sprint: S-23, links: d0be3d9, docs/SPRINT.md)
+- [16:30] DO: connect canonical promise surfaces and verify seeded canonical/public reads (sprint: S-23, links: 6d2a800, docs/SPRINT.md)
