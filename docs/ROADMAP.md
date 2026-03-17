@@ -5,8 +5,9 @@ Last updated: 2026-03-17
 Planning baseline:
 
 - Finland-first launch scope
-- Public discovery first, then deeper trust and moderation surfaces
-- Product truth must stay aligned with shipped `frontend/`, `src/`, and `test/`
+- Build from current shipped `frontend/`, `src/`, `test/`, and migration reality
+- Expose already-tested backend capability in the frontend before inventing new product layers
+- Separate raw submissions, canonical facts, and derived trust metrics instead of overloading one entity
 - Direct MCP tools are preferred for evidence and verification when they materially help
 
 ## M0: Repository OS reset and delegation removal
@@ -44,7 +45,7 @@ Planning baseline:
 
 ## M3: Public trust, editorial refinement, and Finland-first hardening
 
-**Status:** In progress.
+**Status:** Done.
 
 **Done criteria:**
 
@@ -54,22 +55,44 @@ Planning baseline:
 4. Critical public routes align with `docs/FRONTEND_V3_SPEC.md` for visual identity and navigation: amber party accents, party badges, claim styling, footer, breadcrumbs, richer methodology structure, and clear community-sentiment treatment.
 5. `pnpm frontend:typecheck`, `pnpm frontend:build`, and browser/accessibility verification pass for `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, and `/methodology`.
 
-## M4: Moderation, release-readiness, and backend data expansion
+## M4: Contribution, party graph, and canonical promise foundation
+
+**Status:** In progress.
+
+**Done criteria:**
+
+1. Frontend auth and contribution surfaces expose the current backend registration, statement capture, statement voting, and politician-proposal workflows.
+2. Backend-backed parties, aliases, and memberships replace the current frontend-only party placeholders.
+3. Canonical promises exist beside legacy statements, and public/frontend reads can distinguish raw submissions from canonical public promise records.
+4. `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` pass, plus browser verification of new auth, contribution, and party-backed flows.
+
+## M5: Claim canonization and accountability graph
 
 **Status:** Planned.
 
 **Done criteria:**
 
-1. Moderation and proposal-review surfaces stay aligned with the hardened public model.
-2. Key trust and abuse boundaries have current regression coverage.
-3. Release-readiness, traceability, and success-metrics docs are updated to match implemented behavior.
-4. Backend-ready follow-ups for canonical parties, memberships, party stances, and richer evidence modeling are planned or delivered without faking public data.
+1. Claim/source submission, duplicate-assist, equivalence signaling, and moderator canonization queues exist for promise records.
+2. Canonical promise pages show accepted source bundles, merge history, and public change context instead of a single raw statement record.
+3. Moderation reason codes, audits, and optimistic-lock protections extend from politician proposals into claim canonization flows.
+4. Public methodology and moderation surfaces explain how user submissions become canonical public facts.
+
+## M6: Trust scoring, release hardening, and launch audit
+
+**Status:** Planned.
+
+**Done criteria:**
+
+1. Party stances, vote-event mappings, fulfillment assessments, and party-alignment assessments exist and are sourceable.
+2. Politician and party pages show backend-derived trust dimensions with explicit unknown handling and no fabricated composites.
+3. Search, regression coverage, release-readiness docs, and auditability are updated for the expanded accountability graph.
+4. A complete UI audit and manual verification pass succeeds across all public, authenticated, contributor, and moderation flows added in M4-M6.
 
 ## Explicitly out of current scope
 
 1. Delegation or autopilot-based repo execution flows
-2. Repo-specific rules that deny useful non-delegating MCP tools by default
-3. Product planning that is not grounded in current shipped `frontend/`, `src/`, and `test/` reality
-4. Cross-country rollout before the Finland-first model is proven in code
-5. Full backend delivery of canonical parties, memberships, party stances, or real evidence-count modeling inside the current frontend-hardening milestone
-6. Public leaderboards as a primary discovery mechanic
+2. Cross-country rollout before the Finland-first model is proven in code
+3. Reusing community sentiment votes as truth-validation or vote-alignment data
+4. A single opaque trust score before promise, fulfillment, and party-alignment assessments are backed by sourceable records
+5. Fully automated multi-provider ingest before the first Finland-first manual or admin-backed source path is stable
+6. Launching contribution-heavy public flows without auditability, moderation reasons, and abuse controls

@@ -8,28 +8,28 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 
 ## Active milestone
 
-**M3: Public trust, editorial refinement, and Finland-first hardening** (see `docs/ROADMAP.md`).
+**M4: Contribution, party graph, and canonical promise foundation** (see `docs/ROADMAP.md`).
 
 ## Current state
 
-- The M2 public discovery foundation is shipped in `frontend/` and the route set now matches the Finland-first public IA.
-- A 2026-03-17 source audit of `frontend/src/` found that the current public slice still reads like implementation notes instead of a citizen-facing product.
-- Highest-impact issues are developer-facing copy, a home page that hides live promise content below explanatory filler, and party routes that describe placeholders instead of presenting honest unknowns cleanly.
-- Finland-first correctness is incomplete: public dates still format with `en-US`, issue tagging still contains US-centric keywords, and some directory controls imply filtering or sorting behavior the current data cannot support honestly.
-- Visual and navigation drift remains on key public routes: no amber party identity, no footer, no breadcrumbs, generic claim styling, flat methodology structure, and weak contextual/back-link behavior.
-- Promise detail also depends on shared politician context without waiting for the shared provider to finish, which can drop linked politician or party context on direct loads.
+- M3 public discovery hardening is complete: the citizen-facing frontend route set, copy, Finland-first framing, and accessibility/browser proof all landed in `frontend/`.
+- The backend already supports registration, statement capture, statement voting, and politician-proposal moderation, but the frontend still behaves like a read-first public alpha because those flows are not exposed there yet.
+- Party pages are still backed by frontend placeholder data; there is no backend `parties`, `party_aliases`, or `party_memberships` schema yet.
+- Promise pages still map frontend "promise" UX to raw `statements`; there is no canonical promise model, accepted-source bundle, or claim canonization flow yet.
+- Trust surfaces remain intentionally unknown because fulfillment, vote-alignment, party-stance, and party-line assessment models do not exist yet.
+- The active queue now expands into S-21..S-26 so Pnyx can move from read-first public alpha to contribution-capable accountability product without faking its trust graph.
 
 ## Top blockers
 
-1. Public-facing implementation jargon and redundant unknown-state explanations reduce trust on every major route.
-2. The home page does not yet surface the strongest available content signal: real promise records.
-3. Finland-first formatting, taxonomy, and several public interaction states still misrepresent product readiness.
+1. Existing backend contribution and moderation capability is not reachable from the frontend.
+2. Real party, membership, and canonical promise entities do not exist, so party pages and trust surfaces cannot become honest without schema/API work.
+3. Claim equivalence, canonization, fulfillment, and party-line assessments are not modeled yet, blocking real politician and party trust metrics.
 
 ## Next actions
 
-1. Execute `S-15` through `S-19` to rewrite copy, foreground live promise content, fix Finland-first correctness, and close design/interaction drift.
-2. Execute `S-20` to prove the hardened public slice with static, browser, and accessibility checks.
-3. Keep backend-ready follow-ups for real party, membership, stance, and evidence data in backlog while shipping honest frontend states now.
+1. Execute `S-21` to expose auth, contribution, voting, and politician-proposal moderation flows in the frontend.
+2. Execute `S-22` and `S-23` to add real party data and canonical promises while keeping current public reads compatible.
+3. Execute `S-24` through `S-26` to add claim canonization, backend-derived trust dimensions, release hardening, and a full UI audit/manual verification pass.
 
 ## Key links
 

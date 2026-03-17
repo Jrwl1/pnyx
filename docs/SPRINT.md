@@ -1,6 +1,6 @@
 # Sprint
 
-Window: 2026-03-17 to 2026-04-14
+Window: 2026-03-17 to 2026-06-30
 
 Executable DO queue. Execute top-to-bottom.
 Each `Do` checklist must stay flat and each substep must be small enough to complete in one DO run.
@@ -18,122 +18,272 @@ Required substep shape:
 
 ## Goal (this sprint)
 
-Harden the shipped public discovery frontend into a citizen-facing, Finland-first product by removing developer jargon, foregrounding live promise content, fixing correctness gaps, and closing key design and interaction drift.
+Convert Pnyx from a read-first public alpha into a contribution-capable Finland-first accountability product by exposing existing backend workflows in the frontend, replacing placeholder party data with a real party graph, introducing canonical promises and claim canonization, adding source-backed trust dimensions, and closing with a full UI audit and manual verification pass across everything added in this sprint.
 
 ---
 
 | ID | Do | Files | Acceptance | Evidence | Stop | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| S-15 | Rewrite public trust copy and shared placeholder language for citizen-facing discovery. See `S-15` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/types.ts` | No public route shows `route shell`, `frontend-local`, `canonical API`, or `Placeholder shell` copy; the home trust section remains but is rewritten in citizen-facing language; unknown states are concise and point to methodology instead of implementation notes. | Accepted in REVIEW. packets:44b0ce3,445c754,f63dea3 satisfy the copy acceptance and required verification runs. | Stop if the rewrite would require changing backend semantics or contradict `docs/FRONTEND_V3_SPEC.md`. | DONE |
-| S-16 | Rebuild home hierarchy around live promise content and denser discovery modules. See `S-16` substeps below. | `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`, `frontend/src/types.ts` | Home keeps search primary, surfaces latest promise content above generic filler, uses denser politician and party discovery modules, and presents "How this works" as a short visual explainer. | Accepted in REVIEW. packet:589c1d4 satisfies the home hierarchy acceptance and required static verification. | Stop if current APIs cannot support a truthful live promise feed without inventing metadata. | DONE |
-| S-17 | Fix Finland-first correctness and misleading public-state behavior. See `S-17` substeps below. | `frontend/src/lib/format.ts`, `frontend/src/lib/domain.ts`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css` | Public dates and taxonomy are Finland-first, party and sort controls do not imply unavailable behavior, promise detail waits for shared context before rendering linked politician or party data, and raw internal evidence jargon is removed from public views. | Accepted in REVIEW. packets:b9d1349,b0ad038 satisfy the Finland-first correctness and public-state acceptance. | Stop if honest behavior requires new backend fields rather than frontend gating or copy fixes. | DONE |
-| S-18 | Close design-system and navigation drift on public routes. See `S-18` substeps below. | `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css` | Critical public routes use amber party identity, claim styling, footer, breadcrumbs, and a visual sentiment treatment that distinguishes community sentiment from voting records. | Accepted in REVIEW. packets:4882359,b9d86e8 satisfy the design-system and navigation acceptance for the public routes. | Stop if the design work causes responsive or accessibility regressions that cannot be resolved within the same frontend area. | DONE |
-| S-19 | Enrich methodology structure and interaction polish for public discovery. See `S-19` substeps below. | `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css` | Methodology has a richer editorial structure with a sticky TOC, directory rows and key navigation surfaces are easier to traverse, and search suggestions, back links, and tab motion work without breaking keyboard flow. | Accepted in REVIEW. packets:eb8d347,0e0699b,6a71cb0 satisfy the methodology and interaction-polish acceptance. | Stop if interaction work requires new backend endpoints instead of client-side navigation or search behavior. | DONE |
-| S-20 | Verify the hardened public slice with static, browser, and accessibility proof. See `S-20` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and browser/accessibility verification pass across `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, and `/methodology` with no blocking regressions. | Accepted in REVIEW. packet:c2c5eb5 satisfies the static, browser, and accessibility verification acceptance for the current empty-data preview. | Stop if required verification exposes regressions that cannot be fixed within the same frontend area. | DONE |
+| S-21 | Expose auth, contribution, voting, and politician-proposal moderation flows in the frontend. See `S-21` substeps below. | `frontend/src/App.tsx`, `frontend/src/layout/PublicLayout.tsx`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `frontend/src/context/**`, `frontend/src/components/**`, `frontend/src/routes/**`, `src/server.ts`, `test/**` | Normal users can register, sign in, sign out, submit politician proposals, submit statements, and cast support or oppose votes from the frontend; moderators can review the existing politician proposal queue from the frontend; auth and rate-limit or duplicate errors are surfaced honestly; static, test, and browser checks pass for the new flows. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the auth, contribution, voting, and moderation acceptance criteria. | Stop if a required frontend flow depends on unsupported backend semantics beyond bounded route or response additions inside the same auth or proposal area. | TODO |
+| S-22 | Replace frontend-only party placeholders with backend-backed party, alias, and membership data. See `S-22` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `test/**` | Backend `parties`, `party_aliases`, and `party_memberships` exist with public read APIs and admin or moderator write paths; home, directory, party, and politician surfaces use backend-backed party data instead of static placeholder shells; migration and browser checks pass. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the real-party-data acceptance criteria. | Stop if a truthful party page would require inventing membership or affiliation data that cannot be represented through the new backend schema. | TODO |
+| S-23 | Introduce canonical promises beside legacy statements and keep current public reads compatible during the transition. See `S-23` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `test/**` | Canonical promise and accepted-source entities exist beside legacy statements; public/frontend reads can distinguish raw submission history from canonical public promise records; current promise detail and politician profile routes stay functional while the data model changes underneath them; regression and browser checks pass. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the canonical-promise compatibility criteria. | Stop if canonical-promise delivery cannot be isolated from the legacy statement surface without a migration or compatibility strategy that would need extra out-of-scope repo changes. | TODO |
+| S-24 | Build claim-source submission, equivalence, and moderator canonization flows for promise records. See `S-24` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/App.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/components/**`, `frontend/src/routes/**`, `test/**` | Contributors can submit promise-source claims, signal same-as or non-match equivalence, and see duplicate assist; moderators can claim, release, review, merge, or canonize claims into canonical promises with audit trails and reason codes; public promise pages expose accepted sources and change history; tests and browser checks pass for the end-to-end canonization loop. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the canonization and auditability criteria. | Stop if the claim or equivalence workflow would require reusing community sentiment votes as truth-validation instead of introducing dedicated claim-review entities. | TODO |
+| S-25 | Add source-backed party stances, vote-event mappings, fulfillment assessments, and trust dimensions to public pages. See `S-25` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `test/**` | Party stances, vote events, fulfillment assessments, and party-alignment assessments exist with a first Finland-first source path; politician and party pages show backend-derived promise-trust and party-line-trust dimensions with explicit unknown handling; promise detail and methodology explain the real verdict logic; regression, accessibility, and browser checks pass. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the trust-dimension and methodology criteria. | Stop if truthful trust computation requires data outside the selected first Finland-first stance and vote source path and cannot be represented as explicit unknowns for this row. | TODO |
+| S-26 | Harden search, auditability, release proof, and complete a full UI audit and manual verification pass across everything added in S-21..S-26. See `S-26` substeps below. | `src/server.ts`, `migrations/**`, `frontend/src/**`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md` | Search and auditability are expanded for the new contribution and canonization graph; release docs and metrics align with implemented behavior; regression coverage is broadened across auth, contribution, party, canonical promise, moderation, and trust flows; full proof commands, browser checks, accessibility checks, and a complete manual UI audit pass across all newly added surfaces. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the release-hardening and full-site audit criteria. | Stop if the final audit exposes a blocking regression outside the scoped contribution, party, canonization, or trust flows that cannot be resolved within the same hardening area. | TODO |
 
-### S-15 substeps
+### S-21 substeps
 
-- [ ] Rewrite home hero, trust section, and party discovery labels in citizen-facing language
-  - files: `frontend/src/routes/HomePage.tsx`
+- [ ] Add frontend auth context, token persistence, and protected-route helpers for authenticated and moderator-only surfaces
+  - files: `frontend/src/App.tsx`, `frontend/src/context/**`, `frontend/src/components/**`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck`
-  - evidence: packet:44b0ce3 | run:pnpm frontend:typecheck -> pass | files:frontend/src/routes/HomePage.tsx | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Remove placeholder-shell terminology from shared party seed data and party-route copy
-  - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/types.ts`
+- [ ] Add public register, sign-in, and sign-out UI against the existing backend auth endpoints with honest error states
+  - files: `frontend/src/App.tsx`, `frontend/src/lib/api.ts`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/layout/PublicLayout.tsx`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:445c754 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Collapse verbose unknown-state explanations across politician, promise, and methodology surfaces into concise public wording
-  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`
-  - run: `pnpm frontend:build`
-  - evidence: packet:f63dea3 | run:pnpm frontend:build -> pass | files:frontend/src/routes/MethodologyPage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
+- [ ] Add a frontend politician-proposal submission flow with duplicate, captcha, and rate-limit feedback handling
+  - files: `frontend/src/lib/api.ts`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-### S-16 substeps
+- [ ] Add a frontend statement-submission flow for existing politicians with required-field validation and success states
+  - files: `frontend/src/lib/api.ts`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [ ] Add a latest-promises feed on home using current statement data and linked politician context
-  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`
+- [ ] Add authenticated support and oppose voting controls on promise detail without changing the current sentiment semantics
+  - files: `frontend/src/lib/api.ts`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/components/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add a protected moderator route shell and queue listing for the existing politician proposal workflow
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `frontend/src/components/**`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add claim, release, review, and duplicate-assist UI for the politician proposal moderation queue
+  - files: `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `frontend/src/components/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run browser verification across register, sign-in, statement submission, proposal submission, voting, and politician-proposal moderation flows
+  - files: `frontend/src/**`
+  - run: `playwright or chrome-devtools verification of the S-21 public and moderator flows`
+  - evidence: Pending.
+
+### S-22 substeps
+
+- [ ] Add `parties` and `party_aliases` schema, migrations, and migration tests
+  - files: `migrations/**`, `src/db/**`, `test/**`
+  - run: `pnpm test -- -t "migration"`
+  - evidence: Pending.
+
+- [ ] Add `party_memberships` schema plus backend helpers for current and historical politician-party links
+  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add public backend endpoints for party list, party detail, and party member reads
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add admin or moderator write paths for parties, aliases, and memberships so the party graph can be populated without direct database edits
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Update frontend party API clients, shared types, and domain helpers to consume backend-backed party data
+  - files: `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck`
-  - evidence: packet:589c1d4 | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Replace sparse politician summary cards with denser discovery modules and richer browse-by-party cards
-  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/styles.css`, `frontend/src/types.ts`
-  - run: `pnpm frontend:build`
-  - evidence: packet:589c1d4 | run:pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+- [ ] Replace home, party directory, party profile, and politician affiliation surfaces with backend-backed party and membership reads
+  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/types.ts`, `frontend/src/lib/domain.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [ ] Rework the home "How this works" block into a compact visual explainer that supports the search CTA instead of competing with it
-  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/styles.css`
-  - run: `pnpm frontend:build`
-  - evidence: packet:589c1d4 | run:pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/styles.css, frontend/src/types.ts | docs:N/A | status: clean
+- [ ] Run static, test, and browser verification for backend-backed party and membership flows
+  - files: `frontend/src/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of party flows`
+  - evidence: Pending.
 
-### S-17 substeps
+### S-23 substeps
 
-- [ ] Switch public date and time formatting plus identity separators to Finland-first conventions
-  - files: `frontend/src/lib/format.ts`
+- [ ] Add canonical promise and accepted-source schema beside the legacy statement model
+  - files: `migrations/**`, `src/db/**`, `test/**`
+  - run: `pnpm test -- -t "migration"`
+  - evidence: Pending.
+
+- [ ] Add compatibility helpers or backfill logic so legacy `statements` continue to support public reads while canonical promises are introduced
+  - files: `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add backend create and read endpoints for canonical promises and accepted source bundles
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Expose canonical or public-state metadata alongside existing promise reads without breaking current routes
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Update frontend API clients, shared types, and domain mapping so canonical promises and legacy statement history are distinct concepts
+  - files: `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck`
-  - evidence: packet:b9d1349 | run:pnpm frontend:typecheck -> pass | files:frontend/src/lib/domain.ts, frontend/src/lib/format.ts, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Replace US-centric issue keywords and labels with Finland-relevant taxonomy used consistently across home and directory filters
-  - files: `frontend/src/lib/domain.ts`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`
+- [ ] Update politician profile to distinguish canonical promises from raw or legacy submission history
+  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:b9d1349 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/lib/format.ts, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Gate or disable party filtering and fulfillment sorting when the current dataset cannot support truthful results
-  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/styles.css`
+- [ ] Update promise detail to show accepted-source bundles and canonical-public markers instead of a single raw statement framing
+  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:b9d1349 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/lib/format.ts, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Keep promise detail and evidence timeline waiting on shared context instead of rendering missing politician-party links or raw verification jargon
-  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`
+- [ ] Run regression and browser verification for canonical-promise compatibility and public reads
+  - files: `frontend/src/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of canonical promise flows`
+  - evidence: Pending.
+
+### S-24 substeps
+
+- [ ] Add claim-submission, claim-source, and claim-review schema for user-submitted promise records
+  - files: `migrations/**`, `src/db/**`, `test/**`
+  - run: `pnpm test -- -t "migration"`
+  - evidence: Pending.
+
+- [ ] Add claim-equivalence proposal and vote schema with reason-code support separate from community sentiment votes
+  - files: `migrations/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add backend queue, claim, release, review, merge, and canonization APIs for claim submissions using the hardened proposal-ops pattern
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add duplicate or equivalence assist helpers for new claim submissions and moderator review
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add contributor UI for submitting promise-source claims with duplicate and equivalence suggestions before queueing
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:b0ad038 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx | docs:N/A | status: clean
+  - evidence: Pending.
 
-### S-18 substeps
-
-- [ ] Add missing amber tokens and reusable party-badge and claim-block styling aligned with the spec
-  - files: `frontend/src/styles.css`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`
-  - run: `pnpm frontend:build`
-  - evidence: packet:4882359 | run:pnpm frontend:build -> pass | files:frontend/src/routes/HomePage.tsx, frontend/src/routes/PartiesPage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
-
-- [ ] Add a public footer and breadcrumbs across politician, party, and promise detail routes
-  - files: `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css`
+- [ ] Add contributor UI for same-as or non-match equivalence signaling on pending claim records
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:b9d86e8 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/layout/PublicLayout.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Turn the community sentiment block into a simple visual treatment that stays clearly separate from vote alignment
-  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css`
+- [ ] Add moderator queue, review, merge, and canonization UI for claim submissions and equivalence decisions
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Expose accepted sources and canonical change history on public promise detail once claims are merged or approved
+  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run end-to-end browser verification for claim submission, equivalence signaling, moderator review, and canonization
+  - files: `frontend/src/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools verification of claim canonization flows`
+  - evidence: Pending.
+
+### S-25 substeps
+
+- [ ] Add party-stance schema and admin or moderator APIs for entering and reading official party stances
+  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add vote-event and politician-vote-record schema and APIs for Finland-first voting data
+  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add promise-to-vote link, fulfillment-assessment, and party-alignment-assessment schema and backend logic
+  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add a first Finland-first manual or admin-backed source path for party stances and vote events so trust assessments are not blocked on full ingest automation
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Expose backend-derived politician and party trust summary reads with counts first, percentages second, and explicit unknown handling
+  - files: `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Update politician profile trust cards and tables to use backend-derived promise-trust and party-line-trust data
+  - files: `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:b9d86e8 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/layout/PublicLayout.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-### S-19 substeps
-
-- [ ] Rebuild methodology into a richer editorial page with a sticky TOC and clearer section hierarchy
-  - files: `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/styles.css`
+- [ ] Update party directory and party profile to show member trust cards and party-average trust summaries from backend assessments
+  - files: `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:eb8d347 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/MethodologyPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Make directory rows and key navigation surfaces easier to traverse with full-row links and contextual back links
-  - files: `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css`
+- [ ] Update promise detail and methodology to explain real fulfillment, vote-alignment, and party-stance comparison logic
+  - files: `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/types.ts`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:0e0699b | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/routes/PromiseDetailPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+  - evidence: Pending.
 
-- [ ] Add search suggestions and tab-motion polish without breaking keyboard accessibility or URL-state behavior
-  - files: `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:6a71cb0 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/domain.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticianProfilePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/styles.css | docs:N/A | status: clean
+- [ ] Run regression, accessibility, and browser verification for trust-dimension surfaces on politician, party, and promise routes
+  - files: `frontend/src/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && playwright or chrome-devtools accessibility and browser verification of trust flows`
+  - evidence: Pending.
 
-### S-20 substeps
+### S-26 substeps
 
-- [ ] Run static proof for the hardened public slice
-  - files: `frontend/**`
-  - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: packet:c2c5eb5 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PoliticiansPage.tsx | docs:N/A | status: clean
+- [ ] Add backend-backed search improvements for parties, canonical promises, and issue or topic surfaces introduced in S-21..S-25
+  - files: `src/server.ts`, `frontend/src/lib/api.ts`, `frontend/src/lib/domain.ts`, `frontend/src/routes/**`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [ ] Browser-verify the hardened public routes across discovery, profile, and methodology flows
-  - files: `frontend/**`
-  - run: `playwright MCP verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /promises/:id, /methodology`
-  - evidence: packet:c2c5eb5 | run:chrome-devtools verification of /, /politicians, /politicians/1, /parties, /parties/sdp, /promises/1, /methodology on http://127.0.0.1:4174 -> pass (home suggestions, party profile, methodology TOC, empty/not-found states verified) | files:frontend/src/routes/PoliticiansPage.tsx | docs:N/A | status: clean
+- [ ] Add public canonical change-history and contributor-activity surfaces for the new claim, promise, and party records
+  - files: `src/server.ts`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
 
-- [ ] Run focused accessibility checks for keyboard flow, sticky controls, breadcrumbs, TOC, and responsive card-table fallbacks
-  - files: `frontend/**`
-  - run: `playwright or chrome-devtools accessibility verification of the critical public routes`
-  - evidence: packet:c2c5eb5 | run:chrome-devtools accessibility verification on /politicians and /methodology -> pass (console clean after control-id fix, mobile control stack verified, lighthouse accessibility 98) | files:frontend/src/routes/PoliticiansPage.tsx | docs:N/A | status: clean
+- [ ] Add stronger moderation filters, abuse visibility, and auditability for the expanded contribution and canonization queues
+  - files: `src/server.ts`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Expand regression coverage across auth, contribution, party, canonical-promise, canonization, and trust flows
+  - files: `test/**`, `src/server.ts`, `frontend/src/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Refresh traceability, release-readiness, success-metrics, and frontend route docs for the implemented behavior delivered in S-21..S-26
+  - files: `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run the full static and backend proof chain for the expanded product surface
+  - files: `src/server.ts`, `frontend/src/**`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
+  - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run browser and accessibility verification across all public, authenticated, contributor, and moderation routes added in S-21..S-26
+  - files: `frontend/src/**`
+  - run: `playwright or chrome-devtools verification of all routes and flows added in S-21..S-26`
+  - evidence: Pending.
+
+- [ ] Complete an end-to-end UI audit of the site and manually check every flow added in S-21..S-26
+  - files: `frontend/src/**`, `src/server.ts`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
+  - run: `ui-audit plus manual playwright or chrome-devtools verification of every public, authenticated, contributor, moderation, and trust flow added in S-21..S-26`
+  - evidence: Pending.

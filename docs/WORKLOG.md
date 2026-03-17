@@ -32,3 +32,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:38] REVIEW: accept S-19 methodology and interaction row (findings: none)
 - [12:44] DO: verify S-20 static, browser, and accessibility packet (sprint: S-20, links: c2c5eb5, docs/SPRINT.md)
 - [12:44] REVIEW: accept S-20 verification row (findings: none)
+- [15:12] PLAN: close M3 and open the S-21..S-26 implementation sprint for contribution, party graph, canonical promises, trust dimensions, and full UI audit (sprint: S-21..S-26, milestone: M4)

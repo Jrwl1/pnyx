@@ -38,3 +38,19 @@ Last updated: 2026-03-17
   2. Several audit suggestions depend on backend data that does not exist yet.
      - Winner: current code and backend reality.
      - Resolution: keep backend-dependent upgrades in backlog while the active sprint fixes the frontend-only trust, IA, locale, and design gaps now.
+
+## 2026-03-17 implementation-sprint expansion
+
+- The M3 frontend-hardening queue is now closed in planning: `docs/SPRINT.md` marked `S-15` through `S-20` done, and `docs/ROADMAP.md` now records M3 as complete.
+- Direct code and test review show a real split between what the backend already supports and what the frontend currently exposes:
+  - Backend reality: registration, statement capture, statement voting, and politician-proposal moderation already exist and are regression-tested in `src/server.ts` and `test/**`.
+  - Frontend reality: `frontend/src/lib/api.ts` is still read-only, so the shipped public app remains a browse-first alpha even though the backend supports contribution and moderation paths.
+- Conflict resolved by canonical hierarchy:
+  1. Previous planning framed M4 as generic moderation and backend expansion.
+     - Winner: current code reality plus the new grounded implementation roadmap.
+     - Resolution: M4 is now narrowed to contribution reachability, real party graph delivery, and canonical-promise foundation work that the repo can execute next without fabricating trust logic.
+  2. The broader future-direction analysis proposed six implementation chunks that span beyond one narrow milestone.
+     - Winner: `docs/PROJECT_STATUS.md` keeps one active milestone (`M4`), while `docs/SPRINT.md` now queues `S-21` through `S-26` top-to-bottom so execution can continue deterministically into later planned milestones without a second planning system.
+- Planning resolution:
+  - `docs/SPRINT.md` now carries one comprehensive implementation queue from frontend auth and contribution reachability through final UI audit and manual verification.
+  - `docs/BACKLOG.md` marks the completed M3 frontend-hardening items done and promotes the party, canonical-promise, canonization, trust-graph, and release-hardening follow-ups into the active queue.
