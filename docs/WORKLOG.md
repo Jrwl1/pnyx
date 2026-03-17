@@ -54,3 +54,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [18:27] DO: verify S-25 trust routes with seeded browser and accessibility proof (sprint: S-25, links: 09fd9c7, docs/SPRINT.md)
 - [18:28] REVIEW: accept S-25 trust dimension row (findings: none)
 - [18:34] DO: add S-26 backend-backed search results (sprint: S-26, links: 3cec13e, docs/SPRINT.md)
+- [18:40] DO: add S-26 activity feeds and claim queue metrics (sprint: S-26, links: 0635026, docs/SPRINT.md)

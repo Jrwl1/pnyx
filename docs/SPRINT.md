@@ -253,20 +253,20 @@ Convert Pnyx from a read-first public alpha into a contribution-capable Finland-
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:3cec13e8fe533053729246bd1b0f8df06d37815d | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PoliticiansPage.tsx, frontend/src/types.ts, src/server.ts, test/search.test.ts | docs:N/A | status: clean
 
-- [ ] Add public canonical change-history and contributor-activity surfaces for the new claim, promise, and party records
+- [x] Add public canonical change-history and contributor-activity surfaces for the new claim, promise, and party records
   - files: `src/server.ts`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:063502633a0ae3ae2fc0da04285155c58ff57a3f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/types.ts, src/server.ts, test/activity-feed.test.ts | docs:N/A | status: clean
 
-- [ ] Add stronger moderation filters, abuse visibility, and auditability for the expanded contribution and canonization queues
+- [x] Add stronger moderation filters, abuse visibility, and auditability for the expanded contribution and canonization queues
   - files: `src/server.ts`, `frontend/src/routes/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:063502633a0ae3ae2fc0da04285155c58ff57a3f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/types.ts, src/server.ts, test/activity-feed.test.ts | docs:N/A | status: clean
 
-- [ ] Expand regression coverage across auth, contribution, party, canonical-promise, canonization, and trust flows
+- [x] Expand regression coverage across auth, contribution, party, canonical-promise, canonization, and trust flows
   - files: `test/**`, `src/server.ts`, `frontend/src/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:063502633a0ae3ae2fc0da04285155c58ff57a3f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/lib/api.ts, frontend/src/routes/HomePage.tsx, frontend/src/routes/PartyProfilePage.tsx, frontend/src/routes/PromiseClaimsOpsPage.tsx, frontend/src/types.ts, src/server.ts, test/activity-feed.test.ts | docs:N/A | status: clean
 
 - [ ] Refresh traceability, release-readiness, success-metrics, and frontend route docs for the implemented behavior delivered in S-21..S-26
   - files: `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
