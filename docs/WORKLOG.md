@@ -27,3 +27,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:32] DO: add S-18 public breadcrumbs, footer, and sentiment packet (sprint: S-18, links: b9d86e8, docs/SPRINT.md)
 - [12:32] REVIEW: accept S-18 public design row (findings: none)
 - [12:35] DO: rebuild S-19 methodology structure packet (sprint: S-19, links: eb8d347, docs/SPRINT.md)
+- [12:36] DO: improve S-19 directory traversal packet (sprint: S-19, links: 0e0699b, docs/SPRINT.md)
