@@ -21,3 +21,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:21] DO: rebuild S-16 home discovery packet (sprint: S-16, links: 589c1d4, docs/SPRINT.md)
 - [12:21] REVIEW: accept S-16 home hierarchy row (findings: none)
 - [12:24] DO: apply S-17 Finland-first format and control-state packet (sprint: S-17, links: b9d1349, docs/SPRINT.md)
+- [12:25] DO: wait for shared promise context in S-17 (sprint: S-17, links: b0ad038, docs/SPRINT.md)
