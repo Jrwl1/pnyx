@@ -39,3 +39,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [15:49] DO: add moderator proposal queue tooling (sprint: S-21, links: 2b9f3ea, docs/SPRINT.md)
 - [15:58] DO: verify S-21 public and moderator browser flows on fresh local frontend/backend ports (sprint: S-21, links: 2b9f3ea, docs/SPRINT.md)
 - [16:01] REVIEW: accept S-21 frontend contribution and moderation row (findings: none)
+- [16:04] DO: add party and alias schema foundation (sprint: S-22, links: dbae90a, docs/SPRINT.md)
