@@ -4,6 +4,15 @@ import type {
   AuthTokenRequest,
   AuthTokenResponse,
   Politician,
+  ProposalAuditResponse,
+  ProposalClaimResult,
+  ProposalDuplicateAssist,
+  ProposalQueueFilters,
+  ProposalQueueMetrics,
+  ProposalQueueResponse,
+  ProposalReleaseResult,
+  ProposalReviewInput,
+  ProposalReviewResult,
   PoliticianProposalInput,
   PoliticianProposalRecord,
   RegisterAccountInput,
@@ -139,4 +148,82 @@ export const castStatementVote = async (token: string, statementId: number, valu
     token,
     body: { value }
   });
+};
+
+const buildProposalQueuePath = (filters: ProposalQueueFilters = {}): string => {
+  const params = new URLSearchParams();
+
+  if (filters.status && filters.status !== "all") {
+    params.set("status", filters.status);
+  }
+  if (filters.assignee) {
+    params.set("assignee", filters.assignee);
+  }
+  if (filters.ageBucket) {
+    params.set("ageBucket", filters.ageBucket);
+  }
+  if (filters.sort) {
+    params.set("sort", filters.sort);
+  }
+  if (filters.page) {
+    params.set("page", String(filters.page));
+  }
+  if (filters.pageSize) {
+    params.set("pageSize", String(filters.pageSize));
+  }
+
+  const query = params.toString();
+  return `/politician-proposals${query ? `?${query}` : ""}`;
+};
+
+export const listPoliticianProposals = async (token: string, filters: ProposalQueueFilters = {}): Promise<ProposalQueueResponse> => {
+  return fetchJson<ProposalQueueResponse>(buildProposalQueuePath(filters), { token });
+};
+
+export const getPoliticianProposalMetrics = async (token: string): Promise<ProposalQueueMetrics> => {
+  return fetchJson<ProposalQueueMetrics>("/politician-proposals/metrics", { token });
+};
+
+export const claimPoliticianProposal = async (
+  token: string,
+  proposalId: number,
+  expectedVersion: number
+): Promise<ProposalClaimResult> => {
+  return fetchJson<ProposalClaimResult>(`/politician-proposals/${proposalId}/claim`, {
+    method: "POST",
+    token,
+    body: { expectedVersion }
+  });
+};
+
+export const releasePoliticianProposal = async (
+  token: string,
+  proposalId: number,
+  expectedVersion: number
+): Promise<ProposalReleaseResult> => {
+  return fetchJson<ProposalReleaseResult>(`/politician-proposals/${proposalId}/release`, {
+    method: "POST",
+    token,
+    body: { expectedVersion }
+  });
+};
+
+export const reviewPoliticianProposal = async (
+  token: string,
+  proposalId: number,
+  input: ProposalReviewInput
+): Promise<ProposalReviewResult> => {
+  return fetchJson<ProposalReviewResult>(`/politician-proposals/${proposalId}/review`, {
+    method: "PATCH",
+    token,
+    body: input
+  });
+};
+
+export const getPoliticianProposalDuplicateAssist = async (token: string, proposalId: number): Promise<ProposalDuplicateAssist> => {
+  return fetchJson<ProposalDuplicateAssist>(`/politician-proposals/${proposalId}/duplicate-assist`, { token });
+};
+
+export const getPoliticianProposalAudits = async (token: string, proposalId: number): Promise<ProposalAuditResponse> => {
+  return fetchJson<ProposalAuditResponse>(`/politician-proposals/${proposalId}/audits`, { token });
 };

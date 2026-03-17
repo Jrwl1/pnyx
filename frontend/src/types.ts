@@ -120,6 +120,124 @@ export interface VoteSubmissionResult {
   viewerVote: VoteValue;
 }
 
+export type ProposalStatus = "pending" | "approved" | "rejected" | "duplicate";
+export type ProposalAgeBucket = "lt1h" | "1to24h" | "gt24h";
+
+export interface PoliticianProposalQueueItem {
+  id: number;
+  submittedBy: string;
+  assigneeId: string | null;
+  assignedAt: string | null;
+  name: string;
+  region: string | null;
+  office: string | null;
+  externalId: string | null;
+  sourceNote: string | null;
+  status: ProposalStatus;
+  decisionBy: string | null;
+  decisionReason: string | null;
+  decisionCode: string | null;
+  linkedPoliticianId: number | null;
+  reviewVersion: number;
+  createdAt: string;
+  decidedAt: string | null;
+}
+
+export interface ProposalQueueResponse {
+  items: PoliticianProposalQueueItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface ProposalQueueFilters {
+  status?: ProposalStatus | "all";
+  assignee?: string;
+  ageBucket?: ProposalAgeBucket;
+  sort?: "asc" | "desc";
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ProposalQueueMetrics {
+  pending: {
+    total: number;
+    assigned: number;
+    unassigned: number;
+  };
+  ageBuckets: {
+    lt1h: number;
+    oneTo24h: number;
+    gt24h: number;
+  };
+}
+
+export interface ProposalClaimResult {
+  ok: boolean;
+  assigneeId: string;
+  reviewVersion: number;
+}
+
+export interface ProposalReleaseResult {
+  ok: boolean;
+  reviewVersion: number;
+}
+
+export interface ProposalReviewInput {
+  decision: "approve" | "reject" | "duplicate";
+  reason?: string;
+  reasonCode?: string;
+  linkedPoliticianId?: number;
+  expectedVersion?: number;
+}
+
+export interface ProposalReviewResult {
+  ok: boolean;
+  status: ProposalStatus;
+  politicianId: number | null;
+  reviewVersion: number;
+}
+
+export interface ProposalCandidateHint {
+  id: number;
+  name: string;
+  region: string | null;
+  office: string | null;
+  externalId: string | null;
+  matchOn?: string[];
+  score?: number;
+}
+
+export interface ProposalDuplicateAssist {
+  proposalId: number;
+  canonicalMatches: ProposalCandidateHint[];
+  pendingProposalMatches: ProposalCandidateHint[];
+  fuzzyHints: {
+    canonical: ProposalCandidateHint[];
+    pendingProposals: ProposalCandidateHint[];
+  };
+}
+
+export interface ProposalAuditItem {
+  id: number;
+  proposalId: number;
+  actorId: string;
+  action: string;
+  fromStatus: string | null;
+  toStatus: string | null;
+  reason: string | null;
+  reasonCode: string | null;
+  linkedPoliticianId: number | null;
+  createdAt: string;
+}
+
+export interface ProposalAuditResponse {
+  items: ProposalAuditItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
 export interface PromiseRecord {
   id: number;
   politicianId: number;
