@@ -15,6 +15,8 @@ describe("migration", () => {
     expect(tableNames.has("parties")).toBe(true);
     expect(tableNames.has("party_aliases")).toBe(true);
     expect(tableNames.has("party_memberships")).toBe(true);
+    expect(tableNames.has("canonical_promises")).toBe(true);
+    expect(tableNames.has("canonical_promise_sources")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -33,6 +35,10 @@ describe("migration", () => {
     expect(indexNames.has("idx_party_memberships_current_politician")).toBe(true);
     expect(indexNames.has("idx_party_memberships_party_dates")).toBe(true);
     expect(indexNames.has("idx_party_memberships_politician_dates")).toBe(true);
+    expect(indexNames.has("idx_canonical_promises_politician_status")).toBe(true);
+    expect(indexNames.has("idx_canonical_promises_public")).toBe(true);
+    expect(indexNames.has("idx_canonical_promise_sources_promise")).toBe(true);
+    expect(indexNames.has("idx_canonical_promise_sources_statement")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -74,5 +80,23 @@ describe("migration", () => {
     expect(membershipColumnNames.has("start_date")).toBe(true);
     expect(membershipColumnNames.has("end_date")).toBe(true);
     expect(membershipColumnNames.has("created_by")).toBe(true);
+
+    const canonicalPromiseColumns = db
+      .prepare("PRAGMA table_info(canonical_promises)")
+      .all() as { name: string }[];
+    const canonicalPromiseColumnNames = new Set(canonicalPromiseColumns.map((column) => column.name));
+    expect(canonicalPromiseColumnNames.has("politician_id")).toBe(true);
+    expect(canonicalPromiseColumnNames.has("promise_text")).toBe(true);
+    expect(canonicalPromiseColumnNames.has("public_status")).toBe(true);
+    expect(canonicalPromiseColumnNames.has("primary_statement_id")).toBe(true);
+
+    const canonicalSourceColumns = db
+      .prepare("PRAGMA table_info(canonical_promise_sources)")
+      .all() as { name: string }[];
+    const canonicalSourceColumnNames = new Set(canonicalSourceColumns.map((column) => column.name));
+    expect(canonicalSourceColumnNames.has("canonical_promise_id")).toBe(true);
+    expect(canonicalSourceColumnNames.has("statement_id")).toBe(true);
+    expect(canonicalSourceColumnNames.has("source_url")).toBe(true);
+    expect(canonicalSourceColumnNames.has("accepted_by")).toBe(true);
   });
 });

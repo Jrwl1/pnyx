@@ -6,6 +6,12 @@ import express from "express";
 import { authContext } from "./auth/context.js";
 import { signToken } from "./auth/jwt.js";
 import { requireRole } from "./auth/role-guard.js";
+import {
+  getCanonicalPromiseById,
+  getStatementCanonicalMetadataMap,
+  listCanonicalPromiseSources,
+  listCanonicalPromises
+} from "./db/canonical-promises.js";
 import { db } from "./db/client.js";
 import { getPartyById, listCurrentPartyContexts, listParties, listPartyAliases, listPartyMembers } from "./db/party-graph.js";
 
@@ -276,8 +282,10 @@ type ProposalStatus = (typeof proposalStatuses)[number];
 
 const rejectReasonCodes = ["insufficient_evidence", "invalid_identity", "not_public_figure", "out_of_scope"] as const;
 const duplicateReasonCodes = ["duplicate_canonical", "duplicate_pending", "already_tracked"] as const;
+const canonicalPublicStatuses = ["draft", "public"] as const;
 type RejectReasonCode = (typeof rejectReasonCodes)[number];
 type DuplicateReasonCode = (typeof duplicateReasonCodes)[number];
+type CanonicalPublicStatus = (typeof canonicalPublicStatuses)[number];
 
 const isProposalStatus = (value: string): value is ProposalStatus => {
   return proposalStatuses.includes(value as ProposalStatus);
@@ -289,6 +297,10 @@ const isRejectReasonCode = (value: string): value is RejectReasonCode => {
 
 const isDuplicateReasonCode = (value: string): value is DuplicateReasonCode => {
   return duplicateReasonCodes.includes(value as DuplicateReasonCode);
+};
+
+const isCanonicalPublicStatus = (value: string): value is CanonicalPublicStatus => {
+  return canonicalPublicStatuses.includes(value as CanonicalPublicStatus);
 };
 
 const createCanonicalPolitician = (input: CanonicalPoliticianInput, actorId: string): CanonicalPoliticianResult => {
@@ -1540,6 +1552,154 @@ app.get("/politician-proposals/:id/audits", requireRole("moderator"), (req, res)
   res.json({ items, page, pageSize, total: totalRow.total });
 });
 
+app.post("/canonical-promises", requireRole("moderator"), (req, res) => {
+  const { politicianId, promiseText, publicStatus, primaryStatementId, acceptedSources } = req.body as {
+    politicianId?: number;
+    promiseText?: string;
+    publicStatus?: string;
+    primaryStatementId?: number;
+    acceptedSources?: Array<{ sourceUrl?: string; sourceNote?: string; statementId?: number }>;
+  };
+
+  if (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+  const normalizedPromiseText = promiseText?.trim() ?? "";
+  if (!normalizedPromiseText) {
+    res.status(400).json({ error: "promiseText is required" });
+    return;
+  }
+  const normalizedPublicStatus = (publicStatus?.trim().toLowerCase() ?? "draft");
+  if (!isCanonicalPublicStatus(normalizedPublicStatus)) {
+    res.status(400).json({ error: "publicStatus must be draft or public" });
+    return;
+  }
+
+  const politician = db.prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(politicianId) as { "1"?: number } | undefined;
+  if (!politician) {
+    res.status(404).json({ error: "politician not found" });
+    return;
+  }
+
+  const primaryStatement =
+    primaryStatementId !== undefined
+      ? (db
+          .prepare(
+            "SELECT id, politician_id AS politicianId, source_url AS sourceUrl FROM statements WHERE id = ? AND deleted_at IS NULL LIMIT 1"
+          )
+          .get(primaryStatementId) as { id: number; politicianId: number; sourceUrl: string } | undefined)
+      : undefined;
+  if (primaryStatementId !== undefined && !primaryStatement) {
+    res.status(404).json({ error: "primary statement not found" });
+    return;
+  }
+  if (primaryStatement && primaryStatement.politicianId !== politicianId) {
+    res.status(409).json({ error: "primary statement politician does not match canonical promise politician" });
+    return;
+  }
+
+  const normalizedSources = (acceptedSources ?? []).map((source) => ({
+    sourceUrl: source.sourceUrl?.trim() ?? "",
+    sourceNote: normalizeOptionalText(source.sourceNote),
+    statementId: source.statementId
+  }));
+
+  if (normalizedSources.some((source) => !source.sourceUrl)) {
+    res.status(400).json({ error: "accepted source urls are required" });
+    return;
+  }
+
+  if (!primaryStatement && normalizedSources.length === 0) {
+    res.status(400).json({ error: "acceptedSources or primaryStatementId is required" });
+    return;
+  }
+
+  try {
+    const tx = db.transaction(() => {
+      const insertPromise = db
+        .prepare(
+          `INSERT INTO canonical_promises (politician_id, promise_text, public_status, primary_statement_id, created_by)
+           VALUES (?, ?, ?, ?, ?)`
+        )
+        .run(politicianId, normalizedPromiseText, normalizedPublicStatus, primaryStatement?.id ?? null, req.auth.userId ?? "moderation");
+
+      const canonicalPromiseId = insertPromise.lastInsertRowid as number;
+      const insertSource = db.prepare(
+        `INSERT INTO canonical_promise_sources (canonical_promise_id, statement_id, source_url, source_note, accepted_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      );
+
+      const sourceRows = [...normalizedSources];
+      if (primaryStatement && !sourceRows.some((source) => source.sourceUrl === primaryStatement.sourceUrl)) {
+        sourceRows.unshift({
+          sourceUrl: primaryStatement.sourceUrl,
+          sourceNote: "primary statement source",
+          statementId: primaryStatement.id
+        });
+      }
+
+      for (const source of sourceRows) {
+        insertSource.run(
+          canonicalPromiseId,
+          source.statementId ?? null,
+          source.sourceUrl,
+          source.sourceNote,
+          req.auth.userId ?? "moderation"
+        );
+      }
+
+      return canonicalPromiseId;
+    });
+
+    const canonicalPromiseId = tx();
+    res.status(201).json({ id: canonicalPromiseId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "canonical promise already exists for this primary statement or source url" : "internal server error"
+    });
+  }
+});
+
+app.get("/canonical-promises", (req, res) => {
+  const politicianIdRaw = req.query.politicianId as string | undefined;
+  const politicianId = politicianIdRaw ? Number(politicianIdRaw) : undefined;
+  if (politicianIdRaw !== undefined && (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0)) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  res.json({
+    items: listCanonicalPromises({
+      politicianId,
+      includeNonPublic
+    })
+  });
+});
+
+app.get("/canonical-promises/:id", (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  const promise = getCanonicalPromiseById(canonicalPromiseId, includeNonPublic);
+  if (!promise) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+
+  res.json({
+    promise,
+    acceptedSources: listCanonicalPromiseSources(canonicalPromiseId)
+  });
+});
+
 app.get("/statements", (_req, res) => {
   const includePending = _req.auth.role === "moderator" || _req.auth.role === "admin";
   const rows = db
@@ -1549,13 +1709,38 @@ app.get("/statements", (_req, res) => {
        FROM statements s WHERE s.deleted_at IS NULL AND (s.pending_delete = 0 OR ? = 1)
        ORDER BY s.created_at DESC`
     )
-    .all(includePending ? 1 : 0);
-  res.json({ items: rows });
+    .all(includePending ? 1 : 0) as Array<{
+      id: number;
+      politicianId: number;
+      sourceUrl: string;
+      body: string;
+      dateSaid: string;
+      verificationStatus: string;
+      authorId: string;
+      createdAt: string;
+    }>;
+  const canonicalMetadata = getStatementCanonicalMetadataMap(
+    rows.map((row) => row.id),
+    _req.auth.role === "moderator" || _req.auth.role === "admin"
+  );
+  res.json({
+    items: rows.map((row) => {
+      const canonical = canonicalMetadata.get(row.id);
+      return {
+        ...row,
+        canonicalPromiseId: canonical?.canonicalPromiseId ?? null,
+        promiseKind: canonical ? (canonical.canonicalPublicStatus === "public" ? "canonical_public" : "canonical_draft") : "raw_submission",
+        canonicalPromiseText: canonical?.canonicalPromiseText ?? null,
+        acceptedSourceCount: canonical?.acceptedSourceCount ?? 0
+      };
+    })
+  });
 });
 
 app.get("/statements/:id", (req, res) => {
   const statementId = Number(req.params.id);
   const includePending = req.auth.role === "moderator" || req.auth.role === "admin";
+  const includeNonPublicCanonical = req.auth.role === "moderator" || req.auth.role === "admin";
   const row = db
     .prepare(
       `SELECT s.id, s.politician_id AS politicianId, s.source_url AS sourceUrl, s.body, s.date_said AS dateSaid,
@@ -1596,11 +1781,24 @@ app.get("/statements/:id", (req, res) => {
         .prepare("SELECT value FROM votes WHERE statement_id = ? AND user_id = ? LIMIT 1")
         .get(statementId, req.auth.userId) as { value: "support" | "oppose" } | undefined)?.value ?? null)
     : null;
+  const canonical = getStatementCanonicalMetadataMap([statementId], includeNonPublicCanonical).get(statementId) ?? null;
+  const acceptedSources = canonical ? listCanonicalPromiseSources(canonical.canonicalPromiseId) : [];
 
   res.json({
     ...row,
     aggregate,
     viewerVote,
+    promiseKind: canonical ? (canonical.canonicalPublicStatus === "public" ? "canonical_public" : "canonical_draft") : "raw_submission",
+    canonical: canonical
+      ? {
+          id: canonical.canonicalPromiseId,
+          promiseText: canonical.canonicalPromiseText,
+          publicStatus: canonical.canonicalPublicStatus,
+          primaryStatementId: canonical.primaryStatementId,
+          acceptedSourceCount: canonical.acceptedSourceCount
+        }
+      : null,
+    acceptedSources,
     revisionCount: revisionMeta.revisionCount,
     revisionHistoryUrl: `/statements/${statementId}/revisions`
   });
