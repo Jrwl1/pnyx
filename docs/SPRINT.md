@@ -29,7 +29,7 @@ Harden the shipped public discovery frontend into a citizen-facing, Finland-firs
 | S-17 | Fix Finland-first correctness and misleading public-state behavior. See `S-17` substeps below. | `frontend/src/lib/format.ts`, `frontend/src/lib/domain.ts`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css` | Public dates and taxonomy are Finland-first, party and sort controls do not imply unavailable behavior, promise detail waits for shared context before rendering linked politician or party data, and raw internal evidence jargon is removed from public views. | Accepted in REVIEW. packets:b9d1349,b0ad038 satisfy the Finland-first correctness and public-state acceptance. | Stop if honest behavior requires new backend fields rather than frontend gating or copy fixes. | DONE |
 | S-18 | Close design-system and navigation drift on public routes. See `S-18` substeps below. | `frontend/src/layout/PublicLayout.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PartiesPage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/styles.css` | Critical public routes use amber party identity, claim styling, footer, breadcrumbs, and a visual sentiment treatment that distinguishes community sentiment from voting records. | Accepted in REVIEW. packets:4882359,b9d86e8 satisfy the design-system and navigation acceptance for the public routes. | Stop if the design work causes responsive or accessibility regressions that cannot be resolved within the same frontend area. | DONE |
 | S-19 | Enrich methodology structure and interaction polish for public discovery. See `S-19` substeps below. | `frontend/src/routes/MethodologyPage.tsx`, `frontend/src/routes/HomePage.tsx`, `frontend/src/routes/PoliticiansPage.tsx`, `frontend/src/routes/PoliticianProfilePage.tsx`, `frontend/src/routes/PartyProfilePage.tsx`, `frontend/src/routes/PromiseDetailPage.tsx`, `frontend/src/lib/domain.ts`, `frontend/src/styles.css` | Methodology has a richer editorial structure with a sticky TOC, directory rows and key navigation surfaces are easier to traverse, and search suggestions, back links, and tab motion work without breaking keyboard flow. | Accepted in REVIEW. packets:eb8d347,0e0699b,6a71cb0 satisfy the methodology and interaction-polish acceptance. | Stop if interaction work requires new backend endpoints instead of client-side navigation or search behavior. | DONE |
-| S-20 | Verify the hardened public slice with static, browser, and accessibility proof. See `S-20` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and browser/accessibility verification pass across `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, and `/methodology` with no blocking regressions. | Pending DO packet evidence. | Stop if required verification exposes regressions that cannot be fixed within the same frontend area. | TODO |
+| S-20 | Verify the hardened public slice with static, browser, and accessibility proof. See `S-20` substeps below. | `frontend/**` | `pnpm frontend:typecheck`, `pnpm frontend:build`, and browser/accessibility verification pass across `/`, `/politicians`, `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, and `/methodology` with no blocking regressions. | packet:c2c5eb5 complete; S-20 ready for review. | Stop if required verification exposes regressions that cannot be fixed within the same frontend area. | READY |
 
 ### S-15 substeps
 
@@ -126,14 +126,14 @@ Harden the shipped public discovery frontend into a citizen-facing, Finland-firs
 - [ ] Run static proof for the hardened public slice
   - files: `frontend/**`
   - run: `pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending DO packet evidence.
+  - evidence: packet:c2c5eb5 | run:pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/routes/PoliticiansPage.tsx | docs:N/A | status: clean
 
 - [ ] Browser-verify the hardened public routes across discovery, profile, and methodology flows
   - files: `frontend/**`
   - run: `playwright MCP verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /promises/:id, /methodology`
-  - evidence: Pending DO packet evidence.
+  - evidence: packet:c2c5eb5 | run:chrome-devtools verification of /, /politicians, /politicians/1, /parties, /parties/sdp, /promises/1, /methodology on http://127.0.0.1:4174 -> pass (home suggestions, party profile, methodology TOC, empty/not-found states verified) | files:frontend/src/routes/PoliticiansPage.tsx | docs:N/A | status: clean
 
 - [ ] Run focused accessibility checks for keyboard flow, sticky controls, breadcrumbs, TOC, and responsive card-table fallbacks
   - files: `frontend/**`
   - run: `playwright or chrome-devtools accessibility verification of the critical public routes`
-  - evidence: Pending DO packet evidence.
+  - evidence: packet:c2c5eb5 | run:chrome-devtools accessibility verification on /politicians and /methodology -> pass (console clean after control-id fix, mobile control stack verified, lighthouse accessibility 98) | files:frontend/src/routes/PoliticiansPage.tsx | docs:N/A | status: clean

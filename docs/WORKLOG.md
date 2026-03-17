@@ -30,3 +30,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:36] DO: improve S-19 directory traversal packet (sprint: S-19, links: 0e0699b, docs/SPRINT.md)
 - [12:38] DO: add S-19 search suggestions and tab motion packet (sprint: S-19, links: 6a71cb0, docs/SPRINT.md)
 - [12:38] REVIEW: accept S-19 methodology and interaction row (findings: none)
+- [12:44] DO: verify S-20 static, browser, and accessibility packet (sprint: S-20, links: c2c5eb5, docs/SPRINT.md)
