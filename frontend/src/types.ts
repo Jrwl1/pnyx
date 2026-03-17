@@ -63,6 +63,7 @@ export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknow
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
 export type PartyLineStatus = "aligned" | "broke_party_line" | "unknown";
 export type PlaceholderState = "placeholder";
+export type PartyDataState = "placeholder" | "live";
 
 export interface Politician {
   id: number;
@@ -278,7 +279,59 @@ export interface PartyRecord {
   name: string;
   shortName: string;
   contextLine: string;
-  dataState: PlaceholderState;
+  dataState: PartyDataState;
+}
+
+export interface BackendPartySummary {
+  id: string;
+  name: string;
+  shortName: string;
+  countryCode: string;
+  description: string | null;
+  websiteUrl: string | null;
+  aliasCount: number;
+  memberCount: number;
+  currentMemberCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendPartyAlias {
+  id: number;
+  partyId: string;
+  alias: string;
+  sourceNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BackendPartyMember {
+  membershipId: number;
+  politicianId: number;
+  name: string;
+  region: string | null;
+  office: string | null;
+  externalId: string | null;
+  partyId: string;
+  roleTitle: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  sourceNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  current: number;
+}
+
+export interface BackendPartyDetailResponse {
+  party: BackendPartySummary;
+  aliases: BackendPartyAlias[];
+  membersUrl: string;
+}
+
+export interface BackendPartyMembersResponse {
+  partyId: string;
+  includeHistorical: boolean;
+  items: BackendPartyMember[];
 }
 
 export interface PartyStanceRecord {

@@ -1,15 +1,45 @@
-/* Finland-first party directory with explicit unknown states. */
+/* Finland-first party directory backed by canonical backend party and membership reads. */
 
-import type { ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
+import { ErrorState, LoadingState } from "../components/PageState";
 import { StatusChip } from "../components/StatusChip";
-import { PARTY_ROUTE_SHELLS } from "../types";
+import { listParties } from "../lib/api";
+import type { BackendPartySummary } from "../types";
 
 const formatUnknownCount = (value: number | null): string => {
   return value === null ? "Unknown" : String(value);
 };
 
 export const PartiesPage = (): ReactElement => {
+  const [parties, setParties] = useState<BackendPartySummary[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = async (): Promise<void> => {
+    setLoading(true);
+    setError(null);
+    try {
+      setParties(await listParties());
+    } catch (err) {
+      setError((err as Error).message || "Unable to load party directory.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void load();
+  }, []);
+
+  if (loading) {
+    return <LoadingState label="Loading party directory..." />;
+  }
+
+  if (error) {
+    return <ErrorState message={error} onRetry={() => void load()} />;
+  }
+
   return (
     <div className="stack-lg">
       <section className="hero-panel grid-12">
@@ -38,22 +68,31 @@ export const PartiesPage = (): ReactElement => {
         </div>
 
         <div className="cards-grid route-shell-grid">
-          {PARTY_ROUTE_SHELLS.map((entry) => (
-            <article key={entry.party.id} className="card stack-sm card-interactive">
+          {parties.length === 0 ? (
+            <article className="card stack-sm">
+              <h3>No canonical parties yet</h3>
+              <p>Party cards will appear here as canonical party identities and memberships are populated.</p>
+            </article>
+          ) : (
+          parties.map((entry) => (
+            <article key={entry.id} className="card stack-sm card-interactive">
               <div className="stack-xs">
-                <span className="party-badge">{entry.party.shortName}</span>
-                <h3>{entry.party.name}</h3>
-                <p>{entry.party.contextLine}</p>
+                <span className="party-badge">{entry.shortName}</span>
+                <h3>{entry.name}</h3>
+                <p>
+                  {entry.description ??
+                    "Canonical party identity is available here now. Official stances and trust comparisons remain unknown until those records are connected."}
+                </p>
               </div>
 
-              <div className="stack-xs" aria-label={`${entry.party.name} summary`}>
+              <div className="stack-xs" aria-label={`${entry.name} summary`}>
                 <p className="metric-pair">
-                  <span>Official stances tracked</span>
-                  <strong>{formatUnknownCount(entry.officialStancesTracked)}</strong>
+                  <span>Aliases tracked</span>
+                  <strong>{entry.aliasCount}</strong>
                 </p>
                 <p className="metric-pair">
                   <span>Members on PNYX</span>
-                  <strong>{formatUnknownCount(entry.membersOnPnyx)}</strong>
+                  <strong>{entry.currentMemberCount}</strong>
                 </p>
                 <div className="metric-pair">
                   <span>Party-line summary</span>
@@ -62,11 +101,11 @@ export const PartiesPage = (): ReactElement => {
               </div>
 
               <div className="card-link-row">
-                <Link to={`/parties/${entry.party.id}`}>View party profile</Link>
+                <Link to={`/parties/${entry.id}`}>View party profile</Link>
                 <Link to="/methodology">Read methodology</Link>
               </div>
             </article>
-          ))}
+          )))}
         </div>
       </section>
     </div>

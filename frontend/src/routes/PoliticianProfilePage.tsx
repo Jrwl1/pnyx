@@ -169,7 +169,7 @@ export const PoliticianProfilePage = (): ReactElement => {
             )}
           </p>
           <p className="meta-line">
-            {linkedPartyShell ? "Party page available." : "No party affiliation is listed in the current record."}
+            {linkedPartyShell ? "Backend-backed party identity is connected for this politician." : "No party affiliation is listed in the current record."}
           </p>
         </article>
 

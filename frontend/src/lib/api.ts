@@ -3,6 +3,9 @@
 import type {
   AuthTokenRequest,
   AuthTokenResponse,
+  BackendPartyDetailResponse,
+  BackendPartyMembersResponse,
+  BackendPartySummary,
   Politician,
   ProposalAuditResponse,
   ProposalClaimResult,
@@ -126,6 +129,20 @@ export const createStatement = async (token: string, input: StatementSubmissionI
 export const listPoliticians = async (): Promise<Politician[]> => {
   const response = await fetchJson<{ items: Politician[] }>("/politicians");
   return response.items;
+};
+
+export const listParties = async (): Promise<BackendPartySummary[]> => {
+  const response = await fetchJson<{ items: BackendPartySummary[] }>("/parties");
+  return response.items;
+};
+
+export const getPartyById = async (id: string): Promise<BackendPartyDetailResponse> => {
+  return fetchJson<BackendPartyDetailResponse>(`/parties/${id}`);
+};
+
+export const getPartyMembers = async (id: string, includeHistorical = false): Promise<BackendPartyMembersResponse> => {
+  const suffix = includeHistorical ? "?includeHistorical=1" : "";
+  return fetchJson<BackendPartyMembersResponse>(`/parties/${id}/members${suffix}`);
 };
 
 export const listStatements = async (): Promise<StatementSummary[]> => {

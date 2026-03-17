@@ -1,6 +1,6 @@
 /* Finland-first home page with politician search, live promise discovery, and trust framing. */
 
-import { useMemo, useState, type FormEvent, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { useAuth } from "../context/AuthContext";
@@ -12,10 +12,13 @@ import {
   findPartyShellByQuery,
   getPartyAffiliationLabel,
   getTerritoryLabel,
-  ISSUE_OPTIONS
+  ISSUE_OPTIONS,
+  toPartyRecord
 } from "../lib/domain";
+import { listParties } from "../lib/api";
 import { formatDate, formatIdentityLine } from "../lib/format";
 import { usePublicData } from "../context/PublicDataContext";
+import type { BackendPartySummary } from "../types";
 
 const truncatePromiseText = (value: string, maxLength = 156): string => {
   if (value.length <= maxLength) {
@@ -35,8 +38,28 @@ export const HomePage = (): ReactElement => {
   const { session } = useAuth();
   const { politicians, statements, loading, error, refresh } = usePublicData();
   const [query, setQuery] = useState<string>("");
+  const [parties, setParties] = useState<BackendPartySummary[]>([]);
+  const [partyLoading, setPartyLoading] = useState<boolean>(true);
+  const [partyError, setPartyError] = useState<string | null>(null);
+
+  const loadParties = async (): Promise<void> => {
+    setPartyLoading(true);
+    setPartyError(null);
+    try {
+      setParties(await listParties());
+    } catch (err) {
+      setPartyError((err as Error).message || "Unable to load party data.");
+    } finally {
+      setPartyLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadParties();
+  }, []);
 
   const latestPromises = useMemo(() => buildLatestPromiseFeed(politicians, statements, 4), [politicians, statements]);
+  const partyRecords = useMemo(() => parties.map(toPartyRecord), [parties]);
 
   const featuredRows = useMemo(() => {
     return buildDirectoryRows(politicians, statements)
@@ -56,9 +79,9 @@ export const HomePage = (): ReactElement => {
       .slice(0, 4);
   }, [politicians, statements]);
 
-  const featuredParties = useMemo(() => buildHomePartyCards(politicians, statements).slice(0, 4), [politicians, statements]);
-  const exactPartyMatch = useMemo(() => findPartyShellByQuery(query), [query]);
-  const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query), [politicians, query]);
+  const featuredParties = useMemo(() => buildHomePartyCards(politicians, statements, partyRecords).slice(0, 4), [partyRecords, politicians, statements]);
+  const exactPartyMatch = useMemo(() => findPartyShellByQuery(query, partyRecords), [partyRecords, query]);
+  const searchSuggestions = useMemo(() => buildSearchSuggestions(politicians, query, 6, partyRecords), [partyRecords, politicians, query]);
   const politicianProposalTarget = session ? "/contribute/politicians/new" : buildSignInRedirectLink("/contribute/politicians/new");
   const statementContributionTarget = session ? "/contribute/statements/new" : buildSignInRedirectLink("/contribute/statements/new");
 
@@ -71,7 +94,7 @@ export const HomePage = (): ReactElement => {
       return;
     }
 
-    const partyMatch = findPartyShellByQuery(trimmedQuery);
+    const partyMatch = findPartyShellByQuery(trimmedQuery, partyRecords);
     if (partyMatch) {
       navigate(`/parties/${partyMatch.party.id}`);
       return;
@@ -87,12 +110,12 @@ export const HomePage = (): ReactElement => {
     navigate(target);
   };
 
-  if (loading) {
+  if (loading || partyLoading) {
     return <LoadingState />;
   }
 
-  if (error) {
-    return <ErrorState message={error} onRetry={() => void refresh()} />;
+  if (error || partyError) {
+    return <ErrorState message={error ?? partyError ?? "Unable to load data."} onRetry={() => { void refresh(); void loadParties(); }} />;
   }
 
   return (
@@ -159,11 +182,15 @@ export const HomePage = (): ReactElement => {
             <div className="stack-xs">
               <p className="mono-inline">Browse by party</p>
               <div className="shortcut-row" role="group" aria-label="Browse by party">
-                {featuredParties.map((entry) => (
-                  <Link key={entry.party.id} className="shortcut-link" to={`/parties/${entry.party.id}`}>
-                    {entry.party.shortName}
-                  </Link>
-                ))}
+                {featuredParties.length === 0 ? (
+                  <span className="data-note">No canonical parties connected yet.</span>
+                ) : (
+                  featuredParties.map((entry) => (
+                    <Link key={entry.party.id} className="shortcut-link" to={`/parties/${entry.party.id}`}>
+                      {entry.party.shortName}
+                    </Link>
+                  ))
+                )}
               </div>
             </div>
           </div>
@@ -310,25 +337,32 @@ export const HomePage = (): ReactElement => {
           </div>
 
           <div className="cards-grid cards-grid-2 party-discovery-grid">
-            {featuredParties.map((entry) => (
-              <article key={entry.party.id} className="card discovery-card">
-                <div className="stack-xs">
-                  <h3>{entry.party.name}</h3>
-                  <span className="party-badge">{entry.party.shortName}</span>
-                  <p>{entry.party.contextLine}</p>
-                </div>
-                <div className="stat-strip" aria-label={`${entry.party.name} summary`}>
-                  <span className="stat-pill">{entry.linkedPoliticians} linked politicians</span>
-                  <span className="stat-pill">{entry.promisesTracked} promises tracked</span>
-                  <span className="stat-pill">Latest {formatDate(entry.latestActivity)}</span>
-                </div>
-                <div className="card-link-row">
-                  <Link className="button button-link" to={`/parties/${entry.party.id}`}>
-                    View party profile
-                  </Link>
-                </div>
+            {featuredParties.length === 0 ? (
+              <article className="card">
+                <h3>No party records yet</h3>
+                <p>Party cards will appear here once canonical party identities and memberships are populated.</p>
               </article>
-            ))}
+            ) : (
+              featuredParties.map((entry) => (
+                <article key={entry.party.id} className="card discovery-card">
+                  <div className="stack-xs">
+                    <h3>{entry.party.name}</h3>
+                    <span className="party-badge">{entry.party.shortName}</span>
+                    <p>{entry.party.contextLine}</p>
+                  </div>
+                  <div className="stat-strip" aria-label={`${entry.party.name} summary`}>
+                    <span className="stat-pill">{entry.linkedPoliticians} linked politicians</span>
+                    <span className="stat-pill">{entry.promisesTracked} promises tracked</span>
+                    <span className="stat-pill">Latest {formatDate(entry.latestActivity)}</span>
+                  </div>
+                  <div className="card-link-row">
+                    <Link className="button button-link" to={`/parties/${entry.party.id}`}>
+                      View party profile
+                    </Link>
+                  </div>
+                </article>
+              ))
+            )}
           </div>
         </article>
       </section>

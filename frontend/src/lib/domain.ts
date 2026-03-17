@@ -2,9 +2,11 @@
 
 import type {
   AlignmentStats,
+  BackendPartySummary,
   DirectoryRow,
   LatestPromiseFeedItem,
   PartyDiscoveryCard,
+  PartyRecord,
   PartyProfileShell,
   Politician,
   PromiseRecord,
@@ -44,6 +46,20 @@ export interface SearchSuggestion {
   target: string;
 }
 
+const fallbackPartyRecords = PARTY_ROUTE_SHELLS.map((entry) => entry.party);
+
+export const toPartyRecord = (party: BackendPartySummary): PartyRecord => {
+  return {
+    id: party.id,
+    name: party.name,
+    shortName: party.shortName,
+    contextLine:
+      party.description ??
+      "Party page with backend-backed identity and membership counts, while stance and party-line records are still being connected.",
+    dataState: "live"
+  };
+};
+
 export const toPromiseRecord = (statement: StatementSummary): PromiseRecord => {
   return {
     id: statement.id,
@@ -82,22 +98,42 @@ export const hasPartyAffiliationData = (politicians: Politician[]): boolean => {
   return politicians.some((politician) => Boolean(politician.partyId || politician.partyName || politician.partyShortName));
 };
 
-export const findPartyShellByQuery = (query: string): PartyProfileShell | null => {
+export const findPartyShellByQuery = (query: string, partyRecords: PartyRecord[] = fallbackPartyRecords): PartyProfileShell | null => {
   const normalizedQuery = normalizeForSearch(query);
   if (!normalizedQuery) {
     return null;
   }
 
-  return (
-    PARTY_ROUTE_SHELLS.find((entry) => {
-      return [entry.party.name, entry.party.shortName]
+  const match =
+    partyRecords.find((entry) => {
+      return [entry.name, entry.shortName]
         .map((value) => normalizeForSearch(value))
         .some((candidate) => candidate === normalizedQuery);
-    }) ?? null
-  );
+    }) ?? null;
+
+  if (!match) {
+    return null;
+  }
+
+  return {
+    party: match,
+    officialStancesTracked: null,
+    membersOnPnyx: null,
+    partyLineSummary: "unknown",
+    notes: [
+      "Party identity is now backed by backend reads.",
+      "Official party stances have not been connected yet.",
+      "Party-line comparison still stays unknown until supporting records exist."
+    ],
+    stances: [],
+    members: []
+  };
 };
 
-export const findPartyShellForPolitician = (politician: Politician | null | undefined): PartyProfileShell | null => {
+export const findPartyShellForPolitician = (
+  politician: Politician | null | undefined,
+  partyRecords: PartyRecord[] = fallbackPartyRecords
+): PartyProfileShell | null => {
   if (!politician) {
     return null;
   }
@@ -107,9 +143,39 @@ export const findPartyShellForPolitician = (politician: Politician | null | unde
     if (directMatch) {
       return directMatch;
     }
+    const dynamicMatch = partyRecords.find((entry) => entry.id === politician.partyId);
+    if (dynamicMatch) {
+      return {
+        party: dynamicMatch,
+        officialStancesTracked: null,
+        membersOnPnyx: null,
+        partyLineSummary: "unknown",
+        notes: [],
+        stances: [],
+        members: []
+      };
+    }
   }
 
-  return findPartyShellByQuery(politician.partyShortName ?? politician.partyName ?? "");
+  if (politician.partyId && (politician.partyShortName || politician.partyName)) {
+    return {
+      party: {
+        id: politician.partyId,
+        name: politician.partyName ?? politician.partyShortName ?? politician.partyId,
+        shortName: politician.partyShortName ?? politician.partyName ?? politician.partyId,
+        contextLine: "Backend-backed party identity is available for this politician.",
+        dataState: "live"
+      },
+      officialStancesTracked: null,
+      membersOnPnyx: null,
+      partyLineSummary: "unknown",
+      notes: [],
+      stances: [],
+      members: []
+    };
+  }
+
+  return findPartyShellByQuery(politician.partyShortName ?? politician.partyName ?? "", partyRecords);
 };
 
 export const getIssueTagsForStatement = (statement: StatementSummary): string[] => {
@@ -227,20 +293,25 @@ export const buildSearchText = (row: DirectoryRow): string => {
     .toLowerCase();
 };
 
-export const buildSearchSuggestions = (politicians: Politician[], query: string, limit = 6): SearchSuggestion[] => {
+export const buildSearchSuggestions = (
+  politicians: Politician[],
+  query: string,
+  limit = 6,
+  partyRecords: PartyRecord[] = fallbackPartyRecords
+): SearchSuggestion[] => {
   const normalizedQuery = normalizeForSearch(query);
   if (normalizedQuery.length < 2) {
     return [];
   }
 
-  const partySuggestions = PARTY_ROUTE_SHELLS.filter((entry) =>
-    [entry.party.name, entry.party.shortName].some((value) => normalizeForSearch(value).includes(normalizedQuery))
-  ).map((entry) => ({
-    key: `party-${entry.party.id}`,
-    label: entry.party.name,
-    description: `${entry.party.shortName} party page`,
-    target: `/parties/${entry.party.id}`
-  }));
+  const partySuggestions = partyRecords
+    .filter((entry) => [entry.name, entry.shortName].some((value) => normalizeForSearch(value).includes(normalizedQuery)))
+    .map((entry) => ({
+      key: `party-${entry.id}`,
+      label: entry.name,
+      description: `${entry.shortName} party page`,
+      target: `/parties/${entry.id}`
+    }));
 
   const politicianSuggestions = politicians
     .filter((politician) => {
@@ -287,11 +358,15 @@ export const buildLatestPromiseFeed = (
     .slice(0, limit);
 };
 
-export const buildHomePartyCards = (politicians: Politician[], statements: StatementSummary[]): PartyDiscoveryCard[] => {
+export const buildHomePartyCards = (
+  politicians: Politician[],
+  statements: StatementSummary[],
+  partyRecords: PartyRecord[] = fallbackPartyRecords
+): PartyDiscoveryCard[] => {
   const politiciansById = new Map(politicians.map((politician) => [politician.id, politician]));
   const rollups = new Map(
-    PARTY_ROUTE_SHELLS.map((entry) => [
-      entry.party.id,
+    partyRecords.map((party) => [
+      party.id,
       {
         linkedPoliticianIds: new Set<number>(),
         promisesTracked: 0,
@@ -301,7 +376,7 @@ export const buildHomePartyCards = (politicians: Politician[], statements: State
   );
 
   for (const politician of politicians) {
-    const linkedParty = findPartyShellForPolitician(politician);
+    const linkedParty = findPartyShellForPolitician(politician, partyRecords);
     if (!linkedParty) {
       continue;
     }
@@ -311,7 +386,7 @@ export const buildHomePartyCards = (politicians: Politician[], statements: State
 
   for (const statement of statements) {
     const politician = politiciansById.get(statement.politicianId);
-    const linkedParty = findPartyShellForPolitician(politician);
+    const linkedParty = findPartyShellForPolitician(politician, partyRecords);
     if (!linkedParty) {
       continue;
     }
@@ -328,11 +403,11 @@ export const buildHomePartyCards = (politicians: Politician[], statements: State
     }
   }
 
-  return PARTY_ROUTE_SHELLS.map((entry) => {
-    const rollup = rollups.get(entry.party.id);
+  return partyRecords.map((party) => {
+    const rollup = rollups.get(party.id);
 
     return {
-      party: entry.party,
+      party,
       linkedPoliticians: rollup?.linkedPoliticianIds.size ?? 0,
       promisesTracked: rollup?.promisesTracked ?? 0,
       latestActivity: rollup?.latestActivity ?? null
