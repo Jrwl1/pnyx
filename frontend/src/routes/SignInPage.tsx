@@ -21,6 +21,14 @@ export const SignInPage = (): ReactElement => {
   const [message, setMessage] = useState<string | null>(null);
 
   const redirectTarget = useMemo(() => getSafeRedirect(searchParams.get("redirect")), [searchParams]);
+  const registerTarget = useMemo(() => {
+    const params = new URLSearchParams();
+    if (redirectTarget !== "/") {
+      params.set("redirect", redirectTarget);
+    }
+    const query = params.toString();
+    return `/register${query ? `?${query}` : ""}`;
+  }, [redirectTarget]);
 
   const onRequestCode = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
     event.preventDefault();
@@ -131,7 +139,7 @@ export const SignInPage = (): ReactElement => {
             <button className="button button-primary" type="submit" disabled={submitting}>
               {submitting ? "Sending code..." : "Send sign-in code"}
             </button>
-            <Link className="button button-link" to="/register">
+            <Link className="button button-link" to={registerTarget}>
               Need an account? Register
             </Link>
           </div>

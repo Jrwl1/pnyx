@@ -39,6 +39,20 @@ import {
 } from "./db/trust-records.js";
 
 export const app = express();
+const allowedCorsOrigin = (process.env.CORS_ALLOW_ORIGIN ?? "").trim();
+if (allowedCorsOrigin) {
+  app.use((req, res, next) => {
+    res.header("Access-Control-Allow-Origin", allowedCorsOrigin);
+    res.header("Vary", "Origin");
+    res.header("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    if (req.method === "OPTIONS") {
+      res.sendStatus(204);
+      return;
+    }
+    next();
+  });
+}
 app.use(express.json());
 app.use(authContext);
 

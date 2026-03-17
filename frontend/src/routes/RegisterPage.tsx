@@ -124,7 +124,7 @@ export const RegisterPage = (): ReactElement => {
             <button className="button button-primary" type="submit" disabled={submitting}>
               {submitting ? "Creating account..." : "Register"}
             </button>
-            <Link className="button button-link" to="/sign-in">
+            <Link className="button button-link" to={signInTarget}>
               Already have an account? Sign in
             </Link>
           </div>
