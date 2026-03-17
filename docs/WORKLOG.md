@@ -23,3 +23,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [12:24] DO: apply S-17 Finland-first format and control-state packet (sprint: S-17, links: b9d1349, docs/SPRINT.md)
 - [12:25] DO: wait for shared promise context in S-17 (sprint: S-17, links: b0ad038, docs/SPRINT.md)
 - [12:26] REVIEW: accept S-17 Finland-first correctness row (findings: none)
+- [12:30] DO: add S-18 amber identity and claim styling packet (sprint: S-18, links: 4882359, docs/SPRINT.md)
