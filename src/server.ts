@@ -23,6 +23,19 @@ import {
   listPromiseClaimAudits,
   listPromiseClaims
 } from "./db/promise-claims.js";
+import {
+  getLatestPromiseFulfillmentAssessment,
+  getPartyStanceById,
+  getVoteEventById,
+  listPartyStances,
+  listPromiseFulfillmentAssessments,
+  listPromisePartyAlignments,
+  listPromiseVoteComparisons,
+  listVoteEventRecords,
+  listVoteEvents,
+  politicianHasPartyMembership,
+  summarizePromiseVoteAlignment
+} from "./db/trust-records.js";
 
 export const app = express();
 app.use(express.json());
@@ -294,11 +307,19 @@ const duplicateReasonCodes = ["duplicate_canonical", "duplicate_pending", "alrea
 const canonicalPublicStatuses = ["draft", "public"] as const;
 const promiseClaimRejectReasonCodes = ["insufficient_evidence", "unverifiable_source", "out_of_scope"] as const;
 const promiseClaimSignalReasonCodes = ["same_claim", "same_promise", "different_subject", "different_scope"] as const;
+const voteRecordValues = ["for", "against", "abstain", "absent"] as const;
+const alignedVoteValues = ["for", "against", "abstain"] as const;
+const fulfillmentStatuses = ["fulfilled", "broken", "in_progress", "unknown"] as const;
+const partyAlignmentStatuses = ["aligned", "broke_party_line"] as const;
 type RejectReasonCode = (typeof rejectReasonCodes)[number];
 type DuplicateReasonCode = (typeof duplicateReasonCodes)[number];
 type CanonicalPublicStatus = (typeof canonicalPublicStatuses)[number];
 type PromiseClaimRejectReasonCode = (typeof promiseClaimRejectReasonCodes)[number];
 type PromiseClaimSignalReasonCode = (typeof promiseClaimSignalReasonCodes)[number];
+type VoteRecordValue = (typeof voteRecordValues)[number];
+type AlignedVoteValue = (typeof alignedVoteValues)[number];
+type FulfillmentStatus = (typeof fulfillmentStatuses)[number];
+type PartyAlignmentStatus = (typeof partyAlignmentStatuses)[number];
 
 const isProposalStatus = (value: string): value is ProposalStatus => {
   return proposalStatuses.includes(value as ProposalStatus);
@@ -326,6 +347,22 @@ const isPromiseClaimRejectReasonCode = (value: string): value is PromiseClaimRej
 
 const isPromiseClaimSignalReasonCode = (value: string): value is PromiseClaimSignalReasonCode => {
   return promiseClaimSignalReasonCodes.includes(value as PromiseClaimSignalReasonCode);
+};
+
+const isVoteRecordValue = (value: string): value is VoteRecordValue => {
+  return voteRecordValues.includes(value as VoteRecordValue);
+};
+
+const isAlignedVoteValue = (value: string): value is AlignedVoteValue => {
+  return alignedVoteValues.includes(value as AlignedVoteValue);
+};
+
+const isFulfillmentStatus = (value: string): value is FulfillmentStatus => {
+  return fulfillmentStatuses.includes(value as FulfillmentStatus);
+};
+
+const isPartyAlignmentStatus = (value: string): value is PartyAlignmentStatus => {
+  return partyAlignmentStatuses.includes(value as PartyAlignmentStatus);
 };
 
 const createCanonicalPolitician = (input: CanonicalPoliticianInput, actorId: string): CanonicalPoliticianResult => {
@@ -723,6 +760,207 @@ app.patch("/party-memberships/:id", requireRole("moderator"), (req, res) => {
   }
 });
 
+app.get("/parties/:id/stances", (req, res) => {
+  const partyId = req.params.id.trim();
+  if (!getPartyById(partyId)) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+
+  res.json({ items: listPartyStances(partyId) });
+});
+
+app.post("/party-stances", requireRole("moderator"), (req, res) => {
+  const { partyId, issue, stanceText, sourceUrl, sourceNote, dateSaid } = req.body as {
+    partyId?: string;
+    issue?: string;
+    stanceText?: string;
+    sourceUrl?: string;
+    sourceNote?: string;
+    dateSaid?: string;
+  };
+
+  const normalizedPartyId = partyId?.trim().toLowerCase() ?? "";
+  const normalizedStanceText = stanceText?.trim() ?? "";
+  const normalizedSourceUrl = sourceUrl?.trim() ?? "";
+  const normalizedDateSaid = normalizeOptionalDate(dateSaid);
+
+  if (!normalizedPartyId || !normalizedStanceText || !normalizedSourceUrl || !normalizedDateSaid) {
+    res.status(400).json({ error: "partyId, stanceText, sourceUrl, and dateSaid are required" });
+    return;
+  }
+  if (normalizedDateSaid === INVALID_DATE_TOKEN) {
+    res.status(400).json({ error: "dateSaid must use YYYY-MM-DD format" });
+    return;
+  }
+  if (!getPartyById(normalizedPartyId)) {
+    res.status(404).json({ error: "party not found" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO party_stances (party_id, issue, stance_text, source_url, source_note, date_said, created_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      )
+      .run(
+        normalizedPartyId,
+        normalizeOptionalText(issue),
+        normalizedStanceText,
+        normalizedSourceUrl,
+        normalizeOptionalText(sourceNote),
+        normalizedDateSaid,
+        req.auth.userId ?? "moderation"
+      );
+    res.status(201).json({ id: result.lastInsertRowid as number, partyId: normalizedPartyId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "party stance already exists" : "internal server error"
+    });
+  }
+});
+
+app.get("/vote-events", (req, res) => {
+  const politicianIdRaw = req.query.politicianId as string | undefined;
+  const politicianId = politicianIdRaw ? Number(politicianIdRaw) : undefined;
+  if (politicianIdRaw !== undefined && (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0)) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+
+  res.json({
+    items: listVoteEvents({ politicianId }).map(serializeVoteEventSummary)
+  });
+});
+
+app.get("/vote-events/:id", (req, res) => {
+  const voteEventId = Number(req.params.id);
+  if (!Number.isInteger(voteEventId) || voteEventId <= 0) {
+    res.status(400).json({ error: "invalid vote event id" });
+    return;
+  }
+
+  const event = getVoteEventById(voteEventId);
+  if (!event) {
+    res.status(404).json({ error: "vote event not found" });
+    return;
+  }
+
+  res.json({
+    event: serializeVoteEventSummary(event),
+    records: listVoteEventRecords(voteEventId)
+  });
+});
+
+app.post("/vote-events", requireRole("moderator"), (req, res) => {
+  const { externalKey, countryCode, institutionName, issue, title, sourceUrl, sourceNote, eventDate } = req.body as {
+    externalKey?: string;
+    countryCode?: string;
+    institutionName?: string;
+    issue?: string;
+    title?: string;
+    sourceUrl?: string;
+    sourceNote?: string;
+    eventDate?: string;
+  };
+
+  const normalizedTitle = title?.trim() ?? "";
+  const normalizedSourceUrl = sourceUrl?.trim() ?? "";
+  const normalizedCountryCode = (countryCode?.trim().toUpperCase() || "FI");
+  const normalizedEventDate = normalizeOptionalDate(eventDate);
+
+  if (!normalizedTitle || !normalizedSourceUrl || !normalizedEventDate) {
+    res.status(400).json({ error: "title, sourceUrl, and eventDate are required" });
+    return;
+  }
+  if (normalizedEventDate === INVALID_DATE_TOKEN) {
+    res.status(400).json({ error: "eventDate must use YYYY-MM-DD format" });
+    return;
+  }
+  if (!/^[A-Z]{2}$/.test(normalizedCountryCode)) {
+    res.status(400).json({ error: "countryCode must be a two-letter uppercase code" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO vote_events
+         (external_key, country_code, institution_name, issue, title, source_url, source_note, event_date, created_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+      )
+      .run(
+        normalizeOptionalText(externalKey),
+        normalizedCountryCode,
+        normalizeOptionalText(institutionName) ?? "Eduskunta",
+        normalizeOptionalText(issue),
+        normalizedTitle,
+        normalizedSourceUrl,
+        normalizeOptionalText(sourceNote),
+        normalizedEventDate,
+        req.auth.userId ?? "moderation"
+      );
+    res.status(201).json({ id: result.lastInsertRowid as number });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "vote event already exists" : "internal server error"
+    });
+  }
+});
+
+app.post("/vote-events/:id/records", requireRole("moderator"), (req, res) => {
+  const voteEventId = Number(req.params.id);
+  const { politicianId, voteValue, sourceNote } = req.body as {
+    politicianId?: number;
+    voteValue?: string;
+    sourceNote?: string;
+  };
+
+  if (!Number.isInteger(voteEventId) || voteEventId <= 0) {
+    res.status(400).json({ error: "invalid vote event id" });
+    return;
+  }
+  if (!Number.isInteger(politicianId) || (politicianId ?? 0) <= 0) {
+    res.status(400).json({ error: "politicianId must be a positive integer" });
+    return;
+  }
+  const normalizedVoteValue = voteValue?.trim().toLowerCase() ?? "";
+  if (!isVoteRecordValue(normalizedVoteValue)) {
+    res.status(400).json({ error: "voteValue must be for, against, abstain, or absent" });
+    return;
+  }
+  if (!getVoteEventById(voteEventId)) {
+    res.status(404).json({ error: "vote event not found" });
+    return;
+  }
+  const politician = db.prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(politicianId) as { "1"?: number } | undefined;
+  if (!politician) {
+    res.status(404).json({ error: "politician not found" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO politician_vote_records (vote_event_id, politician_id, vote_value, source_note, created_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      )
+      .run(voteEventId, politicianId, normalizedVoteValue, normalizeOptionalText(sourceNote), req.auth.userId ?? "moderation");
+    res.status(201).json({ id: result.lastInsertRowid as number, voteEventId, politicianId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "politician vote record already exists for this event" : "internal server error"
+    });
+  }
+});
+
 app.post("/politicians", politicianCreateLimiter, requireRole("admin"), (req, res) => {
   const { name, region, office, externalId } = req.body as {
     name?: string;
@@ -847,6 +1085,12 @@ const serializePartySummary = (row: ReturnType<typeof listParties>[number]) => (
   aliasCount: Number(row.aliasCount ?? 0),
   memberCount: Number(row.memberCount ?? 0),
   currentMemberCount: Number(row.currentMemberCount ?? 0)
+});
+
+const serializeVoteEventSummary = (row: ReturnType<typeof listVoteEvents>[number]) => ({
+  ...row,
+  recordCount: Number(row.recordCount ?? 0),
+  linkedPromiseCount: Number(row.linkedPromiseCount ?? 0)
 });
 
 type IdentityCandidate = {
@@ -1725,6 +1969,231 @@ app.get("/canonical-promises/:id", (req, res) => {
     acceptedSources: listCanonicalPromiseSources(canonicalPromiseId),
     history: listCanonicalHistory(canonicalPromiseId)
   });
+});
+
+app.get("/canonical-promises/:id/vote-links", (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  const promise = getCanonicalPromiseById(canonicalPromiseId, includeNonPublic);
+  if (!promise) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+
+  const items = listPromiseVoteComparisons(canonicalPromiseId);
+  res.json({
+    summary: summarizePromiseVoteAlignment(items),
+    items
+  });
+});
+
+app.post("/canonical-promises/:id/vote-links", requireRole("moderator"), (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  const { voteEventId, alignedVoteValue, comparisonNote } = req.body as {
+    voteEventId?: number;
+    alignedVoteValue?: string;
+    comparisonNote?: string;
+  };
+
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+  if (!Number.isInteger(voteEventId) || (voteEventId ?? 0) <= 0) {
+    res.status(400).json({ error: "voteEventId must be a positive integer" });
+    return;
+  }
+  const normalizedAlignedVoteValue = alignedVoteValue?.trim().toLowerCase() ?? "";
+  if (!isAlignedVoteValue(normalizedAlignedVoteValue)) {
+    res.status(400).json({ error: "alignedVoteValue must be for, against, or abstain" });
+    return;
+  }
+  if (!getCanonicalPromiseById(canonicalPromiseId, true)) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+  if (!getVoteEventById(voteEventId)) {
+    res.status(404).json({ error: "vote event not found" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO canonical_promise_vote_links
+         (canonical_promise_id, vote_event_id, aligned_vote_value, comparison_note, created_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      )
+      .run(
+        canonicalPromiseId,
+        voteEventId,
+        normalizedAlignedVoteValue,
+        normalizeOptionalText(comparisonNote),
+        req.auth.userId ?? "moderation"
+      );
+    res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, voteEventId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "vote link already exists for this canonical promise" : "internal server error"
+    });
+  }
+});
+
+app.get("/canonical-promises/:id/fulfillment-assessments", (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  if (!getCanonicalPromiseById(canonicalPromiseId, includeNonPublic)) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+
+  res.json({
+    latest: getLatestPromiseFulfillmentAssessment(canonicalPromiseId) ?? null,
+    items: listPromiseFulfillmentAssessments(canonicalPromiseId)
+  });
+});
+
+app.post("/canonical-promises/:id/fulfillment-assessments", requireRole("moderator"), (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  const { status, summary, sourceUrl, sourceNote, evidenceDate } = req.body as {
+    status?: string;
+    summary?: string;
+    sourceUrl?: string;
+    sourceNote?: string;
+    evidenceDate?: string;
+  };
+
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+  const normalizedStatus = status?.trim().toLowerCase() ?? "";
+  const normalizedSummary = summary?.trim() ?? "";
+  const normalizedSourceUrl = sourceUrl?.trim() ?? "";
+  const normalizedEvidenceDate = normalizeOptionalDate(evidenceDate);
+
+  if (!isFulfillmentStatus(normalizedStatus)) {
+    res.status(400).json({ error: "status must be fulfilled, broken, in_progress, or unknown" });
+    return;
+  }
+  if (!normalizedSummary || !normalizedSourceUrl || !normalizedEvidenceDate) {
+    res.status(400).json({ error: "summary, sourceUrl, and evidenceDate are required" });
+    return;
+  }
+  if (normalizedEvidenceDate === INVALID_DATE_TOKEN) {
+    res.status(400).json({ error: "evidenceDate must use YYYY-MM-DD format" });
+    return;
+  }
+  if (!getCanonicalPromiseById(canonicalPromiseId, true)) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+
+  const result = db
+    .prepare(
+      `INSERT INTO promise_fulfillment_assessments
+       (canonical_promise_id, status, summary, source_url, source_note, evidence_date, created_by, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    )
+    .run(
+      canonicalPromiseId,
+      normalizedStatus,
+      normalizedSummary,
+      normalizedSourceUrl,
+      normalizeOptionalText(sourceNote),
+      normalizedEvidenceDate,
+      req.auth.userId ?? "moderation"
+    );
+  res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId });
+});
+
+app.get("/canonical-promises/:id/party-alignments", (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+
+  const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  if (!getCanonicalPromiseById(canonicalPromiseId, includeNonPublic)) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+
+  res.json({ items: listPromisePartyAlignments(canonicalPromiseId) });
+});
+
+app.post("/canonical-promises/:id/party-alignments", requireRole("moderator"), (req, res) => {
+  const canonicalPromiseId = Number(req.params.id);
+  const { partyStanceId, status, reason } = req.body as {
+    partyStanceId?: number;
+    status?: string;
+    reason?: string;
+  };
+
+  if (!Number.isInteger(canonicalPromiseId) || canonicalPromiseId <= 0) {
+    res.status(400).json({ error: "invalid canonical promise id" });
+    return;
+  }
+  if (!Number.isInteger(partyStanceId) || (partyStanceId ?? 0) <= 0) {
+    res.status(400).json({ error: "partyStanceId must be a positive integer" });
+    return;
+  }
+  const normalizedStatus = status?.trim().toLowerCase() ?? "";
+  if (!isPartyAlignmentStatus(normalizedStatus)) {
+    res.status(400).json({ error: "status must be aligned or broke_party_line" });
+    return;
+  }
+
+  const promise = getCanonicalPromiseById(canonicalPromiseId, true);
+  if (!promise) {
+    res.status(404).json({ error: "canonical promise not found" });
+    return;
+  }
+  const partyStance = getPartyStanceById(partyStanceId);
+  if (!partyStance) {
+    res.status(404).json({ error: "party stance not found" });
+    return;
+  }
+  if (!politicianHasPartyMembership(promise.politicianId, partyStance.partyId)) {
+    res.status(409).json({ error: "politician is not linked to the party for this stance" });
+    return;
+  }
+
+  try {
+    const result = db
+      .prepare(
+        `INSERT INTO party_alignment_assessments
+         (canonical_promise_id, party_stance_id, status, reason, created_by, updated_at)
+         VALUES (?, ?, ?, ?, ?, datetime('now'))`
+      )
+      .run(
+        canonicalPromiseId,
+        partyStanceId,
+        normalizedStatus,
+        normalizeOptionalText(reason),
+        req.auth.userId ?? "moderation"
+      );
+    res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, partyStanceId });
+  } catch (err) {
+    const code = (err as { code?: string }).code;
+    const isUniqueness = code === "SQLITE_CONSTRAINT_UNIQUE" || String((err as Error).message).includes("UNIQUE constraint");
+    res.status(isUniqueness ? 409 : 500).json({
+      error: isUniqueness ? "party alignment already exists for this stance" : "internal server error"
+    });
+  }
 });
 
 app.post("/promise-claims", requireRole("user"), (req, res) => {

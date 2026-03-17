@@ -1,4 +1,4 @@
-// WHAT IT DO? S1-T02 and S22 proof: verifies proposal and party schema migrations are applied.
+// WHAT IT DO? S1-T02, S22, and S25 proof: verifies proposal, party, canonization, and trust-record schema migrations are applied.
 import { describe, expect, it } from "vitest";
 
 import { db } from "../src/db/client.js";
@@ -20,6 +20,12 @@ describe("migration", () => {
     expect(tableNames.has("promise_claims")).toBe(true);
     expect(tableNames.has("promise_claim_audits")).toBe(true);
     expect(tableNames.has("claim_equivalence_signals")).toBe(true);
+    expect(tableNames.has("party_stances")).toBe(true);
+    expect(tableNames.has("vote_events")).toBe(true);
+    expect(tableNames.has("politician_vote_records")).toBe(true);
+    expect(tableNames.has("canonical_promise_vote_links")).toBe(true);
+    expect(tableNames.has("promise_fulfillment_assessments")).toBe(true);
+    expect(tableNames.has("party_alignment_assessments")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -47,6 +53,18 @@ describe("migration", () => {
     expect(indexNames.has("idx_promise_claims_pending_key")).toBe(true);
     expect(indexNames.has("idx_promise_claim_audits_claim")).toBe(true);
     expect(indexNames.has("idx_claim_equivalence_signals_claim")).toBe(true);
+    expect(indexNames.has("idx_party_stances_party_date")).toBe(true);
+    expect(indexNames.has("idx_party_stances_issue_date")).toBe(true);
+    expect(indexNames.has("idx_vote_events_external_key")).toBe(true);
+    expect(indexNames.has("idx_vote_events_country_date")).toBe(true);
+    expect(indexNames.has("idx_vote_events_issue_date")).toBe(true);
+    expect(indexNames.has("idx_politician_vote_records_politician")).toBe(true);
+    expect(indexNames.has("idx_politician_vote_records_event")).toBe(true);
+    expect(indexNames.has("idx_canonical_promise_vote_links_promise")).toBe(true);
+    expect(indexNames.has("idx_canonical_promise_vote_links_event")).toBe(true);
+    expect(indexNames.has("idx_promise_fulfillment_assessments_promise")).toBe(true);
+    expect(indexNames.has("idx_party_alignment_assessments_promise")).toBe(true);
+    expect(indexNames.has("idx_party_alignment_assessments_stance")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -131,5 +149,59 @@ describe("migration", () => {
     expect(signalColumnNames.has("target_kind")).toBe(true);
     expect(signalColumnNames.has("relation")).toBe(true);
     expect(signalColumnNames.has("reason_code")).toBe(true);
+
+    const partyStanceColumns = db
+      .prepare("PRAGMA table_info(party_stances)")
+      .all() as { name: string }[];
+    const partyStanceColumnNames = new Set(partyStanceColumns.map((column) => column.name));
+    expect(partyStanceColumnNames.has("party_id")).toBe(true);
+    expect(partyStanceColumnNames.has("issue")).toBe(true);
+    expect(partyStanceColumnNames.has("stance_text")).toBe(true);
+    expect(partyStanceColumnNames.has("source_url")).toBe(true);
+    expect(partyStanceColumnNames.has("date_said")).toBe(true);
+
+    const voteEventColumns = db
+      .prepare("PRAGMA table_info(vote_events)")
+      .all() as { name: string }[];
+    const voteEventColumnNames = new Set(voteEventColumns.map((column) => column.name));
+    expect(voteEventColumnNames.has("external_key")).toBe(true);
+    expect(voteEventColumnNames.has("country_code")).toBe(true);
+    expect(voteEventColumnNames.has("institution_name")).toBe(true);
+    expect(voteEventColumnNames.has("title")).toBe(true);
+    expect(voteEventColumnNames.has("event_date")).toBe(true);
+
+    const voteRecordColumns = db
+      .prepare("PRAGMA table_info(politician_vote_records)")
+      .all() as { name: string }[];
+    const voteRecordColumnNames = new Set(voteRecordColumns.map((column) => column.name));
+    expect(voteRecordColumnNames.has("vote_event_id")).toBe(true);
+    expect(voteRecordColumnNames.has("politician_id")).toBe(true);
+    expect(voteRecordColumnNames.has("vote_value")).toBe(true);
+
+    const promiseVoteLinkColumns = db
+      .prepare("PRAGMA table_info(canonical_promise_vote_links)")
+      .all() as { name: string }[];
+    const promiseVoteLinkColumnNames = new Set(promiseVoteLinkColumns.map((column) => column.name));
+    expect(promiseVoteLinkColumnNames.has("canonical_promise_id")).toBe(true);
+    expect(promiseVoteLinkColumnNames.has("vote_event_id")).toBe(true);
+    expect(promiseVoteLinkColumnNames.has("aligned_vote_value")).toBe(true);
+
+    const fulfillmentColumns = db
+      .prepare("PRAGMA table_info(promise_fulfillment_assessments)")
+      .all() as { name: string }[];
+    const fulfillmentColumnNames = new Set(fulfillmentColumns.map((column) => column.name));
+    expect(fulfillmentColumnNames.has("canonical_promise_id")).toBe(true);
+    expect(fulfillmentColumnNames.has("status")).toBe(true);
+    expect(fulfillmentColumnNames.has("summary")).toBe(true);
+    expect(fulfillmentColumnNames.has("evidence_date")).toBe(true);
+
+    const partyAlignmentColumns = db
+      .prepare("PRAGMA table_info(party_alignment_assessments)")
+      .all() as { name: string }[];
+    const partyAlignmentColumnNames = new Set(partyAlignmentColumns.map((column) => column.name));
+    expect(partyAlignmentColumnNames.has("canonical_promise_id")).toBe(true);
+    expect(partyAlignmentColumnNames.has("party_stance_id")).toBe(true);
+    expect(partyAlignmentColumnNames.has("status")).toBe(true);
+    expect(partyAlignmentColumnNames.has("reason")).toBe(true);
   });
 });
