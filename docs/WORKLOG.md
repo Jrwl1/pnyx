@@ -65,4 +65,5 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [20:31] DO: blocked on S-28 editorial browser verification due unstable local frontend/backend pairing for `/ops/records` (sprint: S-28, links: docs/SPRINT.md)
 - [20:41] DO: verify S-28 editorial ops on isolated preview/backend pair after direct-api and CORS gate fixes (sprint: S-28, links: e9af365, docs/SPRINT.md)
 - [20:42] REVIEW: accept S-28 editorial ops row (findings: none)
+- [21:15] DO: blocked again on S-29 repo-native UI harness after repeated Windows-safe browser runner attempts failed to stabilize under `pnpm test:ui` (sprint: S-29, links: docs/SPRINT.md)
 - [20:48] DO: blocked on S-29 repo-native UI harness after Windows Vitest child-process launches failed to keep the frontend server up reliably (sprint: S-29, links: docs/SPRINT.md)
