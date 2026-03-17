@@ -1,4 +1,4 @@
-/* WHAT IT DO? Implements the Finland-first home page with politician-first search, party shortcuts, and explicit unknown-state trust framing. */
+/* Finland-first home page with politician search, party discovery, and trust framing. */
 
 import { useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -67,10 +67,10 @@ export const HomePage = (): ReactElement => {
     <div className="stack-xl">
       <section className="hero-panel grid-12">
         <div className="col-span-8 stack-md">
-          <p className="eyebrow">Finland-first public discovery</p>
-          <h1>Find a Finnish politician first, then open the party context around the same public record.</h1>
+          <p className="eyebrow">Finnish political accountability</p>
+          <h1>What did they promise, and what does the public record show?</h1>
           <p className="lede">
-            PNYX tracks sourced promises, makes party-context gaps explicit, and keeps unknown accountability data visible instead of implying certainty the backend does not have yet.
+            Search Finnish politicians by name, party, office, or issue. Read the promises, open the evidence, and see clearly where the record is still incomplete.
           </p>
 
           <form className="search-form" onSubmit={onSearchSubmit}>
@@ -92,8 +92,8 @@ export const HomePage = (): ReactElement => {
 
           <p className="data-note">
             {exactPartyMatch
-              ? `Exact match found for ${exactPartyMatch.party.shortName}. Search will open that frontend-local party shell until canonical party search ships.`
-              : "Politician search remains the primary action. Exact placeholder party names also open the new party shells."}
+              ? `Exact match found for ${exactPartyMatch.party.shortName}. Search will open that party page directly.`
+              : "Search politicians first, or enter a party name such as SDP or Kokoomus."}
           </p>
 
           <div className="shortcut-cluster">
@@ -114,8 +114,8 @@ export const HomePage = (): ReactElement => {
             </div>
 
             <div className="stack-xs">
-              <p className="mono-inline">Party shortcuts</p>
-              <div className="shortcut-row" role="group" aria-label="Party shortcuts">
+              <p className="mono-inline">Browse by party</p>
+              <div className="shortcut-row" role="group" aria-label="Browse by party">
                 {featuredParties.map((entry) => (
                   <Link key={entry.party.id} className="shortcut-link" to={`/parties/${entry.party.id}`}>
                     {entry.party.shortName}
@@ -129,9 +129,9 @@ export const HomePage = (): ReactElement => {
         <aside className="col-span-4 stack-sm info-panel" aria-label="How this works">
           <h2>How this works</h2>
           <ul>
-            <li>Promises are tracked as sourced public statements.</li>
-            <li>Party stance and politician stance stay separate, even when one side is still unknown.</li>
-            <li>Unknown data is shown as a transparency rule, not hidden as if it were complete.</li>
+            <li>Each promise starts with a public statement and a source you can inspect.</li>
+            <li>Politician records and party records are shown separately so the gaps stay visible.</li>
+            <li>When evidence is missing, PNYX says so directly instead of guessing.</li>
           </ul>
         </aside>
       </section>
@@ -169,19 +169,19 @@ export const HomePage = (): ReactElement => {
 
       <section className="stack-sm">
         <div className="section-header">
-          <h2>Featured party route shells</h2>
-          <p className="data-note">Frontend-local placeholders keep party discovery visible while canonical party APIs are still pending.</p>
+          <h2>Political parties</h2>
+          <p className="data-note">Open party pages to see the current public context, key gaps, and linked politicians.</p>
         </div>
 
         <div className="cards-grid cards-grid-3">
           {featuredParties.map((entry) => (
             <article key={entry.party.id} className="card stack-xs card-interactive">
-              <span className="placeholder-badge mono-inline">Party shortcut</span>
+              <span className="placeholder-badge mono-inline">Party profile</span>
               <h3>{entry.party.name}</h3>
               <p className="meta-line mono-inline">{entry.party.shortName}</p>
               <p>{entry.party.contextLine}</p>
               <Link className="button button-link" to={`/parties/${entry.party.id}`}>
-                Open party shell
+                View party profile
               </Link>
             </article>
           ))}
@@ -190,20 +190,20 @@ export const HomePage = (): ReactElement => {
 
       <section className="panel-grid">
         <article className="card stack-sm">
-          <h2>What PNYX is</h2>
+          <h2>What you can track here</h2>
           <ul className="placeholder-list">
-            <li>A public accountability surface grounded in sourced statements.</li>
-            <li>A place to compare politician promise tracking with party-context gaps shown clearly.</li>
-            <li>A product that keeps Unknown states visible until better evidence exists.</li>
+            <li>Promises tied to public statements and source material.</li>
+            <li>Politician profiles that show activity, evidence, and open questions.</li>
+            <li>Party pages that make missing context visible instead of hiding it.</li>
           </ul>
         </article>
 
         <article className="card stack-sm">
-          <h2>What PNYX is not</h2>
+          <h2>How to read the unknowns</h2>
           <ul className="placeholder-list">
-            <li>Not a leaderboard built around popularity or engagement metrics.</li>
-            <li>Not a substitute for canonical party, membership, or vote-mapping APIs that do not exist yet.</li>
-            <li>Not a place where party stance is treated as identical to an individual politician stance.</li>
+            <li>Unknown means the evidence has not been connected or assessed yet.</li>
+            <li>Party stance is not treated as the same thing as an individual politician promise.</li>
+            <li>Methodology explains how sources, evidence, and missing data are handled.</li>
           </ul>
         </article>
       </section>
@@ -213,11 +213,11 @@ export const HomePage = (): ReactElement => {
           <div className="stack-xs">
             <h2>Methodology and unknown-data rules</h2>
             <p className="lede">
-              Read how PNYX separates promise fulfillment, vote alignment, party stance, and explicit unknown states before drawing conclusions from any profile.
+              Read how PNYX handles promises, evidence, party context, and unknowns before drawing conclusions from any profile.
             </p>
           </div>
           <Link className="button button-secondary" to="/methodology">
-            Open methodology
+            Read methodology
           </Link>
         </div>
       </section>
