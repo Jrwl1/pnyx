@@ -32,6 +32,17 @@ WHAT IT DO? Maps locked V1 capabilities and governance controls to implemented e
 | Moderation-path rate limiting | `proposal-claim`, `proposal-review`, `proposal-assist` limiter buckets | `test/proposal-rate-limit.test.ts`, `test/rate-limit-429.test.ts` |
 | Abuse telemetry visibility | `GET /abuse/metrics` returns captcha and rate-limit counters to moderators/admins only | `test/abuse-telemetry.test.ts`, `test/role-matrix.test.ts` |
 
+## Contribution, canonization, and trust graph coverage (S21..S26)
+
+| Capability | Implemented endpoints / surfaces | Primary regression suites |
+| --- | --- | --- |
+| CAP-009: frontend auth, statement capture, voting, and contributor reachability | `POST /auth/register`, `POST /auth/token`, `POST /statements`, `POST /statements/:id/votes`, frontend routes `/register`, `/sign-in`, `/contribute/**` | `test/register-role-hardening.test.ts`, `test/register-captcha.test.ts`, `test/statement-capture.test.ts`, `test/statement-detail-viewer-vote.test.ts` |
+| CAP-010: canonical party graph and public party reads | `POST /parties`, `POST /parties/:id/aliases`, `POST|PATCH /party-memberships`, `GET /parties`, `GET /parties/:id`, `GET /parties/:id/members` | `test/party-graph.test.ts`, `test/migration.test.ts` |
+| CAP-011: canonical promises, accepted sources, and claim canonization | `POST /canonical-promises`, `GET /canonical-promises`, `GET /canonical-promises/:id`, `POST /promise-claims`, `GET /promise-claims`, `PATCH /promise-claims/:id/review`, `GET /promise-claims/:id/audits` | `test/canonical-promises.test.ts`, `test/promise-claims.test.ts`, `test/trust-records.test.ts` |
+| CAP-012: party stance, vote-event, fulfillment, and party-line trust records | `POST /party-stances`, `GET /parties/:id/stances`, `POST /vote-events`, `POST /vote-events/:id/records`, `POST /canonical-promises/:id/vote-links`, `POST /canonical-promises/:id/fulfillment-assessments`, `POST /canonical-promises/:id/party-alignments` | `test/trust-records.test.ts`, `test/migration.test.ts` |
+| CAP-013: backend-derived trust summaries and public trust surfaces | `GET /politicians`, `GET /politicians/:id/trust-summary`, `GET /parties`, `GET /parties/:id`, `GET /canonical-promises/:id` (`trustContext`) plus frontend routes `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, `/methodology` | `test/trust-records.test.ts`, `pnpm frontend:typecheck`, `pnpm frontend:build` |
+| CAP-014: backend-backed search, public activity feed, and claim-queue metrics | `GET /search`, `GET /activity`, `GET /promise-claims/metrics`, frontend search suggestions on `/` and `/politicians`, moderator queue metrics on `/ops/claims` | `test/search.test.ts`, `test/activity-feed.test.ts` |
+
 ## Release-readiness checks that consume this matrix
 
 - Use this file with `ai/planning/API_CONTRACT.md` to validate endpoint/test drift before closeout.

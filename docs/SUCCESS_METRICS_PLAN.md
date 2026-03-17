@@ -8,6 +8,8 @@ WHAT IT DO? Defines deterministic, repeatable measurement commands for locked V1
 - Percent of statements with a non-pending verification status.
 - Active user engagement (votes and moderation/review activity).
 - Retention of returning users.
+- Number of public canonical promises, pending promise claims, and canonized claim decisions.
+- Number of official party stances, vote events, and trust-assessed canonical promises.
 
 ## Snapshot command (single JSON output)
 
@@ -83,3 +85,22 @@ FROM statement_stats, engagement, retention;
 - Retention is a proxy based on persisted activity rows; no session analytics table exists in V1.
 - Soft-deleted statements are excluded from tracked statement counts.
 - If schema changes affect these queries, update this file and `docs/TRACEABILITY_V1.md` in the same commit.
+
+## Expanded accountability snapshot (S21..S26)
+
+Run from repo root against the configured `DB_PATH`:
+
+```bash
+pnpm tsx -e "import { db } from './src/db/client.ts'; const row = db.prepare(\\`\n+SELECT\n+  (SELECT COUNT(*) FROM canonical_promises WHERE deleted_at IS NULL AND public_status = 'public') AS public_canonical_promises,\n+  (SELECT COUNT(*) FROM promise_claims WHERE status = 'pending') AS pending_promise_claims,\n+  (SELECT COUNT(*) FROM promise_claim_audits WHERE action = 'canonized') AS canonized_claim_decisions,\n+  (SELECT COUNT(*) FROM party_stances) AS party_stances,\n+  (SELECT COUNT(*) FROM vote_events) AS vote_events,\n+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM promise_fulfillment_assessments) AS promises_with_fulfillment_assessment,\n+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM canonical_promise_vote_links) AS promises_with_vote_links,\n+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM party_alignment_assessments) AS promises_with_party_alignment\n+\\`).get() as Record<string, unknown>; console.log(JSON.stringify(row, null, 2));"
+```
+
+Output schema:
+
+- `public_canonical_promises`: public canonical promise count.
+- `pending_promise_claims`: claims still awaiting moderator decision.
+- `canonized_claim_decisions`: total canonize actions recorded in claim audit history.
+- `party_stances`: total official party stance records.
+- `vote_events`: total vote-event records.
+- `promises_with_fulfillment_assessment`: canonical promises with at least one fulfillment assessment.
+- `promises_with_vote_links`: canonical promises mapped to at least one vote event.
+- `promises_with_party_alignment`: canonical promises with at least one party-line assessment.

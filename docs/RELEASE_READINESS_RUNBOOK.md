@@ -15,6 +15,10 @@ Core runtime:
 - `JWT_SECRET` (used by `POST /auth/token` and bearer verification)
 - `PORT` (optional, default `3000`)
 
+Frontend/dev proxy:
+- `VITE_BACKEND_URL` (used by Vite dev proxy for `/api/*`)
+- `VITE_API_BASE` (optional absolute frontend API base for non-proxy environments)
+
 Rate-limit tuning (optional, defaults in `src/server.ts`):
 - `RATE_LIMIT_WINDOW_MS`
 - `RATE_LIMIT_GLOBAL_MAX`
@@ -56,7 +60,7 @@ Rollback strategy:
 Run full release proof before publish/deploy:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build
+pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build
 ```
 
 Optional focused checks before full run:
@@ -65,6 +69,14 @@ Optional focused checks before full run:
 pnpm test -- -t "role matrix"
 pnpm test -- -t "proposal review race"
 pnpm test -- -t "read surfaces"
+pnpm test -- -t "trust records"
+pnpm test -- -t "search"
+```
+
+Route/browser proof after the command chain:
+
+```bash
+chrome-devtools or playwright verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /promises/:id, /methodology, /register, /sign-in, /contribute/**, /ops, and /ops/claims
 ```
 
 ## 5) Security-audit requirement for sensitive file changes
@@ -87,5 +99,6 @@ References:
 
 - Commit hash of release-prep changes.
 - Proof command output summary.
+- Browser/accessibility verification summary, including any Lighthouse accessibility score used for release evidence.
 - Any risk notes or deferred non-P0/P1 items.
 - Worklog entry with command list and commit anchors.
