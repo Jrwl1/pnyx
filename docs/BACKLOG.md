@@ -64,8 +64,8 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 
 ## Epic E8: Launchability hardening and release orchestration
 
-- B-701: Replace the shared-secret public sign-in flow with a launch-safe email-based session flow. -- IN SPRINT
-- B-702: Add secure moderator/admin provisioning and remove public role or secret selection from sign-in UX. -- IN SPRINT
+- B-701: Replace the shared-secret public sign-in flow with a launch-safe email-based session flow. -- DONE
+- B-702: Add secure moderator/admin provisioning and remove public role or secret selection from sign-in UX. -- DONE
 - B-703: Add protected editorial ops UI for party stances, vote events, vote records, fulfillment assessments, and party-line assessments. -- IN SPRINT
 - B-704: Add launch dataset completeness checks and Finland-first launch coverage reporting for public party, politician, and promise surfaces. -- IN SPRINT
 - B-705: Add durable automated frontend and browser regression coverage to the launch proof chain. -- IN SPRINT
