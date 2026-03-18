@@ -26,16 +26,16 @@ describe("rate limit 429", () => {
     const headers = rateLimitHeaders("login");
     for (let i = 0; i < 3; i += 1) {
       await request(app)
-        .post("/auth/token")
+        .post("/auth/request-code")
         .set(headers)
-        .send({ userId: "rate-login-user", role: "user", secret: "test-jwt-secret" })
-        .expect(200);
+        .send({ email: "rate-login-user@example.fi" })
+        .expect(202);
     }
 
     const limited = await request(app)
-      .post("/auth/token")
+      .post("/auth/request-code")
       .set(headers)
-      .send({ userId: "rate-login-user", role: "user", secret: "test-jwt-secret" })
+      .send({ email: "rate-login-user@example.fi" })
       .expect(429);
 
     expect(limited.body).toMatchObject({ error: "rate_limited" });

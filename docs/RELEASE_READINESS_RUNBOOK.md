@@ -12,7 +12,7 @@ WHAT IT DO? Operational checklist for releasing the current V1 service: environm
 
 Core runtime:
 - `DB_PATH` (SQLite path)
-- `JWT_SECRET` (used by `POST /auth/token` and bearer verification)
+- `JWT_SECRET` (used by bearer verification and local JWT bootstrap helpers)
 - `AUTH_CODE_SECRET` (used by launch email-code auth hashing)
 - `AUTH_EMAIL_PROVIDER` (for example `inline` in rehearsal, provider-backed value in real deploys)
 - `AUTH_EMAIL_FROM` (required when the selected email provider sends real mail)

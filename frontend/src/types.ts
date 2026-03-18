@@ -38,16 +38,6 @@ export interface EmailCodeVerifyResponse {
   role: AuthenticatedRole;
 }
 
-export interface AuthTokenRequest {
-  userId: string;
-  role: AuthenticatedRole;
-  secret: string;
-}
-
-export interface AuthTokenResponse {
-  token: string;
-}
-
 export interface AuthSession {
   token: string;
   userId: string;

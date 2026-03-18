@@ -30,15 +30,15 @@ describe("abuse telemetry", () => {
     const loginHeaders = rateLimitHeaders("telemetry-login");
     for (let index = 0; index < 3; index += 1) {
       await request(app)
-        .post("/auth/token")
+        .post("/auth/request-code")
         .set(loginHeaders)
-        .send({ userId: "telemetry-user", role: "user", secret: "test-jwt-secret" })
-        .expect(200);
+        .send({ email: "telemetry-user@example.fi" })
+        .expect(202);
     }
     await request(app)
-      .post("/auth/token")
+      .post("/auth/request-code")
       .set(loginHeaders)
-      .send({ userId: "telemetry-user", role: "user", secret: "test-jwt-secret" })
+      .send({ email: "telemetry-user@example.fi" })
       .expect(429);
 
     await request(app)

@@ -5,7 +5,6 @@ import express from "express";
 
 import { authContext } from "./auth/context.js";
 import { issueEmailLoginCode, verifyEmailLoginCode } from "./auth/email-login.js";
-import { signToken } from "./auth/jwt.js";
 import { requireRole } from "./auth/role-guard.js";
 import {
   getCanonicalPromiseById,
@@ -422,22 +421,6 @@ const createCanonicalPolitician = (input: CanonicalPoliticianInput, actorId: str
     return { ok: false, status: isUniqueness ? 409 : 500, error: isUniqueness ? "duplicate politician identity" : "internal server error" };
   }
 };
-
-app.post("/auth/token", loginLimiter, (req, res) => {
-  const { userId, role, secret } = req.body as { userId?: string; role?: string; secret?: string };
-  const expectedSecret = process.env.JWT_SECRET ?? "dev-secret-do-not-use-in-production";
-  if (!userId || !role || secret !== expectedSecret) {
-    res.status(401).json({ error: "invalid or missing userId, role, or secret" });
-    return;
-  }
-  const knownRoles = ["user", "moderator", "admin"];
-  if (!knownRoles.includes(role)) {
-    res.status(400).json({ error: "role must be user, moderator, or admin" });
-    return;
-  }
-  const token = signToken({ userId, role: role as "user" | "moderator" | "admin" });
-  res.json({ token });
-});
 
 app.post("/auth/request-code", loginLimiter, async (req, res) => {
   const normalizedEmail = (req.body as { email?: string }).email?.trim().toLowerCase();

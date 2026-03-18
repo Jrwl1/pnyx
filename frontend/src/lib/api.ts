@@ -7,8 +7,6 @@ import type {
   EmailCodeRequestResponse,
   EmailCodeVerifyInput,
   EmailCodeVerifyResponse,
-  AuthTokenRequest,
-  AuthTokenResponse,
   BackendPartyDetailResponse,
   BackendPartyStance,
   BackendPartyMembersResponse,
@@ -114,13 +112,6 @@ const fetchJson = async <T>(path: string, options: JsonRequestOptions = {}): Pro
   }
 
   return (await response.json()) as T;
-};
-
-export const requestAuthToken = async (input: AuthTokenRequest): Promise<AuthTokenResponse> => {
-  return fetchJson<AuthTokenResponse>("/auth/token", {
-    method: "POST",
-    body: input
-  });
 };
 
 export const requestEmailLoginCode = async (input: EmailCodeRequestInput): Promise<EmailCodeRequestResponse> => {
