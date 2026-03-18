@@ -28,6 +28,9 @@ describe("migration", () => {
     expect(tableNames.has("party_alignment_assessments")).toBe(true);
     expect(tableNames.has("auth_login_codes")).toBe(true);
     expect(tableNames.has("product_events")).toBe(true);
+    expect(tableNames.has("notification_preferences")).toBe(true);
+    expect(tableNames.has("notifications")).toBe(true);
+    expect(tableNames.has("notification_deliveries")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -74,6 +77,10 @@ describe("migration", () => {
     expect(indexNames.has("idx_product_events_name_created")).toBe(true);
     expect(indexNames.has("idx_product_events_actor_created")).toBe(true);
     expect(indexNames.has("idx_product_events_entity_created")).toBe(true);
+    expect(indexNames.has("idx_notifications_user_created")).toBe(true);
+    expect(indexNames.has("idx_notifications_user_unread")).toBe(true);
+    expect(indexNames.has("idx_notification_deliveries_notification")).toBe(true);
+    expect(indexNames.has("idx_notification_deliveries_channel_state")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -235,5 +242,37 @@ describe("migration", () => {
     expect(productEventColumnNames.has("entity_kind")).toBe(true);
     expect(productEventColumnNames.has("entity_id")).toBe(true);
     expect(productEventColumnNames.has("metadata_json")).toBe(true);
+
+    const notificationPreferenceColumns = db
+      .prepare("PRAGMA table_info(notification_preferences)")
+      .all() as { name: string }[];
+    const notificationPreferenceColumnNames = new Set(notificationPreferenceColumns.map((column) => column.name));
+    expect(notificationPreferenceColumnNames.has("user_id")).toBe(true);
+    expect(notificationPreferenceColumnNames.has("in_app_enabled")).toBe(true);
+    expect(notificationPreferenceColumnNames.has("email_enabled")).toBe(true);
+    expect(notificationPreferenceColumnNames.has("review_updates_enabled")).toBe(true);
+    expect(notificationPreferenceColumnNames.has("moderator_assignments_enabled")).toBe(true);
+    expect(notificationPreferenceColumnNames.has("role_updates_enabled")).toBe(true);
+
+    const notificationColumns = db
+      .prepare("PRAGMA table_info(notifications)")
+      .all() as { name: string }[];
+    const notificationColumnNames = new Set(notificationColumns.map((column) => column.name));
+    expect(notificationColumnNames.has("user_id")).toBe(true);
+    expect(notificationColumnNames.has("notification_type")).toBe(true);
+    expect(notificationColumnNames.has("title")).toBe(true);
+    expect(notificationColumnNames.has("body")).toBe(true);
+    expect(notificationColumnNames.has("related_path")).toBe(true);
+    expect(notificationColumnNames.has("read_at")).toBe(true);
+
+    const notificationDeliveryColumns = db
+      .prepare("PRAGMA table_info(notification_deliveries)")
+      .all() as { name: string }[];
+    const notificationDeliveryColumnNames = new Set(notificationDeliveryColumns.map((column) => column.name));
+    expect(notificationDeliveryColumnNames.has("notification_id")).toBe(true);
+    expect(notificationDeliveryColumnNames.has("channel")).toBe(true);
+    expect(notificationDeliveryColumnNames.has("delivery_state")).toBe(true);
+    expect(notificationDeliveryColumnNames.has("provider_message_id")).toBe(true);
+    expect(notificationDeliveryColumnNames.has("error_message")).toBe(true);
   });
 });

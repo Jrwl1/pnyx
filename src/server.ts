@@ -13,6 +13,13 @@ import {
   listCanonicalPromises
 } from "./db/canonical-promises.js";
 import { db } from "./db/client.js";
+import {
+  createNotification,
+  getNotificationPreferences,
+  listNotifications,
+  markNotificationRead,
+  upsertNotificationPreferences
+} from "./db/notifications.js";
 import { recordProductEvent } from "./db/product-events.js";
 import { getPartyById, listCurrentPartyContexts, listParties, listPartyAliases, listPartyMembers } from "./db/party-graph.js";
 import {
@@ -545,12 +552,85 @@ app.post("/auth/role-grants", requireRole("admin"), (req, res) => {
       role: normalizedRole
     }
   });
+  createNotification({
+    userId: user.id,
+    notificationType: "role_granted",
+    title: "Your PNYX role changed",
+    body: `Your role is now ${normalizedRole}.`,
+    relatedPath: normalizedRole === "moderator" || normalizedRole === "admin" ? "/ops" : "/",
+    preferenceKey: "roleUpdatesEnabled"
+  });
   res.json({
     ok: true,
     id: user.id,
     email: normalizedEmail,
     role: normalizedRole
   });
+});
+
+app.get("/me/notification-preferences", requireRole("user"), (req, res) => {
+  const userId = req.auth.userId ?? "unknown";
+  res.json(getNotificationPreferences(userId));
+});
+
+app.patch("/me/notification-preferences", requireRole("user"), (req, res) => {
+  const userId = req.auth.userId ?? "unknown";
+  const user = db.prepare("SELECT 1 FROM users WHERE id = ? LIMIT 1").get(userId) as { "1"?: number } | undefined;
+  if (!user) {
+    res.status(404).json({ error: "user not found" });
+    return;
+  }
+
+  const toFlag = (value: unknown): number | undefined => {
+    if (value === undefined) {
+      return undefined;
+    }
+    return value ? 1 : 0;
+  };
+
+  const preferences = upsertNotificationPreferences(userId, {
+    inAppEnabled: toFlag((req.body as { inAppEnabled?: boolean }).inAppEnabled),
+    emailEnabled: toFlag((req.body as { emailEnabled?: boolean }).emailEnabled),
+    reviewUpdatesEnabled: toFlag((req.body as { reviewUpdatesEnabled?: boolean }).reviewUpdatesEnabled),
+    moderatorAssignmentsEnabled: toFlag((req.body as { moderatorAssignmentsEnabled?: boolean }).moderatorAssignmentsEnabled),
+    roleUpdatesEnabled: toFlag((req.body as { roleUpdatesEnabled?: boolean }).roleUpdatesEnabled)
+  });
+
+  res.json(preferences);
+});
+
+app.get("/me/notifications", requireRole("user"), (req, res) => {
+  const userId = req.auth.userId ?? "unknown";
+  const unreadOnly = String(req.query.status ?? "").trim().toLowerCase() === "unread";
+  const pageRaw = Number(req.query.page ?? 1);
+  const pageSizeRaw = Number(req.query.pageSize ?? 20);
+  const page = Number.isFinite(pageRaw) && pageRaw > 0 ? Math.floor(pageRaw) : 1;
+  const pageSize = Number.isFinite(pageSizeRaw) && pageSizeRaw > 0 ? Math.min(Math.floor(pageSizeRaw), 100) : 20;
+  const result = listNotifications({ userId, unreadOnly, page, pageSize });
+
+  res.json({
+    items: result.items,
+    page,
+    pageSize,
+    total: result.total
+  });
+});
+
+app.post("/me/notifications/:id/read", requireRole("user"), (req, res) => {
+  const userId = req.auth.userId ?? "unknown";
+  const notificationId = Number(req.params.id);
+  if (!Number.isInteger(notificationId) || notificationId <= 0) {
+    res.status(400).json({ error: "invalid notification id" });
+    return;
+  }
+
+  const marked = markNotificationRead(userId, notificationId);
+  if (!marked) {
+    res.status(404).json({ error: "notification not found" });
+    return;
+  }
+
+  res.json({ ok: true });
 });
 
 app.get("/health", (_req, res) => {
@@ -2540,6 +2620,14 @@ app.patch("/politician-proposals/:id/review", proposalReviewLimiter, requireRole
           linkedPoliticianId: createdId
         }
       });
+      createNotification({
+        userId: proposalRow.submittedBy,
+        notificationType: "politician_proposal_reviewed",
+        title: "Your politician proposal was reviewed",
+        body: `Decision: approve.`,
+        relatedPath: `/politicians/${createdId}`,
+        preferenceKey: "reviewUpdatesEnabled"
+      });
 
       return { status: "approved" as const, politicianId: createdId, reviewVersion: currentVersion + 1 };
     }
@@ -2583,6 +2671,14 @@ app.patch("/politician-proposals/:id/review", proposalReviewLimiter, requireRole
         decision,
         linkedPoliticianId: linkedId
       }
+    });
+    createNotification({
+      userId: proposalRow.submittedBy,
+      notificationType: "politician_proposal_reviewed",
+      title: "Your politician proposal was reviewed",
+      body: `Decision: ${decision}.`,
+      relatedPath: linkedId ? `/politicians/${linkedId}` : "/ops",
+      preferenceKey: "reviewUpdatesEnabled"
     });
 
     return { status: nextStatus, politicianId: linkedId, reviewVersion: currentVersion + 1 };
@@ -3711,13 +3807,14 @@ app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => 
     const tx = db.transaction(() => {
       const claim = db
         .prepare(
-          `SELECT id, politician_id AS politicianId, claim_text AS claimText, source_url AS sourceUrl, source_note AS sourceNote,
+          `SELECT id, submitted_by AS submittedBy, politician_id AS politicianId, claim_text AS claimText, source_url AS sourceUrl, source_note AS sourceNote,
             status, assignee_id AS assigneeId, review_version AS reviewVersion
            FROM promise_claims WHERE id = ?`
         )
         .get(claimId) as
         | {
             id: number;
+            submittedBy: string;
             politicianId: number;
             claimText: string;
             sourceUrl: string;
@@ -3804,6 +3901,21 @@ app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => 
           decision,
           canonicalPromiseId: targetCanonicalPromiseId
         }
+      });
+      const notificationPath =
+        targetCanonicalPromiseId != null
+          ? (() => {
+              const canonicalPromise = getCanonicalPromiseById(targetCanonicalPromiseId!, true);
+              return canonicalPromise?.statementId ? `/promises/${canonicalPromise.statementId}` : "/promises";
+            })()
+          : "/promises";
+      createNotification({
+        userId: claim.submittedBy,
+        notificationType: "promise_claim_reviewed",
+        title: "Your promise claim was reviewed",
+        body: `Decision: ${decision}.`,
+        relatedPath: notificationPath,
+        preferenceKey: "reviewUpdatesEnabled"
       });
 
       return { status: nextStatus, canonicalPromiseId: targetCanonicalPromiseId, reviewVersion: claim.reviewVersion + 1 };
