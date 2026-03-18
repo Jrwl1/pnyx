@@ -1,0 +1,66 @@
+# WHAT IT DO? Runs the launch proof chain and a smoke-release rehearsal on demand.
+
+name: Release rehearsal
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rehearse:
+    runs-on: ubuntu-latest
+    env:
+      PORT: 3001
+      DB_PATH: ${{ runner.temp }}/pnyx-release.db
+      JWT_SECRET: gha-release-jwt-secret
+      AUTH_CODE_SECRET: gha-release-auth-code-secret
+      AUTH_EMAIL_PROVIDER: inline
+      SMOKE_BASE_URL: http://127.0.0.1:3001
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run launch proof chain
+        run: pnpm proof:launch
+
+      - name: Start service
+        run: |
+          nohup pnpm exec tsx src/index.ts > server.log 2>&1 &
+          echo $! > server.pid
+
+      - name: Wait for health
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS "$SMOKE_BASE_URL/health" >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server never became healthy"
+          exit 1
+
+      - name: Run release smoke
+        run: pnpm smoke:release
+
+      - name: Show server log on failure
+        if: failure()
+        run: |
+          if [ -f server.log ]; then
+            cat server.log
+          fi

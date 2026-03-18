@@ -19,6 +19,12 @@ pnpm frontend:dev
 The frontend dev server proxies `/api/*` to `http://localhost:3000` by default.
 Override the proxy target with `VITE_BACKEND_URL` when you need a different backend port in development.
 
+## Launch proof helpers
+
+- `pnpm test:ui` runs the dependency-backed Playwright browser suite.
+- `pnpm proof:launch` runs the repo launch proof chain.
+- `pnpm smoke:release` runs live smoke checks against a running backend using `SMOKE_BASE_URL`.
+
 ## Implemented routes
 
 - `/`

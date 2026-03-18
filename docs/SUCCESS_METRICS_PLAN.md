@@ -79,6 +79,7 @@ FROM statement_stats, engagement, retention;
 - Daily lightweight snapshot in development/staging.
 - Pre-release and post-release checkpoints recorded in release notes.
 - Compare week-over-week trend deltas for engagement and retention proxies.
+- Record `pnpm proof:launch` and `pnpm smoke:release` outcomes at each release rehearsal checkpoint.
 
 ## Notes and caveats
 
@@ -104,3 +105,12 @@ Output schema:
 - `promises_with_fulfillment_assessment`: canonical promises with at least one fulfillment assessment.
 - `promises_with_vote_links`: canonical promises mapped to at least one vote event.
 - `promises_with_party_alignment`: canonical promises with at least one party-line assessment.
+
+## Launch rehearsal evidence
+
+At each release rehearsal, capture:
+
+- `pnpm proof:launch` pass/fail
+- `pnpm smoke:release` pass/fail
+- browser/accessibility audit summary
+- snapshot output from the base and expanded accountability metrics

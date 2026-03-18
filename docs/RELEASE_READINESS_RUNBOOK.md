@@ -13,6 +13,9 @@ WHAT IT DO? Operational checklist for releasing the current V1 service: environm
 Core runtime:
 - `DB_PATH` (SQLite path)
 - `JWT_SECRET` (used by `POST /auth/token` and bearer verification)
+- `AUTH_CODE_SECRET` (used by launch email-code auth hashing)
+- `AUTH_EMAIL_PROVIDER` (for example `inline` in rehearsal, provider-backed value in real deploys)
+- `AUTH_EMAIL_FROM` (required when the selected email provider sends real mail)
 - `PORT` (optional, default `3000`)
 
 Frontend/dev proxy:
@@ -60,7 +63,7 @@ Rollback strategy:
 Run full release proof before publish/deploy:
 
 ```bash
-pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build
+pnpm proof:launch
 ```
 
 Optional focused checks before full run:
@@ -77,6 +80,33 @@ Route/browser proof after the command chain:
 
 ```bash
 chrome-devtools or playwright verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /promises/:id, /methodology, /register, /sign-in, /contribute/**, /ops, and /ops/claims
+```
+
+Smoke rehearsal after the server is up:
+
+```bash
+SMOKE_BASE_URL=http://127.0.0.1:3000 pnpm smoke:release
+```
+
+## 4.1 Manual release rehearsal
+
+Run from repo root:
+
+```bash
+pnpm proof:launch
+PORT=3001 DB_PATH=/tmp/pnyx-release.db AUTH_EMAIL_PROVIDER=inline pnpm exec tsx src/index.ts
+SMOKE_BASE_URL=http://127.0.0.1:3001 pnpm smoke:release
+```
+
+Windows PowerShell example:
+
+```powershell
+$env:PORT='3001'
+$env:DB_PATH="$env:TEMP\\pnyx-release.db"
+$env:AUTH_EMAIL_PROVIDER='inline'
+Start-Process powershell -ArgumentList '-NoProfile','-Command','Set-Location "C:\\path\\to\\Pnyx"; pnpm exec tsx src/index.ts'
+$env:SMOKE_BASE_URL='http://127.0.0.1:3001'
+pnpm smoke:release
 ```
 
 ## 5) Security-audit requirement for sensitive file changes
@@ -98,7 +128,8 @@ References:
 ## 6) Release evidence to record
 
 - Commit hash of release-prep changes.
-- Proof command output summary.
+- `pnpm proof:launch` output summary.
+- `pnpm smoke:release` output summary.
 - Browser/accessibility verification summary, including any Lighthouse accessibility score used for release evidence.
 - Any risk notes or deferred non-P0/P1 items.
 - Worklog entry with command list and commit anchors.
