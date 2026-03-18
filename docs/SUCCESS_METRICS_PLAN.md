@@ -6,10 +6,11 @@ WHAT IT DO? Defines deterministic, repeatable measurement commands for locked V1
 
 - Number of tracked politicians and statements.
 - Percent of statements with a non-pending verification status.
-- Active user engagement (votes and moderation/review activity).
-- Retention of returning users.
+- Active user engagement from explicit product-event rows plus votes.
+- Retention of returning users from explicit product-event activity.
 - Number of public canonical promises, pending promise claims, and canonized claim decisions.
 - Number of official party stances, vote events, and trust-assessed canonical promises.
+- Notification volume and delivery backlog.
 
 ## Snapshot command (single JSON output)
 
@@ -27,26 +28,18 @@ WITH statement_stats AS (
 engagement AS (
   SELECT
     (SELECT COUNT(*) FROM votes) AS vote_events,
-    (SELECT COUNT(*) FROM politician_proposal_audits WHERE action IN ('approved','rejected','duplicate')) AS moderation_decisions
+    (SELECT COUNT(*) FROM product_events WHERE event_domain = 'moderation' AND event_name LIKE '%reviewed') AS moderation_decisions,
+    (SELECT COUNT(*) FROM product_events) AS product_event_rows
 ),
 retention AS (
-  WITH activity AS (
-    SELECT author_id AS actor_id, date(created_at) AS activity_day FROM statements
-    UNION ALL
-    SELECT user_id AS actor_id, date(created_at) AS activity_day FROM votes
-    UNION ALL
-    SELECT submitted_by AS actor_id, date(created_at) AS activity_day FROM politician_proposals
-    UNION ALL
-    SELECT actor_id AS actor_id, date(created_at) AS activity_day FROM politician_proposal_audits
-  )
   SELECT COUNT(*) AS returning_actors_2plus_days
   FROM (
     SELECT actor_id
-    FROM activity
+    FROM product_events
     WHERE actor_id IS NOT NULL
       AND actor_id NOT IN ('system', 'moderation', 'unknown')
     GROUP BY actor_id
-    HAVING COUNT(DISTINCT activity_day) >= 2
+    HAVING COUNT(DISTINCT date(created_at)) >= 2
   )
 )
 SELECT
@@ -59,6 +52,7 @@ SELECT
   END AS verification_assigned_pct,
   engagement.vote_events,
   engagement.moderation_decisions,
+  engagement.product_event_rows,
   retention.returning_actors_2plus_days
 FROM statement_stats, engagement, retention;
 \`).get() as Record<string, unknown>; console.log(JSON.stringify(row, null, 2));"
@@ -71,20 +65,21 @@ FROM statement_stats, engagement, retention;
 - `verified_or_reviewed` (number): non-pending statements (`verification_status != 'pending'`).
 - `verification_assigned_pct` (number): `(verified_or_reviewed / tracked_statements) * 100` rounded to 2 decimals.
 - `vote_events` (number): total vote rows (one active vote per actor/statement).
-- `moderation_decisions` (number): proposal decisions (`approved|rejected|duplicate`).
-- `returning_actors_2plus_days` (number): actors with activity on at least two distinct days across statements, votes, proposal submissions, or proposal audits.
+- `moderation_decisions` (number): moderation review decisions derived from `product_events`.
+- `product_event_rows` (number): total append-only rows in `product_events`.
+- `returning_actors_2plus_days` (number): actors with product-event activity on at least two distinct days.
 
 ## Suggested reporting cadence
 
 - Daily lightweight snapshot in development/staging.
 - Pre-release and post-release checkpoints recorded in release notes.
-- Compare week-over-week trend deltas for engagement and retention proxies.
+- Compare week-over-week trend deltas for explicit product-event engagement and retention counts.
 - Record `pnpm seed:launch-rehearsal` and `pnpm launch:coverage` outcomes for each seeded launch dry run.
 - Record `pnpm proof:launch` and `pnpm smoke:release` outcomes at each release rehearsal checkpoint.
 
 ## Notes and caveats
 
-- Retention is a proxy based on persisted activity rows; no session analytics table exists in V1.
+- Retention now comes from append-only `product_events` rather than a derived proxy over mixed domain tables.
 - Soft-deleted statements are excluded from tracked statement counts.
 - If schema changes affect these queries, update this file and `docs/TRACEABILITY_V1.md` in the same commit.
 
@@ -106,6 +101,29 @@ Output schema:
 - `promises_with_fulfillment_assessment`: canonical promises with at least one fulfillment assessment.
 - `promises_with_vote_links`: canonical promises mapped to at least one vote event.
 - `promises_with_party_alignment`: canonical promises with at least one party-line assessment.
+
+## Notification and event snapshot
+
+Run from repo root against the configured `DB_PATH`:
+
+```bash
+pnpm tsx -e "import { db } from './src/db/client.ts'; const row = db.prepare(\`
+SELECT
+  (SELECT COUNT(*) FROM product_events) AS product_events_total,
+  (SELECT COUNT(*) FROM notifications) AS notifications_total,
+  (SELECT COUNT(*) FROM notifications WHERE read_at IS NULL) AS notifications_unread,
+  (SELECT COUNT(*) FROM notification_deliveries WHERE channel = 'email' AND delivery_state = 'pending') AS email_deliveries_pending,
+  (SELECT COUNT(*) FROM notification_deliveries WHERE channel = 'inapp' AND delivery_state = 'delivered') AS inapp_deliveries_delivered
+\`).get() as Record<string, unknown>; console.log(JSON.stringify(row, null, 2));"
+```
+
+Output schema:
+
+- `product_events_total`: total append-only product-event rows.
+- `notifications_total`: total notification rows.
+- `notifications_unread`: unread notification rows.
+- `email_deliveries_pending`: email delivery rows waiting on a future sender.
+- `inapp_deliveries_delivered`: in-app delivery rows recorded as delivered.
 
 ## Launch rehearsal evidence
 

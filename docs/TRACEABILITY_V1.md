@@ -42,6 +42,7 @@ WHAT IT DO? Maps locked V1 capabilities and governance controls to implemented e
 | CAP-012: party stance, vote-event, fulfillment, and party-line trust records | `POST /party-stances`, `GET /parties/:id/stances`, `POST /vote-events`, `POST /vote-events/:id/records`, `POST /canonical-promises/:id/vote-links`, `POST /canonical-promises/:id/fulfillment-assessments`, `POST /canonical-promises/:id/party-alignments` | `test/trust-records.test.ts`, `test/migration.test.ts` |
 | CAP-013: backend-derived trust summaries and public trust surfaces | `GET /politicians`, `GET /politicians/:id/trust-summary`, `GET /parties`, `GET /parties/:id`, `GET /canonical-promises/:id` (`trustContext`) plus frontend routes `/politicians/:id`, `/parties`, `/parties/:id`, `/promises/:id`, `/methodology` | `test/trust-records.test.ts`, `pnpm frontend:typecheck`, `pnpm frontend:build` |
 | CAP-014: backend-backed search, public activity feed, and claim-queue metrics | `GET /search`, `GET /activity`, `GET /promise-claims/metrics`, frontend search suggestions on `/` and `/politicians`, moderator queue metrics on `/ops/claims` | `test/search.test.ts`, `test/activity-feed.test.ts` |
+| CAP-015: explicit product events and notification preferences/inbox | `product_events`, `GET/PATCH /me/notification-preferences`, `GET /me/notifications`, `POST /me/notifications/:id/read`, role-grant plus review-outcome notification writes | `test/product-events.test.ts`, `test/notifications.test.ts` |
 
 ## Release-readiness checks that consume this matrix
 

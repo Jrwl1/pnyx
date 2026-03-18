@@ -172,6 +172,11 @@ test("registers, signs in, and submits contributor records", async ({ page }) =>
   await page.getByRole("button", { name: "Check duplicates first" }).click();
   await page.getByRole("button", { name: "Submit claim" }).click();
   await expect(page.getByRole("heading", { name: "Claim queued" })).toBeVisible();
+
+  await page.goto(`${frontendBase}/notifications`);
+  await expect(page.getByRole("heading", { name: "Manage alerts and review updates" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Preferences" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 });
 
 test("loads protected moderator and editorial routes under an admin session", async ({ page }) => {
