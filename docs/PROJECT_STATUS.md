@@ -13,19 +13,20 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 ## Current state
 
 - M0 through M7 are complete in code and accepted sprint evidence: public discovery, contribution flows, canonical parties, canonical promises, claim canonization, trust records, launch-safe email auth, editorial ops, browser regression coverage, release rehearsal, and final launch audit all landed.
+- `S-32` is complete in code and review evidence: the legacy `/auth/token` path is gone, protected party and canonical-promise admin surfaces now exist at `/ops/admin`, public promise discovery now has `/promises`, and Playwright coverage exercises the new routes.
 - The launch regression floor remains `pnpm seed:launch-rehearsal`, `pnpm launch:coverage`, `pnpm proof:launch`, and `pnpm smoke:release`.
-- The next implementation gap is no longer launchability. It is post-launch completeness: removing leftover auth debt, exposing missing admin and public surfaces, shipping SEO metadata, adding explicit event and notification infrastructure, improving moderation ergonomics, and automating Finland-first ingest.
-- The active execution queue now starts with `S-32` debt retirement and missing-surface delivery before it moves into SEO, metrics and notifications, reputation, ingest, and proof refresh work.
+- The next implementation gap is now the `S-33` through `S-37` queue: SEO metadata, explicit event and notification infrastructure, moderation ergonomics, Finland-first ingest, and post-launch proof refresh.
+- The active execution queue now starts with `S-33` SEO and search-preview work.
 
 ## Top blockers
 
-1. Legacy shared-secret `/auth/token` still exists as implementation debt even though public auth now uses email codes.
-2. Backend-supported party-admin and direct canonical-promise operations are not yet fully reachable through protected product UI, and public promise discovery still lacks a dedicated browse route.
-3. SEO metadata, notifications, event-backed retention metrics, contributor reputation, and Finland-first ingest are planned but unimplemented.
+1. SEO metadata and search-preview tags are still missing from the widened public surface.
+2. Event-backed retention metrics, notification infrastructure, and user preference surfaces are still planned but unimplemented.
+3. Contributor reputation, deeper moderation ergonomics, and Finland-first ingest remain ahead in the active queue.
 
 ## Next actions
 
-1. Execute `S-32` first and keep the row order in `docs/SPRINT.md` deterministic.
+1. Execute `S-33` next and keep the row order in `docs/SPRINT.md` deterministic.
 2. Hold the existing launch proof chain as the regression floor while expanding post-launch coverage.
 3. Re-baseline roadmap, backlog, and release docs only through accepted sprint evidence; do not open a parallel planning system.
 
