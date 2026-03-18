@@ -15,6 +15,7 @@ import { PartiesPage } from "./routes/PartiesPage";
 import { PartyProfilePage } from "./routes/PartyProfilePage";
 import { PromiseClaimDetailPage } from "./routes/PromiseClaimDetailPage";
 import { PromiseClaimsOpsPage } from "./routes/PromiseClaimsOpsPage";
+import { PromiseIndexPage } from "./routes/PromiseIndexPage";
 import { PoliticianProfilePage } from "./routes/PoliticianProfilePage";
 import { PoliticiansPage } from "./routes/PoliticiansPage";
 import { PromiseDetailPage } from "./routes/PromiseDetailPage";
@@ -36,6 +37,7 @@ export const App = (): ReactElement => {
           <Route path="/politicians/:id" element={<PoliticianProfilePage />} />
           <Route path="/parties" element={<PartiesPage />} />
           <Route path="/parties/:id" element={<PartyProfilePage />} />
+          <Route path="/promises" element={<PromiseIndexPage />} />
           <Route path="/promises/:id" element={<PromiseDetailPage />} />
           <Route path="/methodology" element={<MethodologyPage />} />
           <Route element={<RequireAuthRoute />}>

@@ -298,8 +298,8 @@ export const HomePage = (): ReactElement => {
             <h2>Latest documented promises</h2>
             <p className="data-note">Recent promise records from the current public dataset, with linked politician context.</p>
           </div>
-          <Link className="button button-secondary" to="/politicians">
-            Browse all politicians
+          <Link className="button button-secondary" to="/promises">
+            Browse all promises
           </Link>
         </div>
 
