@@ -98,6 +98,7 @@ Planning baseline:
 2. Editorial operations for party stances, vote events, fulfillment assessments, and party-line assessments are reachable through protected product surfaces instead of backend-only APIs or manual seeding.
 3. Durable automated coverage exists for critical public, auth, contributor, moderation, and editorial flows, and the launch proof chain includes those checks.
 4. Release and deploy sequencing, backup and restore rehearsal, observability, smoke checks, and a final go or no-go UI audit are documented and verified from a clean tree.
+5. Launch browser automation may use repo-managed dependencies and lockfile changes when the no-new-dependency path is not reliable enough on the target environment, provided those changes stay inside the sprint scope and include any required security audit notes.
 
 ## M8: Post-launch automation and growth
 

@@ -34,3 +34,14 @@ Source: `AGENTS.md`, `docs/CANONICAL.md`, `.cursor/skills/security-auditor/SKILL
 **Consequences:** The next sprint prioritizes auth migration, secure role bootstrap, and frontend auth UX changes before deploy orchestration. Launchability work may add new auth/session persistence tables or flows, but must not keep the current shared-secret sign-in path as the public launch mechanism.
 
 Source: `src/server.ts`, `frontend/src/routes/SignInPage.tsx`, `docs/ROADMAP.md`, `docs/SPRINT.md`
+
+---
+
+## ADR-004: Launch browser automation may use repo-managed dependencies when the no-new-dependency path is unreliable
+
+**Date:** 2026-03-18
+**Decision:** For the launchability milestone, `S-29` may use repo-managed browser automation dependencies and the resulting lockfile changes if the repo-native no-new-dependency Windows harness remains unreliable. Those changes must remain inside sprint scope and include any required security-audit note when workflow files change.
+**Context:** Repeated attempts to build a repo-native Windows browser harness inside `pnpm test:ui` failed even though equivalent manual browser runs worked outside the runner. The blocker is no longer product functionality but the chosen automation path.
+**Consequences:** The sprint no longer treats "no new dependency" as mandatory for launch browser coverage. `pnpm-lock.yaml` and browser-test wiring are now valid implementation collateral for `S-29` if they are added through the active sprint scope and evidence path.
+
+Source: `docs/SPRINT.md`, `docs/BACKLOG.md`, `docs/ROADMAP.md`, `docs/WORKLOG.md`

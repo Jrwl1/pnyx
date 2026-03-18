@@ -76,3 +76,19 @@ Last updated: 2026-03-17
 - Auth decision resolution:
   - The repo needed a concrete launch-auth assumption rather than an open question.
   - Resolution: `docs/DECISIONS.md` adds ADR-003, which selects email-based launch auth and removes the current shared-secret public sign-in model from the launch path.
+
+## 2026-03-18 S-29 unblock resolution
+
+- Repeated `S-29` attempts proved that the blocker was no longer product behavior but the selected automation path:
+  - repo-native Windows browser harness attempts worked manually outside the runner,
+  - but did not stay reliable enough inside `pnpm test:ui` to count as durable launch automation.
+- Conflict resolved by canonical hierarchy:
+  1. The previous `S-29` row implicitly assumed durable browser coverage should be delivered without widening scope to lockfiles or browser-test wiring.
+     - Winner: implementation reality from the blocked `S-29` attempts.
+     - Resolution: `docs/SPRINT.md` now widens `S-29` scope to include `pnpm-lock.yaml`, `playwright.config.*`, and `docs/security/**` so the dependency-backed browser automation path is valid.
+  2. Backlog note `B-708` previously left the browser-automation decision open.
+     - Winner: the new explicit decision.
+     - Resolution: `docs/DECISIONS.md` adds ADR-004 and `docs/BACKLOG.md` marks `B-708` done.
+- Planning consequence:
+  - `S-29` is now unblocked at the planning level.
+  - The next execution pass should stop trying to brute-force the no-new-dependency Windows harness and instead implement the dependency-backed browser automation path inside the widened sprint scope.

@@ -67,3 +67,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [20:42] REVIEW: accept S-28 editorial ops row (findings: none)
 - [21:15] DO: blocked again on S-29 repo-native UI harness after repeated Windows-safe browser runner attempts failed to stabilize under `pnpm test:ui` (sprint: S-29, links: docs/SPRINT.md)
 - [20:48] DO: blocked on S-29 repo-native UI harness after Windows Vitest child-process launches failed to keep the frontend server up reliably (sprint: S-29, links: docs/SPRINT.md)
+- [17:17] PLAN: widen S-29 to allow dependency-backed browser automation and close the scope blocker from the failed no-new-dependency path (sprint: S-29..S-31, milestone: M7)
