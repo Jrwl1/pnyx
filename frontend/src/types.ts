@@ -226,6 +226,19 @@ export interface VoteSubmissionResult {
 export type ProposalStatus = "pending" | "approved" | "rejected" | "duplicate";
 export type ProposalAgeBucket = "lt1h" | "1to24h" | "gt24h";
 
+export interface ContributorRiskSummary {
+  score: number;
+  verifiedStatements: number;
+  approvedProposals: number;
+  duplicateProposals: number;
+  rejectedProposals: number;
+  mergedClaims: number;
+  canonizedClaims: number;
+  rejectedClaims: number;
+  riskFlags: string[];
+  riskLevel: "low" | "medium" | "high";
+}
+
 export interface PoliticianProposalQueueItem {
   id: number;
   submittedBy: string;
@@ -244,6 +257,7 @@ export interface PoliticianProposalQueueItem {
   reviewVersion: number;
   createdAt: string;
   decidedAt: string | null;
+  submittedByReputation: ContributorRiskSummary;
 }
 
 export interface ProposalQueueResponse {
@@ -272,6 +286,9 @@ export interface ProposalQueueMetrics {
     lt1h: number;
     oneTo24h: number;
     gt24h: number;
+  };
+  priority: {
+    highRisk: number;
   };
 }
 

@@ -31,6 +31,7 @@ import {
   listPromiseClaimAudits,
   listPromiseClaims
 } from "./db/promise-claims.js";
+import { getContributorRiskSummary } from "./db/reputation.js";
 import {
   getLatestPromiseFulfillmentAssessment,
   getPartyStanceById,
@@ -2324,7 +2325,15 @@ app.get("/politician-proposals", requireRole("user"), (req, res) => {
     )
     .all(...params, pageSize, offset);
 
-  res.json({ items, page, pageSize, total: totalRow.total });
+  res.json({
+    items: items.map((item) => ({
+      ...item,
+      submittedByReputation: getContributorRiskSummary(item.submittedBy)
+    })),
+    page,
+    pageSize,
+    total: totalRow.total
+  });
 });
 
 app.get("/politician-proposals/metrics", requireRole("moderator"), (_req, res) => {
@@ -2360,6 +2369,18 @@ app.get("/politician-proposals/metrics", requireRole("moderator"), (_req, res) =
       lt1h: Number(buckets.lt1h ?? 0),
       oneTo24h: Number(buckets.oneTo24h ?? 0),
       gt24h: Number(buckets.gt24h ?? 0)
+    },
+    priority: {
+      highRisk: (
+        db.prepare(
+          `SELECT COUNT(*) AS total
+           FROM politician_proposals
+           WHERE status = 'pending'
+             AND submitted_by IN (
+               SELECT user_id FROM contributor_reputation WHERE score <= 0
+             )`
+        ).get() as { total: number }
+      ).total
     }
   });
 });

@@ -17,6 +17,19 @@ export type ContributorReputationRow = {
   updatedAt: string;
 };
 
+export type ContributorRiskSummary = {
+  score: number;
+  verifiedStatements: number;
+  approvedProposals: number;
+  duplicateProposals: number;
+  rejectedProposals: number;
+  mergedClaims: number;
+  canonizedClaims: number;
+  rejectedClaims: number;
+  riskFlags: string[];
+  riskLevel: "low" | "medium" | "high";
+};
+
 export const REPUTATION_WEIGHTS = {
   verifiedStatements: 1,
   disputedStatements: -1,
@@ -156,4 +169,45 @@ export const recomputeAllContributorReputation = (): ContributorReputationRow[] 
     .all() as Array<{ userId: string }>;
 
   return rows.map((row) => recomputeContributorReputation(row.userId));
+};
+
+export const getContributorRiskSummary = (userId: string): ContributorRiskSummary => {
+  const row = recomputeContributorReputation(userId);
+  const rejectedOutcomeCount = row.rejectedStatements + row.rejectedProposals + row.rejectedClaims;
+  const trustedOutcomeCount =
+    row.verifiedStatements + row.approvedProposals + row.mergedClaims + row.canonizedClaims;
+
+  const riskFlags: string[] = [];
+  if (row.score <= 0) {
+    riskFlags.push("low_score");
+  }
+  if (rejectedOutcomeCount >= 2) {
+    riskFlags.push("repeated_rejections");
+  }
+  if (row.duplicateProposals >= 2) {
+    riskFlags.push("repeated_duplicates");
+  }
+  if (trustedOutcomeCount === 0) {
+    riskFlags.push("no_trusted_history");
+  }
+
+  const riskLevel: "low" | "medium" | "high" =
+    riskFlags.includes("low_score") || riskFlags.includes("repeated_rejections") || riskFlags.includes("repeated_duplicates")
+      ? "high"
+      : riskFlags.length > 0
+        ? "medium"
+        : "low";
+
+  return {
+    score: row.score,
+    verifiedStatements: row.verifiedStatements,
+    approvedProposals: row.approvedProposals,
+    duplicateProposals: row.duplicateProposals,
+    rejectedProposals: row.rejectedProposals,
+    mergedClaims: row.mergedClaims,
+    canonizedClaims: row.canonizedClaims,
+    rejectedClaims: row.rejectedClaims,
+    riskFlags,
+    riskLevel
+  };
 };

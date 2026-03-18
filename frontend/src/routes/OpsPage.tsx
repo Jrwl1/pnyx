@@ -297,7 +297,7 @@ export const OpsPage = (): ReactElement => {
       </section>
 
       {metrics ? (
-        <section className="cards-grid cards-grid-3" aria-label="Queue metrics">
+        <section className="cards-grid cards-grid-4" aria-label="Queue metrics">
           <article className="card stack-xs">
             <h2>Pending backlog</h2>
             <p className="score-value">{metrics.pending.total}</p>
@@ -312,6 +312,11 @@ export const OpsPage = (): ReactElement => {
             <h2>Stale</h2>
             <p className="score-value">{metrics.ageBuckets.gt24h}</p>
             <p className="meta-line">More than 24 hours old</p>
+          </article>
+          <article className="card stack-xs">
+            <h2>High risk submitters</h2>
+            <p className="score-value">{metrics.priority.highRisk}</p>
+            <p className="meta-line">Pending proposals submitted by contributors with a non-positive reputation score.</p>
           </article>
         </section>
       ) : null}
@@ -439,9 +444,14 @@ export const OpsPage = (): ReactElement => {
                 <div className="stat-strip">
                   <span className="stat-pill">Status {item.status}</span>
                   <span className="stat-pill">Submitted by {item.submittedBy}</span>
+                  <span className="stat-pill">Reputation {item.submittedByReputation.score}</span>
+                  <span className="stat-pill">Risk {item.submittedByReputation.riskLevel}</span>
                   <span className="stat-pill">Assignee {item.assigneeId ?? "Unassigned"}</span>
                   <span className="stat-pill">Version {item.reviewVersion}</span>
                 </div>
+                {item.submittedByReputation.riskFlags.length > 0 ? (
+                  <p className="meta-line">Risk flags: {item.submittedByReputation.riskFlags.join(", ")}</p>
+                ) : null}
                 <p className="meta-line">Created {formatDateTime(item.createdAt)}</p>
                 {item.sourceNote ? <p>Source note: {item.sourceNote}</p> : null}
               </article>
@@ -468,6 +478,14 @@ export const OpsPage = (): ReactElement => {
               </div>
             </div>
             <p className="meta-line">Submitted by {selectedProposal.submittedBy} | Assignee {selectedProposal.assigneeId ?? "Unassigned"} | Created {formatDateTime(selectedProposal.createdAt)}</p>
+            <p className="meta-line">
+              Reputation {selectedProposal.submittedByReputation.score} | Verified statements {selectedProposal.submittedByReputation.verifiedStatements} | Approved proposals {selectedProposal.submittedByReputation.approvedProposals}
+            </p>
+            {selectedProposal.submittedByReputation.riskFlags.length > 0 ? (
+              <p className="meta-line">Risk flags: {selectedProposal.submittedByReputation.riskFlags.join(", ")}</p>
+            ) : (
+              <p className="meta-line">No elevated contributor risk flags are currently derived for this proposal.</p>
+            )}
             {selectedProposal.assigneeId && selectedProposal.assigneeId !== session.userId && session.role !== "admin" ? (
               <p className="meta-line">Another moderator currently holds this claim, so review actions are disabled for your session.</p>
             ) : null}
