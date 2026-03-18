@@ -13,6 +13,7 @@ import {
   listCanonicalPromises
 } from "./db/canonical-promises.js";
 import { db } from "./db/client.js";
+import { recordProductEvent } from "./db/product-events.js";
 import { getPartyById, listCurrentPartyContexts, listParties, listPartyAliases, listPartyMembers } from "./db/party-graph.js";
 import {
   buildPromiseClaimDuplicateAssist,
@@ -489,6 +490,16 @@ app.post("/auth/register", registerLimiter, (req, res) => {
   try {
     const id = crypto.randomUUID();
     db.prepare("INSERT INTO users (id, email, role) VALUES (?, ?, ?)").run(id, normalizedEmail, effectiveRole);
+    recordProductEvent({
+      eventDomain: "auth",
+      eventName: "user_registered",
+      entityKind: "user",
+      entityId: id,
+      metadata: {
+        email: normalizedEmail,
+        role: effectiveRole
+      }
+    });
     res.status(201).json({ id, email: normalizedEmail, role: effectiveRole });
   } catch (err) {
     const code = (err as { code?: string })?.code;
@@ -522,6 +533,18 @@ app.post("/auth/role-grants", requireRole("admin"), (req, res) => {
   }
 
   db.prepare("UPDATE users SET role = ?, updated_at = datetime('now') WHERE id = ?").run(normalizedRole, user.id);
+  recordProductEvent({
+    eventDomain: "auth",
+    eventName: "role_granted",
+    actorId: req.auth.userId ?? "moderation",
+    actorRole: req.auth.role ?? null,
+    entityKind: "user",
+    entityId: user.id,
+    metadata: {
+      email: normalizedEmail,
+      role: normalizedRole
+    }
+  });
   res.json({
     ok: true,
     id: user.id,
@@ -878,6 +901,18 @@ app.post("/parties", requireRole("moderator"), (req, res) => {
       normalizeOptionalText(websiteUrl),
       req.auth.userId ?? "moderation"
     );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "party_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "party",
+      entityId: normalizedId,
+      metadata: {
+        shortName: normalizedShortName,
+        countryCode: normalizedCountryCode
+      }
+    });
     res.status(201).json({ id: normalizedId });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -909,6 +944,17 @@ app.post("/parties/:id/aliases", requireRole("moderator"), (req, res) => {
          VALUES (?, ?, ?, ?, datetime('now'))`
       )
       .run(partyId, normalizedAlias, normalizeOptionalText(sourceNote), req.auth.userId ?? "moderation");
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "party_alias_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "party_alias",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        partyId
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number, partyId });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -974,6 +1020,18 @@ app.post("/party-memberships", requireRole("moderator"), (req, res) => {
         normalizeOptionalText(sourceNote),
         req.auth.userId ?? "moderation"
       );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "party_membership_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "party_membership",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        politicianId,
+        partyId: normalizedPartyId
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -1054,6 +1112,18 @@ app.patch("/party-memberships/:id", requireRole("moderator"), (req, res) => {
       hasSourceNote ? normalizeOptionalText((req.body as { sourceNote?: string | null }).sourceNote) : existing.sourceNote,
       membershipId
     );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "party_membership_updated",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "party_membership",
+      entityId: membershipId,
+      metadata: {
+        politicianId: existing.politicianId,
+        partyId: nextPartyId
+      }
+    });
     res.json({ ok: true });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -1117,6 +1187,17 @@ app.post("/party-stances", requireRole("moderator"), (req, res) => {
         normalizedDateSaid,
         req.auth.userId ?? "moderation"
       );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "party_stance_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "party_stance",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        partyId: normalizedPartyId
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number, partyId: normalizedPartyId });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -1207,6 +1288,17 @@ app.post("/vote-events", requireRole("moderator"), (req, res) => {
         normalizedEventDate,
         req.auth.userId ?? "moderation"
       );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "vote_event_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "vote_event",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        countryCode: normalizedCountryCode
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -1255,6 +1347,18 @@ app.post("/vote-events/:id/records", requireRole("moderator"), (req, res) => {
          VALUES (?, ?, ?, ?, ?, datetime('now'))`
       )
       .run(voteEventId, politicianId, normalizedVoteValue, normalizeOptionalText(sourceNote), req.auth.userId ?? "moderation");
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "vote_record_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "vote_record",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        voteEventId,
+        politicianId
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number, voteEventId, politicianId });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -1345,6 +1449,17 @@ app.post("/politician-proposals", proposalSubmitLimiter, requireRole("user"), (r
     db.prepare(
       "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason) VALUES (?, ?, 'submitted', NULL, 'pending', NULL)"
     ).run(proposalId, req.auth.userId ?? "unknown");
+    recordProductEvent({
+      eventDomain: "contribution",
+      eventName: "politician_proposal_submitted",
+      actorId: req.auth.userId ?? "unknown",
+      actorRole: req.auth.role ?? null,
+      entityKind: "politician_proposal",
+      entityId: proposalId,
+      metadata: {
+        name: trimmedName
+      }
+    });
 
     res.status(201).json({ id: proposalId, status: "pending" });
   } catch (err) {
@@ -2183,6 +2298,7 @@ app.post("/politician-proposals/:id/claim", proposalClaimLimiter, requireRole("m
   }
 
   const actorId = req.auth.userId ?? "moderation";
+  const actorRole = req.auth.role ?? null;
   const claimTx = db.transaction(() => {
     const proposal = db
       .prepare("SELECT status, assignee_id AS assigneeId, review_version AS reviewVersion FROM politician_proposals WHERE id = ?")
@@ -2212,6 +2328,15 @@ app.post("/politician-proposals/:id/claim", proposalClaimLimiter, requireRole("m
     if (write.changes === 0) {
       throwProposalTxError(409, "proposal version conflict");
     }
+
+    recordProductEvent({
+      eventDomain: "moderation",
+      eventName: "politician_proposal_claimed",
+      actorId,
+      actorRole,
+      entityKind: "politician_proposal",
+      entityId: proposalId
+    });
 
     return { assigneeId: actorId, reviewVersion: proposalRow.reviewVersion + 1 };
   });
@@ -2243,6 +2368,7 @@ app.post("/politician-proposals/:id/release", proposalClaimLimiter, requireRole(
 
   const actorId = req.auth.userId ?? "moderation";
   const isAdmin = req.auth.role === "admin";
+  const actorRole = req.auth.role ?? null;
   const releaseTx = db.transaction(() => {
     const proposal = db
       .prepare("SELECT status, assignee_id AS assigneeId, review_version AS reviewVersion FROM politician_proposals WHERE id = ?")
@@ -2272,6 +2398,15 @@ app.post("/politician-proposals/:id/release", proposalClaimLimiter, requireRole(
     if (write.changes === 0) {
       throwProposalTxError(409, "proposal version conflict");
     }
+
+    recordProductEvent({
+      eventDomain: "moderation",
+      eventName: "politician_proposal_released",
+      actorId,
+      actorRole,
+      entityKind: "politician_proposal",
+      entityId: proposalId
+    });
 
     return { reviewVersion: proposalRow.reviewVersion + 1 };
   });
@@ -2324,6 +2459,7 @@ app.patch("/politician-proposals/:id/review", proposalReviewLimiter, requireRole
 
   const actorId = req.auth.userId ?? "moderation";
   const isAdmin = req.auth.role === "admin";
+  const actorRole = req.auth.role ?? null;
   const reasonNote = reason?.trim() || null;
 
   const reviewTx = db.transaction(() => {
@@ -2392,6 +2528,19 @@ app.patch("/politician-proposals/:id/review", proposalReviewLimiter, requireRole
         "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, reason_code, linked_politician_id) VALUES (?, ?, 'approved', 'pending', 'approved', ?, NULL, ?)"
       ).run(proposalId, actorId, reasonNote, createdId);
 
+      recordProductEvent({
+        eventDomain: "moderation",
+        eventName: "politician_proposal_reviewed",
+        actorId,
+        actorRole,
+        entityKind: "politician_proposal",
+        entityId: proposalId,
+        metadata: {
+          decision: "approve",
+          linkedPoliticianId: createdId
+        }
+      });
+
       return { status: "approved" as const, politicianId: createdId, reviewVersion: currentVersion + 1 };
     }
 
@@ -2422,6 +2571,19 @@ app.patch("/politician-proposals/:id/review", proposalReviewLimiter, requireRole
     db.prepare(
       "INSERT INTO politician_proposal_audits (proposal_id, actor_id, action, from_status, to_status, reason, reason_code, linked_politician_id) VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)"
     ).run(proposalId, actorId, action, nextStatus, reasonNote, normalizedReasonCode ?? null, linkedId);
+
+    recordProductEvent({
+      eventDomain: "moderation",
+      eventName: "politician_proposal_reviewed",
+      actorId,
+      actorRole,
+      entityKind: "politician_proposal",
+      entityId: proposalId,
+      metadata: {
+        decision,
+        linkedPoliticianId: linkedId
+      }
+    });
 
     return { status: nextStatus, politicianId: linkedId, reviewVersion: currentVersion + 1 };
   });
@@ -2751,6 +2913,19 @@ app.post("/canonical-promises", requireRole("moderator"), (req, res) => {
         );
       }
 
+      recordProductEvent({
+        eventDomain: "editorial",
+        eventName: "canonical_promise_created",
+        actorId: req.auth.userId ?? "moderation",
+        actorRole: req.auth.role ?? null,
+        entityKind: "canonical_promise",
+        entityId: canonicalPromiseId,
+        metadata: {
+          politicianId,
+          publicStatus: normalizedPublicStatus
+        }
+      });
+
       return canonicalPromiseId;
     });
 
@@ -2870,6 +3045,18 @@ app.post("/canonical-promises/:id/vote-links", requireRole("moderator"), (req, r
         normalizeOptionalText(comparisonNote),
         req.auth.userId ?? "moderation"
       );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "vote_link_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "canonical_promise_vote_link",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        canonicalPromiseId,
+        voteEventId: safeVoteEventId
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, voteEventId: safeVoteEventId });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -2950,6 +3137,18 @@ app.post("/canonical-promises/:id/fulfillment-assessments", requireRole("moderat
       normalizedEvidenceDate,
       req.auth.userId ?? "moderation"
     );
+  recordProductEvent({
+    eventDomain: "editorial",
+    eventName: "fulfillment_assessment_created",
+    actorId: req.auth.userId ?? "moderation",
+    actorRole: req.auth.role ?? null,
+    entityKind: "promise_fulfillment_assessment",
+    entityId: result.lastInsertRowid as number,
+    metadata: {
+      canonicalPromiseId,
+      status: normalizedStatus
+    }
+  });
   res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId });
 });
 
@@ -3021,6 +3220,19 @@ app.post("/canonical-promises/:id/party-alignments", requireRole("moderator"), (
         normalizeOptionalText(reason),
         req.auth.userId ?? "moderation"
       );
+    recordProductEvent({
+      eventDomain: "editorial",
+      eventName: "party_alignment_created",
+      actorId: req.auth.userId ?? "moderation",
+      actorRole: req.auth.role ?? null,
+      entityKind: "party_alignment_assessment",
+      entityId: result.lastInsertRowid as number,
+      metadata: {
+        canonicalPromiseId,
+        partyStanceId: safePartyStanceId,
+        status: normalizedStatus
+      }
+    });
     res.status(201).json({ id: result.lastInsertRowid as number, canonicalPromiseId, partyStanceId: safePartyStanceId });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -3070,6 +3282,17 @@ app.post("/promise-claims", requireRole("user"), (req, res) => {
       `INSERT INTO promise_claim_audits (claim_id, actor_id, action, from_status, to_status, reason)
        VALUES (?, ?, 'submitted', NULL, 'pending', NULL)`
     ).run(claimId, req.auth.userId ?? "unknown");
+    recordProductEvent({
+      eventDomain: "contribution",
+      eventName: "promise_claim_submitted",
+      actorId: req.auth.userId ?? "unknown",
+      actorRole: req.auth.role ?? null,
+      entityKind: "promise_claim",
+      entityId: claimId,
+      metadata: {
+        politicianId
+      }
+    });
     res.status(201).json({ id: claimId, status: "pending" });
   } catch (err) {
     const code = (err as { code?: string }).code;
@@ -3322,6 +3545,7 @@ app.post("/promise-claims/:id/claim", requireRole("moderator"), (req, res) => {
   }
 
   const actorId = req.auth.userId ?? "moderation";
+  const actorRole = req.auth.role ?? null;
   try {
     const tx = db.transaction(() => {
       const claim = db
@@ -3354,6 +3578,14 @@ app.post("/promise-claims/:id/claim", requireRole("moderator"), (req, res) => {
       db.prepare(
         "INSERT INTO promise_claim_audits (claim_id, actor_id, action, from_status, to_status, reason) VALUES (?, ?, 'claimed', 'pending', 'pending', NULL)"
       ).run(claimId, actorId);
+      recordProductEvent({
+        eventDomain: "moderation",
+        eventName: "promise_claim_claimed",
+        actorId,
+        actorRole,
+        entityKind: "promise_claim",
+        entityId: claimId
+      });
       return { assigneeId: actorId, reviewVersion: claim.reviewVersion + 1 };
     });
     res.json({ ok: true, ...tx() });
@@ -3380,6 +3612,7 @@ app.post("/promise-claims/:id/release", requireRole("moderator"), (req, res) => 
 
   const actorId = req.auth.userId ?? "moderation";
   const isAdmin = req.auth.role === "admin";
+  const actorRole = req.auth.role ?? null;
   try {
     const tx = db.transaction(() => {
       const claim = db
@@ -3412,6 +3645,14 @@ app.post("/promise-claims/:id/release", requireRole("moderator"), (req, res) => 
       db.prepare(
         "INSERT INTO promise_claim_audits (claim_id, actor_id, action, from_status, to_status, reason) VALUES (?, ?, 'released', 'pending', 'pending', NULL)"
       ).run(claimId, actorId);
+      recordProductEvent({
+        eventDomain: "moderation",
+        eventName: "promise_claim_released",
+        actorId,
+        actorRole,
+        entityKind: "promise_claim",
+        entityId: claimId
+      });
       return { reviewVersion: claim.reviewVersion + 1 };
     });
     res.json({ ok: true, ...tx() });
@@ -3457,6 +3698,7 @@ app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => 
 
   const actorId = req.auth.userId ?? "moderation";
   const isAdmin = req.auth.role === "admin";
+  const actorRole = req.auth.role ?? null;
   const normalizedPublicStatus = isCanonicalPublicStatus(publicStatus?.trim().toLowerCase() ?? "public")
     ? (publicStatus?.trim().toLowerCase() ?? "public")
     : undefined;
@@ -3550,6 +3792,19 @@ app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => 
          (claim_id, actor_id, action, from_status, to_status, reason, reason_code, linked_canonical_promise_id)
          VALUES (?, ?, ?, 'pending', ?, ?, ?, ?)`
       ).run(claimId, actorId, nextStatus, nextStatus, normalizeOptionalText(reason), reasonCode ?? null, targetCanonicalPromiseId);
+
+      recordProductEvent({
+        eventDomain: "moderation",
+        eventName: "promise_claim_reviewed",
+        actorId,
+        actorRole,
+        entityKind: "promise_claim",
+        entityId: claimId,
+        metadata: {
+          decision,
+          canonicalPromiseId: targetCanonicalPromiseId
+        }
+      });
 
       return { status: nextStatus, canonicalPromiseId: targetCanonicalPromiseId, reviewVersion: claim.reviewVersion + 1 };
     });
@@ -3721,6 +3976,17 @@ app.post("/statements", addStatementLimiter, requireRole("user"), (req, res) => 
     db.prepare(
       "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'createStatement', NULL, ?)"
     ).run(statementId, req.auth.userId ?? "system", body.trim());
+    recordProductEvent({
+      eventDomain: "contribution",
+      eventName: "statement_submitted",
+      actorId: req.auth.userId ?? "system",
+      actorRole: req.auth.role ?? null,
+      entityKind: "statement",
+      entityId: statementId,
+      metadata: {
+        politicianId
+      }
+    });
 
     res.status(201).json({ id: statementId, verificationStatus: "pending" });
   } catch (err) {

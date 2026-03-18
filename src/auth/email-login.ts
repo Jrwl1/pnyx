@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 
 import { db } from "../db/client.js";
+import { recordProductEvent } from "../db/product-events.js";
 import { signToken } from "./jwt.js";
 
 type KnownRole = "user" | "moderator" | "admin";
@@ -99,6 +100,16 @@ export const issueEmailLoginCode = async (rawEmail: string): Promise<EmailLoginR
     .get(email) as { id: string } | undefined;
 
   if (!user) {
+    recordProductEvent({
+      eventDomain: "auth",
+      eventName: "login_code_requested",
+      entityKind: "user",
+      metadata: {
+        email,
+        userKnown: false,
+        deliveryMode: EMAIL_PROVIDER === "inline" ? "inline" : "email"
+      }
+    });
     return {
       ok: true,
       expiresInMinutes: EMAIL_LOGIN_TTL_MINUTES,
@@ -121,6 +132,18 @@ export const issueEmailLoginCode = async (rawEmail: string): Promise<EmailLoginR
   try {
     const delivery = await deliverCode(email, code);
     db.prepare("UPDATE auth_login_codes SET delivery_state = 'sent', updated_at = datetime('now') WHERE id = ?").run(loginCodeId);
+    recordProductEvent({
+      eventDomain: "auth",
+      eventName: "login_code_requested",
+      actorId: user.id,
+      entityKind: "user",
+      entityId: user.id,
+      metadata: {
+        email,
+        userKnown: true,
+        deliveryMode: delivery.deliveryMode
+      }
+    });
     return {
       ok: true,
       expiresInMinutes: EMAIL_LOGIN_TTL_MINUTES,
@@ -166,6 +189,18 @@ export const verifyEmailLoginCode = (rawEmail: string, code: string): EmailLogin
   if (write.changes === 0) {
     return { ok: false, error: "invalid or expired sign-in code" };
   }
+
+  recordProductEvent({
+    eventDomain: "auth",
+    eventName: "signed_in",
+    actorId: row.userId,
+    actorRole: row.role,
+    entityKind: "user",
+    entityId: row.userId,
+    metadata: {
+      email: row.email
+    }
+  });
 
   return {
     ok: true,
