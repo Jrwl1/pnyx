@@ -7,6 +7,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { PublicLayout } from "./layout/PublicLayout";
 import { HomePage } from "./routes/HomePage";
 import { MethodologyPage } from "./routes/MethodologyPage";
+import { OpsAdminPage } from "./routes/OpsAdminPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 import { OpsPage } from "./routes/OpsPage";
 import { OpsRecordsPage } from "./routes/OpsRecordsPage";
@@ -44,6 +45,7 @@ export const App = (): ReactElement => {
             <Route path="/contribute/statements/new" element={<SubmitStatementPage />} />
             <Route element={<RequireRoleRoute minimumRole="moderator" />}>
               <Route path="/ops" element={<OpsPage />} />
+              <Route path="/ops/admin" element={<OpsAdminPage />} />
               <Route path="/ops/records" element={<OpsRecordsPage />} />
               <Route path="/ops/claims" element={<PromiseClaimsOpsPage />} />
             </Route>

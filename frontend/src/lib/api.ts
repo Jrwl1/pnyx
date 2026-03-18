@@ -199,6 +199,75 @@ export const getPartyStances = async (id: string): Promise<BackendPartyStance[]>
   return response.items;
 };
 
+export const createParty = async (
+  token: string,
+  input: {
+    id: string;
+    name: string;
+    shortName: string;
+    countryCode?: string;
+    description?: string;
+    websiteUrl?: string;
+  }
+): Promise<{ id: string }> => {
+  return fetchJson<{ id: string }>("/parties", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const createPartyAlias = async (
+  token: string,
+  partyId: string,
+  input: {
+    alias: string;
+    sourceNote?: string;
+  }
+): Promise<{ id: number; partyId: string }> => {
+  return fetchJson<{ id: number; partyId: string }>(`/parties/${partyId}/aliases`, {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const createPartyMembership = async (
+  token: string,
+  input: {
+    politicianId: number;
+    partyId: string;
+    roleTitle?: string;
+    startDate?: string;
+    endDate?: string;
+    sourceNote?: string;
+  }
+): Promise<{ id: number }> => {
+  return fetchJson<{ id: number }>("/party-memberships", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const updatePartyMembership = async (
+  token: string,
+  membershipId: number,
+  input: {
+    partyId?: string;
+    roleTitle?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    sourceNote?: string;
+  }
+): Promise<{ ok: true }> => {
+  return fetchJson<{ ok: true }>(`/party-memberships/${membershipId}`, {
+    method: "PATCH",
+    token,
+    body: input
+  });
+};
+
 export const createPartyStance = async (
   token: string,
   input: {
@@ -309,6 +378,23 @@ export const listCanonicalPromises = async (politicianId?: number, token?: strin
   const suffix = politicianId ? `?politicianId=${politicianId}` : "";
   const response = await fetchJson<{ items: CanonicalPromiseSummary[] }>(`/canonical-promises${suffix}`, { token });
   return response.items;
+};
+
+export const createCanonicalPromise = async (
+  token: string,
+  input: {
+    politicianId: number;
+    promiseText: string;
+    publicStatus: "draft" | "public";
+    primaryStatementId?: number;
+    acceptedSources?: Array<{ sourceUrl: string; sourceNote?: string; statementId?: number }>;
+  }
+): Promise<{ id: number }> => {
+  return fetchJson<{ id: number }>("/canonical-promises", {
+    method: "POST",
+    token,
+    body: input
+  });
 };
 
 export const getCanonicalPromiseById = async (id: number, token?: string): Promise<CanonicalPromiseDetailResponse> => {

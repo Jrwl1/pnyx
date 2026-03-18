@@ -157,6 +157,7 @@ export const OpsRecordsPage = (): ReactElement => {
         <h1>Launch-critical record maintenance</h1>
         <div className="card-link-row">
           <Link to="/ops">Open politician proposal queue</Link>
+          <Link to="/ops/admin">Open party and promise admin</Link>
           <Link to="/ops/claims">Open promise claim queue</Link>
         </div>
       </section>
