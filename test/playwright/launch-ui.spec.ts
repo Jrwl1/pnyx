@@ -191,6 +191,7 @@ test("loads protected moderator and editorial routes under an admin session", as
 
   await page.goto(`${frontendBase}/ops`);
   await expect(page.getByRole("heading", { name: "Politician proposal queue" })).toBeVisible();
+  await expect(page.getByLabel("Priority")).toBeVisible();
 
   await page.goto(`${frontendBase}/ops/admin`);
   await expect(page.getByRole("heading", { name: "Protected party graph and canonical promise maintenance" })).toBeVisible();
@@ -199,4 +200,5 @@ test("loads protected moderator and editorial routes under an admin session", as
 
   await page.goto(`${frontendBase}/ops/claims`);
   await expect(page.getByRole("heading", { name: "Promise claim queue" })).toBeVisible();
+  await expect(page.getByLabel("Priority")).toBeVisible();
 });

@@ -62,4 +62,35 @@ describe("politician proposal queue", () => {
     expect(pending.body.items.map((item: { id: number }) => item.id)).toContain(pendingRes.body.id);
     expect(pending.body.items.map((item: { id: number }) => item.id)).not.toContain(rejectRes.body.id);
   });
+
+  it("supports high-risk priority filtering for moderators", async () => {
+    const userSafe = await authHeaders("queue-safe-user", "user");
+    const userRisk = await authHeaders("queue-risk-user", "user");
+
+    await request(app)
+      .post("/politician-proposals")
+      .set(userSafe)
+      .send({ name: "Queue Safe" })
+      .expect(201);
+    const riskyProposal = await request(app)
+      .post("/politician-proposals")
+      .set(userRisk)
+      .send({ name: "Queue Risk" })
+      .expect(201);
+
+    db.prepare(
+      "INSERT INTO contributor_reputation (user_id, score, rejected_proposals, updated_at) VALUES (?, ?, ?, datetime('now'))"
+    ).run("queue-risk-user", -1, 2);
+
+    const modHeaders = await authHeaders("queue-priority-mod", "moderator");
+    const filtered = await request(app).get("/politician-proposals?priority=high_risk").set(modHeaders).expect(200);
+    expect(filtered.body.items).toHaveLength(1);
+    expect(filtered.body.items[0]).toMatchObject({
+      id: riskyProposal.body.id,
+      submittedBy: "queue-risk-user",
+      submittedByReputation: {
+        riskLevel: "high"
+      }
+    });
+  });
 });

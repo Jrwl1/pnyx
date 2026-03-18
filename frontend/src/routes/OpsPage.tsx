@@ -57,6 +57,7 @@ export const OpsPage = (): ReactElement => {
   const status = readStatus(searchParams.get("status"));
   const assignee = searchParams.get("assignee") ?? "";
   const ageBucket = readAgeBucket(searchParams.get("ageBucket"));
+  const priority = searchParams.get("priority") ?? "";
   const sort = searchParams.get("sort") === "asc" ? "asc" : "desc";
   const page = readInt(searchParams.get("page"), 1);
   const selectedId = readInt(searchParams.get("proposalId"), 0);
@@ -93,6 +94,7 @@ export const OpsPage = (): ReactElement => {
           status,
           assignee: assignee || undefined,
           ageBucket: ageBucket || undefined,
+          priority: priority === "high_risk" || priority === "trusted" ? priority : undefined,
           sort,
           page,
           pageSize: 20
@@ -110,7 +112,7 @@ export const OpsPage = (): ReactElement => {
 
   useEffect(() => {
     void loadQueue();
-  }, [ageBucket, assignee, page, session, sort, status]);
+  }, [ageBucket, assignee, page, priority, session, sort, status]);
 
   const selectedProposal = useMemo(() => queue?.items.find((item) => item.id === selectedId) ?? null, [queue, selectedId]);
 
@@ -403,6 +405,14 @@ export const OpsPage = (): ReactElement => {
               <option value="asc">Oldest first</option>
             </select>
           </label>
+          <label className="field-group" htmlFor="ops-priority">
+            <span>Priority</span>
+            <select id="ops-priority" className="select-input" value={priority} onChange={(event) => setFilter("priority", event.target.value || null)}>
+              <option value="">All contributors</option>
+              <option value="high_risk">High-risk first</option>
+              <option value="trusted">Trusted history</option>
+            </select>
+          </label>
         </div>
         <p className="data-note">Signed in as {session.userId} ({session.role}). Filters map directly to the queue API.</p>
         {error ? <p className="meta-line">{error}</p> : null}
@@ -454,6 +464,9 @@ export const OpsPage = (): ReactElement => {
                 ) : null}
                 <p className="meta-line">Created {formatDateTime(item.createdAt)}</p>
                 {item.sourceNote ? <p>Source note: {item.sourceNote}</p> : null}
+                {item.submittedByReputation.riskLevel === "high" ? (
+                  <p className="meta-line">High-priority review recommended due to current contributor risk signals.</p>
+                ) : null}
               </article>
             ))}
           </div>
@@ -486,6 +499,9 @@ export const OpsPage = (): ReactElement => {
             ) : (
               <p className="meta-line">No elevated contributor risk flags are currently derived for this proposal.</p>
             )}
+            {selectedProposal.submittedByReputation.riskLevel === "high" ? (
+              <p className="meta-line">Priority review: high-risk contributor history.</p>
+            ) : null}
             {selectedProposal.assigneeId && selectedProposal.assigneeId !== session.userId && session.role !== "admin" ? (
               <p className="meta-line">Another moderator currently holds this claim, so review actions are disabled for your session.</p>
             ) : null}

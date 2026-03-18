@@ -43,6 +43,7 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
   const selectedId = Number(searchParams.get("claimId"));
   const status = (searchParams.get("status") ?? "pending").toLowerCase();
   const assignee = searchParams.get("assignee") ?? "";
+  const priority = searchParams.get("priority") ?? "";
   const page = readInt(searchParams.get("page"), 1);
   const [claims, setClaims] = useState<PromiseClaimRecord[]>([]);
   const [queuePage, setQueuePage] = useState<number>(1);
@@ -76,6 +77,9 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
       if (assignee) {
         params.set("assignee", assignee);
       }
+      if (priority === "high_risk" || priority === "trusted") {
+        params.set("priority", priority);
+      }
       params.set("page", String(page));
       params.set("pageSize", "20");
 
@@ -99,7 +103,7 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
 
   useEffect(() => {
     void loadClaims();
-  }, [assignee, page, session, status]);
+  }, [assignee, page, priority, session, status]);
 
   useEffect(() => {
     if (!session || !Number.isFinite(selectedId) || selectedId <= 0) {
@@ -245,6 +249,14 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
               <option value="unassigned">Unassigned</option>
             </select>
           </label>
+          <label className="field-group" htmlFor="claim-priority-filter">
+            <span>Priority</span>
+            <select id="claim-priority-filter" className="select-input" value={priority} onChange={(event) => setSearchParams(withParams(searchParams, { priority: event.target.value || null, page: "1" }))}>
+              <option value="">All contributors</option>
+              <option value="high_risk">High-risk first</option>
+              <option value="trusted">Trusted history</option>
+            </select>
+          </label>
         </div>
         <p className="data-note">Showing {claims.length} claims on page {queuePage}. Filters map directly to the queue API.</p>
       </section>
@@ -266,6 +278,9 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
               Reputation {claim.submittedByReputation.score} · Risk {claim.submittedByReputation.riskLevel}
               {claim.submittedByReputation.riskFlags.length > 0 ? ` · ${claim.submittedByReputation.riskFlags.join(", ")}` : ""}
             </p>
+            {claim.submittedByReputation.riskLevel === "high" ? (
+              <p className="meta-line">High-priority review recommended due to contributor history.</p>
+            ) : null}
           </article>
         ))}
       </section>
@@ -297,6 +312,9 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
             ) : (
               <p className="meta-line">No elevated contributor risk flags are currently derived for this claim.</p>
             )}
+            {selectedClaim.submittedByReputation.riskLevel === "high" ? (
+              <p className="meta-line">Priority review: high-risk contributor history.</p>
+            ) : null}
             <div className="card-link-row">
               <button className="button button-secondary" type="button" onClick={() => void onClaim()}>
                 Claim

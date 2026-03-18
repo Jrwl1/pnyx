@@ -271,6 +271,7 @@ export interface ProposalQueueFilters {
   status?: ProposalStatus | "all";
   assignee?: string;
   ageBucket?: ProposalAgeBucket;
+  priority?: "high_risk" | "trusted";
   sort?: "asc" | "desc";
   page?: number;
   pageSize?: number;

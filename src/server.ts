@@ -2251,6 +2251,7 @@ app.get("/politician-proposals", requireRole("user"), (req, res) => {
   const isModerator = req.auth.role === "moderator" || req.auth.role === "admin";
   const assigneeRaw = (req.query.assignee as string | undefined)?.trim();
   const ageBucket = (req.query.ageBucket as string | undefined)?.trim().toLowerCase();
+  const priority = (req.query.priority as string | undefined)?.trim().toLowerCase();
   const sort = (req.query.sort as string | undefined)?.trim().toLowerCase();
   const page = parsePageValue(req.query.page as string | undefined, 1, 10_000);
   const pageSize = parsePageValue(req.query.pageSize as string | undefined, 20, 100);
@@ -2263,6 +2264,10 @@ app.get("/politician-proposals", requireRole("user"), (req, res) => {
 
   if (sort && sort !== "asc" && sort !== "desc") {
     res.status(400).json({ error: "sort must be asc or desc" });
+    return;
+  }
+  if (priority && priority !== "high_risk" && priority !== "trusted") {
+    res.status(400).json({ error: "priority must be high_risk or trusted" });
     return;
   }
 
@@ -2302,6 +2307,11 @@ app.get("/politician-proposals", requireRole("user"), (req, res) => {
     whereClauses.push("created_at < datetime('now', '-1 hour') AND created_at >= datetime('now', '-24 hours')");
   } else if (ageBucket === "gt24h") {
     whereClauses.push("created_at < datetime('now', '-24 hours')");
+  }
+  if (priority === "high_risk") {
+    whereClauses.push("submitted_by IN (SELECT user_id FROM contributor_reputation WHERE score <= 0)");
+  } else if (priority === "trusted") {
+    whereClauses.push("submitted_by IN (SELECT user_id FROM contributor_reputation WHERE score > 0)");
   }
 
   const whereSql = whereClauses.length > 0 ? `WHERE ${whereClauses.join(" AND ")}` : "";
@@ -3453,13 +3463,19 @@ app.get("/promise-claims", requireRole("user"), (req, res) => {
   }
 
   const assignee = includeAll ? (req.query.assignee as string | undefined)?.trim() : undefined;
+  const priority = includeAll ? (req.query.priority as string | undefined)?.trim().toLowerCase() : undefined;
   const page = parsePageValue(req.query.page as string | undefined, 1, 10_000);
   const pageSize = parsePageValue(req.query.pageSize as string | undefined, 20, 100);
+  if (priority && priority !== "high_risk" && priority !== "trusted") {
+    res.status(400).json({ error: "priority must be high_risk or trusted" });
+    return;
+  }
   const result = listPromiseClaims({
     submitterId: req.auth.userId ?? "unknown",
     includeAll,
     status: status as typeof claimStatuses[number] | undefined,
     assignee,
+    priority,
     page,
     pageSize
   });

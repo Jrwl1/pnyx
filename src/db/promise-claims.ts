@@ -135,6 +135,7 @@ export const listPromiseClaims = ({
   includeAll,
   status,
   assignee,
+  priority,
   page,
   pageSize
 }: {
@@ -142,6 +143,7 @@ export const listPromiseClaims = ({
   includeAll: boolean;
   status?: PromiseClaimStatus;
   assignee?: string;
+  priority?: string;
   page: number;
   pageSize: number;
 }): { items: PromiseClaimRow[]; total: number } => {
@@ -166,6 +168,11 @@ export const listPromiseClaims = ({
       conditions.push("assignee_id = ?");
       params.push(assignee);
     }
+  }
+  if (priority === "high_risk") {
+    conditions.push("submitted_by IN (SELECT user_id FROM contributor_reputation WHERE score <= 0)");
+  } else if (priority === "trusted") {
+    conditions.push("submitted_by IN (SELECT user_id FROM contributor_reputation WHERE score > 0)");
   }
 
   const whereSql = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

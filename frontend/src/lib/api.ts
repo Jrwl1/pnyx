@@ -559,6 +559,9 @@ const buildProposalQueuePath = (filters: ProposalQueueFilters = {}): string => {
   if (filters.ageBucket) {
     params.set("ageBucket", filters.ageBucket);
   }
+  if (filters.priority) {
+    params.set("priority", filters.priority);
+  }
   if (filters.sort) {
     params.set("sort", filters.sort);
   }

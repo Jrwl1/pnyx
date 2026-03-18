@@ -257,4 +257,45 @@ describe("promise claims", () => {
     const metrics = await request(app).get("/promise-claims/metrics").set(moderator).expect(200);
     expect(metrics.body.priority.highRisk).toBeGreaterThanOrEqual(1);
   });
+
+  it("supports high-risk priority filtering for moderators", async () => {
+    const userSafe = await authHeaders("claim-safe-user", "user");
+    const userRisk = await authHeaders("claim-risk-filter-user", "user");
+
+    await request(app)
+      .post("/promise-claims")
+      .set(userSafe)
+      .send({
+        politicianId,
+        claimText: "Safe claim",
+        sourceUrl: "https://example.com/safe-claim",
+        dateSaid: "2026-03-23"
+      })
+      .expect(201);
+    const riskyClaim = await request(app)
+      .post("/promise-claims")
+      .set(userRisk)
+      .send({
+        politicianId,
+        claimText: "Risk filter claim",
+        sourceUrl: "https://example.com/risk-filter-claim",
+        dateSaid: "2026-03-23"
+      })
+      .expect(201);
+
+    db.prepare(
+      "INSERT INTO contributor_reputation (user_id, score, rejected_claims, updated_at) VALUES (?, ?, ?, datetime('now'))"
+    ).run("claim-risk-filter-user", -1, 2);
+
+    const moderator = await authHeaders("claim-priority-mod", "moderator");
+    const filtered = await request(app).get("/promise-claims?priority=high_risk").set(moderator).expect(200);
+    expect(filtered.body.items).toHaveLength(1);
+    expect(filtered.body.items[0]).toMatchObject({
+      id: riskyClaim.body.id,
+      submittedBy: "claim-risk-filter-user",
+      submittedByReputation: {
+        riskLevel: "high"
+      }
+    });
+  });
 });
