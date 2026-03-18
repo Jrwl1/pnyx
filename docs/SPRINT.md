@@ -28,7 +28,7 @@ Move Pnyx from a feature-complete-enough accountability product to a launchable 
 | S-28 | Expose protected editorial operations for launch-critical trust records and launch coverage completeness. See `S-28` substeps below. | `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `src/db/**`, `test/**` | Protected product surfaces exist for party stances, vote events, vote records, fulfillment assessments, and party-line assessments; moderators or admins can maintain launch-critical truth data without direct database edits or manual-only seeding; launch completeness views identify gaps in party, politician, promise, and trust coverage; tests and browser checks pass. | Accepted in REVIEW. Packets `eeb0b64` and `e9af365` landed the protected `/ops/records` surface, launch-coverage endpoint, and the direct-backend verification stabilizers; `pnpm test`, `pnpm frontend:typecheck`, and `pnpm frontend:build` passed; browser verification covered `/ops/records` and `/ops/claims` under an admin session on the isolated `4189 -> 3009` pair. | Stop if a launch-critical record type still depends on direct database mutation or non-repeatable manual seeding outside protected product surfaces. | DONE |
 | S-29 | Add durable automated regression coverage for critical public, contributor, moderation, and editorial flows. See `S-29` substeps below. | `package.json`, `frontend/package.json`, `pnpm-lock.yaml`, `vitest*.ts`, `playwright.config.*`, `frontend/**`, `test/**`, `.github/workflows/**`, `docs/security/**` | Critical public routes, auth flows, contributor submission flows, moderator queues, and editorial ops flows are covered by durable automated tests in repo; the launch proof chain includes those checks; workflow or dependency changes include the required security-audit note when sensitive files or CI wiring are touched. | Accepted in REVIEW. Packets `38c17ea` and `786cd17` landed dependency-backed Playwright coverage, repo scripts, CI proof wiring, and the required security audit note; `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm frontend:typecheck`, `pnpm frontend:build`, and `pnpm test:ui` all passed. | Stop if the dependency-backed browser automation path cannot be made repeatable on the target Windows environment even after widening the sprint scope to include lockfile and browser-test wiring. | DONE |
 | S-30 | Harden release sequencing, observability, backup/restore rehearsal, and launch runbooks. See `S-30` substeps below. | `src/server.ts`, `package.json`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`, `test/**` | Release docs, smoke checks, observability, backup/restore rehearsal, and deploy sequencing are updated for the completed accountability graph; launch metrics and release evidence are reproducible; any sensitive workflow/config changes ship with the required security-audit note; staging-like release rehearsal passes from a clean tree. | Accepted in REVIEW. Packets `7e61e28` and `247894b` landed the release proof scripts, manual release-rehearsal workflow, security audit note, and the smoke-script fix; `pnpm proof:launch` and `SMOKE_BASE_URL=http://127.0.0.1:3013 pnpm smoke:release` both passed. | Stop if required deploy orchestration depends on unmanaged platform state that cannot be captured through repo docs, workflows, or repeatable smoke commands. | DONE |
-| S-31 | Run the final launch dry run, route-wide audit, and go-or-no-go proof from the launch-ready baseline. See `S-31` substeps below. | `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md` | Launch candidate data coverage is loaded or verified for the Finland-first slice; the full static, automated, browser, accessibility, and manual UI audit passes from a clean tree; remaining launch risks are documented; a go-or-no-go verdict is supported by evidence rather than assumptions. | Pending. Each checked substep must record packet, run, files, docs, and clean-tree evidence, and REVIEW must accept the row against the final launch-readiness and route-wide audit criteria. | Stop if the final rehearsal surfaces a blocking regression or content gap that cannot be resolved within the same launchability area. | TODO |
+| S-31 | Run the final launch dry run, route-wide audit, and go-or-no-go proof from the launch-ready baseline. See `S-31` substeps below. | `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md` | Launch candidate data coverage is loaded or verified for the Finland-first slice; the full static, automated, browser, accessibility, and manual UI audit passes from a clean tree; remaining launch risks are documented; a go-or-no-go verdict is supported by evidence rather than assumptions. | READY for REVIEW. Packet `f194057` landed shared launch-rehearsal seed and coverage helpers, a deterministic seed test, the protected `/claims/:id` route fix, broader Playwright route coverage, and refreshed launch runbooks; `pnpm test`, `pnpm proof:launch`, `DB_PATH=%TEMP%\\pnyx-final-launch.db pnpm seed:launch-rehearsal`, `DB_PATH=%TEMP%\\pnyx-final-launch.db pnpm launch:coverage`, and `SMOKE_BASE_URL=http://127.0.0.1:3014 pnpm smoke:release` all passed; chrome-devtools route sweep across public, auth, contributor, moderation, editorial, and trust routes on `4314 -> 3014` passed with no failed network requests or app-console errors; Lighthouse snapshot accessibility stayed `100` on home, politician profile, promise detail, and ops records, while SEO remained a documented non-blocking follow-up at `60` on dev-server pages. | Stop if the final rehearsal surfaces a blocking regression or content gap that cannot be resolved within the same launchability area. | READY |
 
 ### S-27 substeps
 
@@ -86,81 +86,81 @@ Move Pnyx from a feature-complete-enough accountability product to a launchable 
 
 ### S-29 substeps
 
-- [ ] Add a durable frontend/browser test harness and repo scripts for launch-critical flows
+- [x] Add a durable frontend/browser test harness and repo scripts for launch-critical flows
   - files: `package.json`, `frontend/package.json`, `pnpm-lock.yaml`, `vitest*.ts`, `playwright.config.*`, `frontend/**`, `test/**`
   - run: `pnpm lint && pnpm typecheck && pnpm frontend:typecheck`
   - evidence: packet:38c17ea5ae881f44df5f0f3ff2108f751787c26f | run:pnpm lint && pnpm typecheck && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:frontend/src/routes/OpsRecordsPage.tsx, package.json, playwright.config.ts, pnpm-lock.yaml, test/playwright/launch-ui.spec.ts | docs:N/A | status: clean
 
-- [ ] Add automated smoke coverage for critical public routes and trust-data rendering states
+- [x] Add automated smoke coverage for critical public routes and trust-data rendering states
   - files: `frontend/**`, `test/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:38c17ea5ae881f44df5f0f3ff2108f751787c26f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:frontend/src/routes/OpsRecordsPage.tsx, package.json, playwright.config.ts, pnpm-lock.yaml, test/playwright/launch-ui.spec.ts | docs:N/A | status: clean
 
-- [ ] Add automated auth and contributor-flow coverage for register, sign-in, statement submission, proposal submission, and promise-claim submission
+- [x] Add automated auth and contributor-flow coverage for register, sign-in, statement submission, proposal submission, and promise-claim submission
   - files: `frontend/**`, `test/**`, `src/server.ts`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:38c17ea5ae881f44df5f0f3ff2108f751787c26f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:frontend/src/routes/OpsRecordsPage.tsx, package.json, playwright.config.ts, pnpm-lock.yaml, test/playwright/launch-ui.spec.ts | docs:N/A | status: clean
 
-- [ ] Add automated moderator/editorial ops coverage for proposal review, claim canonization, party stance entry, vote-event entry, and trust assessment maintenance
+- [x] Add automated moderator/editorial ops coverage for proposal review, claim canonization, party stance entry, vote-event entry, and trust assessment maintenance
   - files: `frontend/**`, `test/**`, `src/server.ts`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:38c17ea5ae881f44df5f0f3ff2108f751787c26f | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:frontend/src/routes/OpsRecordsPage.tsx, package.json, playwright.config.ts, pnpm-lock.yaml, test/playwright/launch-ui.spec.ts | docs:N/A | status: clean
 
-- [ ] Wire the launch proof chain and workflow coverage into the repo with the required security-audit note if sensitive workflow files change
+- [x] Wire the launch proof chain and workflow coverage into the repo with the required security-audit note if sensitive workflow files change
   - files: `package.json`, `pnpm-lock.yaml`, `.github/workflows/**`, `docs/security/**`, `test/**`
   - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm frontend:typecheck`
   - evidence: packet:786cd1745b56e39cd2c841db1ae8d6b8a2670299 | run:pnpm lint && pnpm typecheck && pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:.github/workflows/ci-proof.yml, docs/security/audit-playwright-ci.md, playwright.config.ts | docs:N/A | status: clean
 
 ### S-30 substeps
 
-- [ ] Refresh environment, secret, and launch smoke requirements for staging and production deploys
+- [x] Refresh environment, secret, and launch smoke requirements for staging and production deploys
   - files: `docs/RELEASE_READINESS_RUNBOOK.md`, `frontend/README.md`
   - run: `N/A`
   - evidence: packet:7e61e285dadda834ba9a2bc6278286e8b1773dfb | run:pnpm proof:launch -> pass | files:.github/workflows/release-rehearsal.yml, docs/RELEASE_READINESS_RUNBOOK.md, docs/SUCCESS_METRICS_PLAN.md, docs/TRACEABILITY_V1.md, docs/security/audit-release-rehearsal.md, frontend/README.md, package.json | docs:N/A | status: clean
 
-- [ ] Add deploy or release orchestration plus the required security-audit note for any sensitive workflow or config changes
+- [x] Add deploy or release orchestration plus the required security-audit note for any sensitive workflow or config changes
   - files: `.github/workflows/**`, `docs/security/**`, `package.json`
   - run: `pnpm lint && pnpm typecheck && pnpm test`
   - evidence: packet:7e61e285dadda834ba9a2bc6278286e8b1773dfb | run:pnpm lint && pnpm typecheck && pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:.github/workflows/release-rehearsal.yml, docs/RELEASE_READINESS_RUNBOOK.md, docs/SUCCESS_METRICS_PLAN.md, docs/TRACEABILITY_V1.md, docs/security/audit-release-rehearsal.md, frontend/README.md, package.json | docs:N/A | status: clean
 
-- [ ] Add or harden launch observability and smoke checks for health, search, auth, contributor, moderation, and editorial ops paths
+- [x] Add or harden launch observability and smoke checks for health, search, auth, contributor, moderation, and editorial ops paths
   - files: `src/server.ts`, `test/**`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`
   - run: `pnpm test`
   - evidence: packet:7e61e285dadda834ba9a2bc6278286e8b1773dfb | run:pnpm test -> pass | files:.github/workflows/release-rehearsal.yml, docs/RELEASE_READINESS_RUNBOOK.md, docs/SUCCESS_METRICS_PLAN.md, docs/TRACEABILITY_V1.md, docs/security/audit-release-rehearsal.md, frontend/README.md, package.json | docs:N/A | status: clean
 
-- [ ] Rehearse backup/restore and rollback procedure for the launch database and release path
+- [x] Rehearse backup/restore and rollback procedure for the launch database and release path
   - files: `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`
   - run: `N/A`
   - evidence: packet:7e61e285dadda834ba9a2bc6278286e8b1773dfb | run:pnpm proof:launch -> pass | files:.github/workflows/release-rehearsal.yml, docs/RELEASE_READINESS_RUNBOOK.md, docs/SUCCESS_METRICS_PLAN.md, docs/TRACEABILITY_V1.md, docs/security/audit-release-rehearsal.md, frontend/README.md, package.json | docs:N/A | status: clean
 
-- [ ] Refresh traceability, release evidence, and metrics docs for the launchability baseline
+- [x] Refresh traceability, release evidence, and metrics docs for the launchability baseline
   - files: `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `frontend/README.md`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:7e61e285dadda834ba9a2bc6278286e8b1773dfb | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:.github/workflows/release-rehearsal.yml, docs/RELEASE_READINESS_RUNBOOK.md, docs/SUCCESS_METRICS_PLAN.md, docs/TRACEABILITY_V1.md, docs/security/audit-release-rehearsal.md, frontend/README.md, package.json | docs:N/A | status: clean
 
-- [ ] Run a staging-like release rehearsal from a clean tree using the hardened proof chain and smoke checklist
+- [x] Run a staging-like release rehearsal from a clean tree using the hardened proof chain and smoke checklist
   - files: `src/server.ts`, `frontend/src/**`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
   - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:247894b9cf67a457f3328c078dcd492b84efe494 | run:pnpm proof:launch && SMOKE_BASE_URL=http://127.0.0.1:3013 pnpm smoke:release -> pass | files:package.json | docs:N/A | status: clean
 
 ### S-31 substeps
 
-- [ ] Load or verify launch-candidate Finland-first data coverage for public parties, politicians, canonical promises, and trust records
+- [x] Load or verify launch-candidate Finland-first data coverage for public parties, politicians, canonical promises, and trust records
   - files: `frontend/src/**`, `src/server.ts`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/SUCCESS_METRICS_PLAN.md`
   - run: `pnpm test`
-  - evidence: Pending.
+  - evidence: packet:f194057b722f5ab7500dca249511ff44f44b7d22 | run:pnpm test && cmd /c "set DB_PATH=%TEMP%\pnyx-final-launch.db&& if exist %TEMP%\pnyx-final-launch.db del /f /q %TEMP%\pnyx-final-launch.db&& pnpm seed:launch-rehearsal&& pnpm launch:coverage" -> pass | files:docs/RELEASE_READINESS_RUNBOOK.md,docs/SUCCESS_METRICS_PLAN.md,docs/TRACEABILITY_V1.md,frontend/README.md,frontend/src/App.tsx,package.json,test/helpers/launch-rehearsal.ts,test/launch-rehearsal.test.ts,test/playwright/launch-ui.spec.ts | docs:N/A | baseline:absorbed | gate-fix:frontend/src/App.tsx,test/helpers/launch-rehearsal.ts,test/playwright/launch-ui.spec.ts | status: clean
 
-- [ ] Run the full static and automated launch proof chain including the new frontend and browser coverage
+- [x] Run the full static and automated launch proof chain including the new frontend and browser coverage
   - files: `package.json`, `frontend/package.json`, `src/server.ts`, `frontend/src/**`, `test/**`, `.github/workflows/**`
   - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm test:e2e && pnpm build && pnpm frontend:typecheck && pnpm frontend:build`
-  - evidence: Pending.
+  - evidence: packet:f194057b722f5ab7500dca249511ff44f44b7d22 | run:pnpm proof:launch -> pass | files:docs/RELEASE_READINESS_RUNBOOK.md,docs/SUCCESS_METRICS_PLAN.md,docs/TRACEABILITY_V1.md,frontend/README.md,frontend/src/App.tsx,package.json,test/helpers/launch-rehearsal.ts,test/launch-rehearsal.test.ts,test/playwright/launch-ui.spec.ts | docs:N/A | baseline:absorbed | gate-fix:frontend/src/App.tsx,test/helpers/launch-rehearsal.ts,test/playwright/launch-ui.spec.ts | status: clean
 
-- [ ] Run browser and accessibility verification across all public, auth, contributor, moderator, and editorial routes required for launch
+- [x] Run browser and accessibility verification across all public, auth, contributor, moderator, and editorial routes required for launch
   - files: `frontend/src/**`
   - run: `playwright or chrome-devtools verification of all launch-critical routes and flows`
-  - evidence: Pending.
+  - evidence: packet:f194057b722f5ab7500dca249511ff44f44b7d22 | run:chrome-devtools verification of /, /politicians, /politicians/1, /parties/launch-party, /promises/1, /claims/1 redirect, /register, /sign-in?email=admin@launch.test&redirect=/ops/records, /contribute/politicians/new, /contribute/statements/new?politicianId=1, /contribute/promises/new?politicianId=1, /ops, /ops/records, and /ops/claims on http://127.0.0.1:4314 with backend http://127.0.0.1:3014 plus Lighthouse snapshot accessibility audits on home, politician profile, promise detail, and ops records -> pass | files:docs/RELEASE_READINESS_RUNBOOK.md,docs/SUCCESS_METRICS_PLAN.md,docs/TRACEABILITY_V1.md,frontend/README.md,frontend/src/App.tsx,package.json,test/helpers/launch-rehearsal.ts,test/launch-rehearsal.test.ts,test/playwright/launch-ui.spec.ts | docs:N/A | baseline:absorbed | gate-fix:frontend/src/App.tsx,test/helpers/launch-rehearsal.ts,test/playwright/launch-ui.spec.ts | status: clean
 
-- [ ] Complete the final launch UI audit, manual regression sweep, and go-or-no-go proof across every critical route and flow
+- [x] Complete the final launch UI audit, manual regression sweep, and go-or-no-go proof across every critical route and flow
   - files: `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
   - run: `ui-audit plus manual playwright or chrome-devtools verification of every launch-critical public, contributor, moderator, editorial, and trust flow`
-  - evidence: Pending.
+  - evidence: packet:f194057b722f5ab7500dca249511ff44f44b7d22 | run:ui-audit plus manual chrome-devtools verification of launch-critical public, contributor, moderation, editorial, and trust flows on http://127.0.0.1:4314 with backend http://127.0.0.1:3014; no failed network requests or app-console errors; SMOKE_BASE_URL=http://127.0.0.1:3014 pnpm smoke:release -> pass | files:docs/RELEASE_READINESS_RUNBOOK.md,docs/SUCCESS_METRICS_PLAN.md,docs/TRACEABILITY_V1.md,frontend/README.md,frontend/src/App.tsx,package.json,test/helpers/launch-rehearsal.ts,test/launch-rehearsal.test.ts,test/playwright/launch-ui.spec.ts | docs:N/A | baseline:absorbed | gate-fix:frontend/src/App.tsx,test/helpers/launch-rehearsal.ts,test/playwright/launch-ui.spec.ts | status: clean
