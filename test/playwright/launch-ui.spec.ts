@@ -64,6 +64,10 @@ test("loads core public routes", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Launch Rehearsal Party" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Current member politicians" })).toBeVisible();
 
+  await page.goto(`${frontendBase}/promises`);
+  await expect(page.getByRole("heading", { name: "Browse documented promises on PNYX" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Launch rehearsal canonical promise" })).toBeVisible();
+
   await page.goto(`${frontendBase}/promises/${seededIds.statementId}`);
   await expect(page.getByRole("heading", { name: "Launch rehearsal canonical promise" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fulfillment verdict" })).toBeVisible();
@@ -128,6 +132,11 @@ test("loads protected moderator and editorial routes under an admin session", as
 
   await page.goto(`${frontendBase}/ops`);
   await expect(page.getByRole("heading", { name: "Politician proposal queue" })).toBeVisible();
+
+  await page.goto(`${frontendBase}/ops/admin`);
+  await expect(page.getByRole("heading", { name: "Protected party graph and canonical promise maintenance" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create party identity" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Create canonical promise directly" })).toBeVisible();
 
   await page.goto(`${frontendBase}/ops/claims`);
   await expect(page.getByRole("heading", { name: "Promise claim queue" })).toBeVisible();
