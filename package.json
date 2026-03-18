@@ -20,7 +20,7 @@
     "test:e2e": "vitest run -c vitest.e2e.config.ts",
     "frontend:dev": "pnpm --filter pnyx-frontend-v3 dev",
     "frontend:typecheck": "pnpm --filter pnyx-frontend-v3 typecheck",
-    "frontend:build": "pnpm --filter pnyx-frontend-v3 build",
+    "frontend:build": "node frontend/scripts/generate-seo-artifacts.mjs && pnpm --filter pnyx-frontend-v3 build",
     "frontend:preview": "pnpm --filter pnyx-frontend-v3 preview"
   },
   "dependencies": {
