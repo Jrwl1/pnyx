@@ -21,13 +21,19 @@ export default defineConfig({
   timeout: 120_000,
   fullyParallel: false,
   workers: 1,
-  use: {
-    baseURL: `http://127.0.0.1:${frontendPort}`,
-    headless: true,
-    launchOptions: {
-      executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-    }
-  },
+  use:
+    process.platform === "win32"
+      ? {
+          baseURL: `http://127.0.0.1:${frontendPort}`,
+          headless: true,
+          launchOptions: {
+            executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+          }
+        }
+      : {
+          baseURL: `http://127.0.0.1:${frontendPort}`,
+          headless: true
+        },
   webServer: [
     {
       command: "pnpm exec tsx src/index.ts",
