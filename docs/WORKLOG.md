@@ -94,3 +94,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [22:13] DO: add notification preferences, inbox APIs, and delivery-tracking foundations for role and review updates (sprint: S-34, links: 8a35931, docs/SPRINT.md)
 - [22:17] DO: add authenticated `/notifications` UI and refresh metrics plus traceability evidence with browser verification (sprint: S-34, links: 0dca03b, c4c2b96, docs/SPRINT.md)
 - [22:18] REVIEW: accept S-34 event, notification, and metrics-foundation row (findings: none)
+- [22:21] DO: add contributor reputation schema, score rules, and backfill helpers for S-35 (sprint: S-35, links: 4b00897, docs/SPRINT.md)
