@@ -17,8 +17,11 @@ This file is the repository OS contract.
 - When a run enters via `DO` or `RUNSPRINT`, execute continuous internal cycles as packet-driven DO with row-gated REVIEW: `DO packet -> (REVIEW only when the selected sprint row becomes READY) -> DO packet`.
 - DO owns packet-level implementation, hygiene, and evidence capture. REVIEW owns row-level acceptance verification only.
 - Auto-REVIEW must not run after every substep. It runs only when the selected sprint row has all substeps checked and `Status=READY`.
+- `RUNSPRINT` is not allowed to stop at `READY`. `READY` is only a handoff state into immediate row-level `REVIEW`.
+- `RUNSPRINT` is complete only when every active sprint row is `DONE` and no active sprint row still contains an unchecked `- [ ]` substep.
+- If a sprint row `Status` conflicts with its checklist state, the checklist wins: any unchecked substep means the row is unfinished for `DO`, `RUNSPRINT`, and `REVIEW` routing.
 - Continue the loop until one of these is true:
-  1. all active sprint rows are `DONE`, or
+  1. all active sprint rows are `DONE` and no active sprint row contains an unchecked substep, or
   2. a DO/REVIEW stop condition is hit, or
   3. a blocker is recorded per protocol.
 - Each internal DO/REVIEW cycle must still fully obey its own read/write permissions, commit rules, and `docs/WORKLOG.md` one-line append rule.
@@ -29,7 +32,8 @@ This file is the repository OS contract.
 - `RUNSPRINT` is an explicit whole-sprint execution entry.
 - It uses the DO protocol, the same row-gated DO/REVIEW loop engine, and the same implementation-helper policy.
 - It starts from the first active sprint row with `Status != DONE` and its first unchecked substep.
-- It continues until all active sprint rows are `DONE` or a blocker/stop condition is hit.
+- It continues until every active sprint row is `DONE` and every substep is checked, or a blocker/stop condition is hit.
+- `RUNSPRINT` must immediately trigger `REVIEW` for any row that reaches `READY`; leaving rows parked at `READY` is not a valid completion state.
 - `DO` remains valid and unchanged.
 
 ## Global rules
@@ -43,7 +47,13 @@ This file is the repository OS contract.
   - `github` for remote PR or CI context.
   - `context7` for current library/framework docs.
   - `chrome-devtools` or `playwright` for browser verification and UI flows.
-- Do not use delegation or autopilot tooling in this repo.
+- Never use recursive or autopilot-style orchestration in this repo.
+- Delegation is outer-policy-gated:
+  - If the active outer policy forbids delegation in this repo, do not delegate.
+  - If the active outer policy permits bounded delegation in a future environment, use only bounded workers/explorers and keep the parent agent responsible for scope, evidence, and stop conditions.
+- Delegated model preference, when outer policy permits delegation:
+  - Use `gpt-5.4-mini` for explorer and worker sidecars by default.
+  - Use `gpt-5.4` with `reasoning_effort=high` for large delegated reads, large implementation slices, or other clearly heavyweight delegated work.
 - WORKLOG read limit: only the last ~30 lines.
 - Never create parallel planning systems.
 - Do not use helpers to create parallel sprint streams or recursive orchestration trees.

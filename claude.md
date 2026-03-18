@@ -14,7 +14,7 @@ Quick reference:
 
 - Normal chat is the default. If the first line is not `PLAN`, `DO`, `RUNSPRINT`, or `REVIEW`, do not run repo actions unless the user explicitly asks.
 - Canonical planning docs live in `docs/`.
-- Use direct MCP tools when they help. Do not use delegation or autopilot tooling in this repo.
+- Use direct MCP tools when they help. If the active outer policy forbids delegation, do not delegate; if bounded delegation is permitted in another environment, follow the model-selection and RUNSPRINT completion rules in `AGENTS.md`.
 - `docs/WORKLOG.md` is append-only.
 - `docs/DECISIONS.md` is append-only.
 
