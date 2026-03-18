@@ -229,4 +229,32 @@ describe("promise claims", () => {
       })
       .expect(409);
   });
+
+  it("includes submitter reputation in claim queue items and priority metrics", async () => {
+    const user = await authHeaders("claim-risk-user", "user");
+    const claim = await request(app)
+      .post("/promise-claims")
+      .set(user)
+      .send({
+        politicianId,
+        claimText: "Risky claim",
+        sourceUrl: "https://example.com/risk-claim",
+        dateSaid: "2026-03-22"
+      })
+      .expect(201);
+
+    const moderator = await authHeaders("claim-risk-mod", "moderator");
+    const queue = await request(app).get("/promise-claims").set(moderator).expect(200);
+    const queueItem = queue.body.items.find((item: { id: number }) => item.id === claim.body.id);
+    expect(queueItem).toMatchObject({
+      submittedBy: "claim-risk-user",
+      submittedByReputation: {
+        score: 0,
+        riskLevel: "high"
+      }
+    });
+
+    const metrics = await request(app).get("/promise-claims/metrics").set(moderator).expect(200);
+    expect(metrics.body.priority.highRisk).toBeGreaterThanOrEqual(1);
+  });
 });

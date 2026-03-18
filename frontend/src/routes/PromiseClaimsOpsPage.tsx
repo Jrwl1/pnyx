@@ -217,9 +217,11 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
             <p className="meta-line">Merged {metrics.statuses.merged} · Rejected {metrics.statuses.rejected}</p>
           </article>
           <article className="card stack-xs">
-            <h2>Abuse telemetry</h2>
-            <p className="score-value">{abuseMetrics?.rateLimit?.["politician-proposal"]?.blocked ?? 0}</p>
-            <p className="meta-line">Shared backend abuse blocks visible from the moderation dashboard.</p>
+            <h2>Risk and abuse</h2>
+            <p className="score-value">{metrics.priority.highRisk}</p>
+            <p className="meta-line">
+              High-risk pending claims. Shared abuse blocks: login {abuseMetrics?.rateLimit?.login?.blocked ?? 0} · proposal submit {abuseMetrics?.rateLimit?.["politician-proposal"]?.blocked ?? 0} · proposal review {abuseMetrics?.rateLimit?.["proposal-review"]?.blocked ?? 0}
+            </p>
           </article>
         </section>
       ) : null}
@@ -260,6 +262,10 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
               </button>
             </div>
             <p className="meta-line">Status {claim.status} · Submitted by {claim.submittedBy}</p>
+            <p className="meta-line">
+              Reputation {claim.submittedByReputation.score} · Risk {claim.submittedByReputation.riskLevel}
+              {claim.submittedByReputation.riskFlags.length > 0 ? ` · ${claim.submittedByReputation.riskFlags.join(", ")}` : ""}
+            </p>
           </article>
         ))}
       </section>
@@ -283,6 +289,14 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
           <article className="card stack-sm">
             <h2>Selected claim #{selectedClaim.id}</h2>
             <p className="meta-line">Source: {selectedClaim.sourceUrl}</p>
+            <p className="meta-line">
+              Reputation {selectedClaim.submittedByReputation.score} · Risk {selectedClaim.submittedByReputation.riskLevel}
+            </p>
+            {selectedClaim.submittedByReputation.riskFlags.length > 0 ? (
+              <p className="meta-line">Risk flags: {selectedClaim.submittedByReputation.riskFlags.join(", ")}</p>
+            ) : (
+              <p className="meta-line">No elevated contributor risk flags are currently derived for this claim.</p>
+            )}
             <div className="card-link-row">
               <button className="button button-secondary" type="button" onClick={() => void onClaim()}>
                 Claim

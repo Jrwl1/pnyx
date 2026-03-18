@@ -304,6 +304,9 @@ export interface PromiseClaimQueueMetrics {
     canonized: number;
     rejected: number;
   };
+  priority: {
+    highRisk: number;
+  };
 }
 
 export interface AbuseMetrics {
@@ -413,6 +416,7 @@ export interface PromiseClaimRecord {
   reviewVersion: number;
   createdAt: string;
   decidedAt: string | null;
+  submittedByReputation: ContributorRiskSummary;
 }
 
 export interface PromiseClaimSubmissionInput {

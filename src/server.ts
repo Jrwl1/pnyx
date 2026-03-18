@@ -3465,7 +3465,10 @@ app.get("/promise-claims", requireRole("user"), (req, res) => {
   });
 
   res.json({
-    items: result.items,
+    items: result.items.map((item) => ({
+      ...item,
+      submittedByReputation: getContributorRiskSummary(item.submittedBy)
+    })),
     page,
     pageSize,
     total: result.total
@@ -3505,7 +3508,19 @@ app.get("/promise-claims/metrics", requireRole("moderator"), (_req, res) => {
       assigned: pendingAssigned,
       unassigned: Math.max(0, statusCounts.pending - pendingAssigned)
     },
-    statuses: statusCounts
+    statuses: statusCounts,
+    priority: {
+      highRisk: (
+        db.prepare(
+          `SELECT COUNT(*) AS total
+           FROM promise_claims
+           WHERE status = 'pending'
+             AND submitted_by IN (
+               SELECT user_id FROM contributor_reputation WHERE score <= 0
+             )`
+        ).get() as { total: number }
+      ).total
+    }
   });
 });
 
