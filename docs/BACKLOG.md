@@ -68,7 +68,7 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 - B-702: Add secure moderator/admin provisioning and remove public role or secret selection from sign-in UX. -- DONE
 - B-703: Add protected editorial ops UI for party stances, vote events, vote records, fulfillment assessments, and party-line assessments. -- DONE
 - B-704: Add launch dataset completeness checks and Finland-first launch coverage reporting for public party, politician, and promise surfaces. -- DONE
-- B-705: Add durable automated frontend and browser regression coverage to the launch proof chain, including dependency-backed browser automation if the repo-native Windows harness remains unreliable. -- IN SPRINT
+- B-705: Add durable automated frontend and browser regression coverage to the launch proof chain, including dependency-backed browser automation if the repo-native Windows harness remains unreliable. -- DONE
 - B-706: Add deploy sequencing, smoke verification, observability, backup/restore rehearsal, and release runbook hardening. -- IN SPRINT
 - B-707: Run launch dry run, final UI audit, and go or no-go review from a clean tree. -- IN SPRINT
 - B-708: Decide whether launch browser automation should use a new repo dependency or a different Windows-safe process model after the repo-native harness attempt failed under Vitest. -- DONE
