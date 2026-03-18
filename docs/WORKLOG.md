@@ -83,3 +83,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [21:36] DO: remove legacy `/auth/token` route and migrate auth tests to direct JWT signing (sprint: S-32, links: ee7ea23, docs/SPRINT.md)
 - [21:41] DO: add protected `/ops/admin` party and canonical-promise maintenance surfaces (sprint: S-32, links: a36e199, docs/SPRINT.md)
 - [21:44] DO: add public `/promises` browse route with filters and home reachability (sprint: S-32, links: 806c378, docs/SPRINT.md)
+- [21:46] DO: widen Playwright coverage for `/promises` and `/ops/admin`, leaving S-32 ready for review (sprint: S-32, links: 8d714af, docs/SPRINT.md)
