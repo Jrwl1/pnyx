@@ -56,6 +56,9 @@ export const PublicLayout = (): ReactElement => {
                 <>
                   <p className="meta-line">Signed in as {session.userId}</p>
                   <p className="meta-line">Role: {session.role}</p>
+                  <NavLink to="/notifications" className={navClassName}>
+                    Notifications
+                  </NavLink>
                   <button className="button button-secondary" type="button" onClick={signOut}>
                     Sign out
                   </button>

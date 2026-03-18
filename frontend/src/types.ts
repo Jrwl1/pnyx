@@ -58,6 +58,28 @@ export interface RoleGrantResult {
   role: AuthenticatedRole;
 }
 
+export interface NotificationPreferences {
+  userId: string;
+  inAppEnabled: number;
+  emailEnabled: number;
+  reviewUpdatesEnabled: number;
+  moderatorAssignmentsEnabled: number;
+  roleUpdatesEnabled: number;
+  createdAt: string | null;
+  updatedAt: string | null;
+}
+
+export interface NotificationRecord {
+  id: number;
+  userId: string;
+  notificationType: string;
+  title: string;
+  body: string;
+  relatedPath: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
 export interface PoliticianProposalInput {
   name: string;
   region?: string;

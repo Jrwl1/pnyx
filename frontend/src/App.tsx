@@ -9,6 +9,7 @@ import { HomePage } from "./routes/HomePage";
 import { MethodologyPage } from "./routes/MethodologyPage";
 import { OpsAdminPage } from "./routes/OpsAdminPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
+import { NotificationsPage } from "./routes/NotificationsPage";
 import { OpsPage } from "./routes/OpsPage";
 import { OpsRecordsPage } from "./routes/OpsRecordsPage";
 import { PartiesPage } from "./routes/PartiesPage";
@@ -42,6 +43,7 @@ export const App = (): ReactElement => {
           <Route path="/methodology" element={<MethodologyPage />} />
           <Route element={<RequireAuthRoute />}>
             <Route path="/claims/:id" element={<PromiseClaimDetailPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/contribute/politicians/new" element={<SubmitPoliticianProposalPage />} />
             <Route path="/contribute/promises/new" element={<SubmitPromiseClaimPage />} />
             <Route path="/contribute/statements/new" element={<SubmitStatementPage />} />

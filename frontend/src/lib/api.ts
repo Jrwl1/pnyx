@@ -47,6 +47,8 @@ import type {
   StatementRevision,
   StatementSummary,
   LaunchCoverageSummary,
+  NotificationPreferences,
+  NotificationRecord,
   VoteEventRecord,
   VoteEventSummary,
   VoteSubmissionResult,
@@ -143,6 +145,49 @@ export const grantUserRole = async (token: string, input: RoleGrantInput): Promi
     method: "POST",
     token,
     body: input
+  });
+};
+
+export const getNotificationPreferences = async (token: string): Promise<NotificationPreferences> => {
+  return fetchJson<NotificationPreferences>("/me/notification-preferences", { token });
+};
+
+export const updateNotificationPreferences = async (
+  token: string,
+  input: Partial<{
+    inAppEnabled: boolean;
+    emailEnabled: boolean;
+    reviewUpdatesEnabled: boolean;
+    moderatorAssignmentsEnabled: boolean;
+    roleUpdatesEnabled: boolean;
+  }>
+): Promise<NotificationPreferences> => {
+  return fetchJson<NotificationPreferences>("/me/notification-preferences", {
+    method: "PATCH",
+    token,
+    body: input
+  });
+};
+
+export const listNotifications = async (
+  token: string,
+  options?: { unreadOnly?: boolean }
+): Promise<{ items: NotificationRecord[]; page: number; pageSize: number; total: number }> => {
+  const params = new URLSearchParams();
+  if (options?.unreadOnly) {
+    params.set("status", "unread");
+  }
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return fetchJson<{ items: NotificationRecord[]; page: number; pageSize: number; total: number }>(
+    `/me/notifications${suffix}`,
+    { token }
+  );
+};
+
+export const markNotificationRead = async (token: string, notificationId: number): Promise<{ ok: true }> => {
+  return fetchJson<{ ok: true }>(`/me/notifications/${notificationId}/read`, {
+    method: "POST",
+    token
   });
 };
 
