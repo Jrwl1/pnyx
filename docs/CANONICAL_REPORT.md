@@ -92,3 +92,21 @@ Last updated: 2026-03-17
 - Planning consequence:
   - `S-29` is now unblocked at the planning level.
   - The next execution pass should stop trying to brute-force the no-new-dependency Windows harness and instead implement the dependency-backed browser automation path inside the widened sprint scope.
+
+## 2026-03-18 S-31 launch closeout
+
+- Final launchability acceptance is now grounded in repeatable repo evidence instead of manual-only reasoning:
+  - `pnpm test` passed with the new `test/launch-rehearsal.test.ts` seed proof,
+  - `pnpm proof:launch` passed from the final `S-31` product commit,
+  - `seed:launch-rehearsal`, `launch:coverage`, and `smoke:release` passed against a fresh temp database and a live isolated server,
+  - chrome-devtools route verification covered public, auth, contributor, moderator, editorial, and trust routes on the seeded live pair,
+  - Lighthouse snapshot accessibility stayed at `100` on the sampled launch-critical routes.
+- Conflict resolved by implementation reality:
+  1. `/claims/:id` had been routed publicly while the page and API contract required a signed-in session.
+     - Winner: code-path reality discovered during the final route audit.
+     - Resolution: `frontend/src/App.tsx` now protects `/claims/:id` behind `RequireAuthRoute`, and the launch audit explicitly verifies the redirect behavior before sign-in and the route behavior after sign-in.
+  2. The launch rehearsal seed path was previously implicit and not repeatable from a fresh temp DB.
+     - Winner: final launch acceptance criteria.
+     - Resolution: the repo now has `seed:launch-rehearsal`, `launch:coverage`, shared seed helpers, and refreshed runbooks/traceability docs.
+- Residual risk:
+  - Lighthouse snapshot SEO remained at `60` on the Vite dev-server audit pages. This is documented as a non-blocking post-launch follow-up in `docs/BACKLOG.md` and does not change the launchability verdict because functional, accessibility, and release-proof criteria all passed.

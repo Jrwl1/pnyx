@@ -70,11 +70,12 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 - B-704: Add launch dataset completeness checks and Finland-first launch coverage reporting for public party, politician, and promise surfaces. -- DONE
 - B-705: Add durable automated frontend and browser regression coverage to the launch proof chain, including dependency-backed browser automation if the repo-native Windows harness remains unreliable. -- DONE
 - B-706: Add deploy sequencing, smoke verification, observability, backup/restore rehearsal, and release runbook hardening. -- DONE
-- B-707: Run launch dry run, final UI audit, and go or no-go review from a clean tree. -- IN SPRINT
+- B-707: Run launch dry run, final UI audit, and go or no-go review from a clean tree. -- DONE
 - B-708: Decide whether launch browser automation should use a new repo dependency or a different Windows-safe process model after the repo-native harness attempt failed under Vitest. -- DONE
 
 ## Epic E9: Post-launch automation and growth
 
+- B-804: Improve public SEO metadata and search-preview tags now that the launchable baseline is locked.
 - B-801: Automate ingest from official Finland-first party and parliamentary sources once the manual launch path is stable.
 - B-802: Add contributor reputation and moderation assist layers beyond the first launch-safe baseline.
 - B-803: Add post-launch retention, notification, and operating metrics beyond the current database-only proxy model.

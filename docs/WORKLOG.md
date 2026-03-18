@@ -75,5 +75,6 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [17:43] DO: verify S-30 proof:launch and live smoke rehearsal on an isolated server (sprint: S-30, links: 247894b, docs/SPRINT.md)
 - [17:44] REVIEW: accept S-30 release rehearsal row (findings: none)
 - [18:04] DO: finalize S-31 seeded launch rehearsal, route audit, and go-or-no-go packet (sprint: S-31, links: f194057, docs/SPRINT.md)
+- [18:05] REVIEW: accept S-31 launch closeout row (findings: none)
 - [17:38] DO: add release proof scripts, rehearsal workflow, and backup/rollback runbook updates (sprint: S-30, links: 7e61e28, docs/SPRINT.md)
 - [17:29] REVIEW: accept S-29 automated browser coverage row (findings: none)
