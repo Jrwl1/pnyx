@@ -31,6 +31,7 @@ describe("migration", () => {
     expect(tableNames.has("notification_preferences")).toBe(true);
     expect(tableNames.has("notifications")).toBe(true);
     expect(tableNames.has("notification_deliveries")).toBe(true);
+    expect(tableNames.has("contributor_reputation")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -81,6 +82,7 @@ describe("migration", () => {
     expect(indexNames.has("idx_notifications_user_unread")).toBe(true);
     expect(indexNames.has("idx_notification_deliveries_notification")).toBe(true);
     expect(indexNames.has("idx_notification_deliveries_channel_state")).toBe(true);
+    expect(indexNames.has("idx_contributor_reputation_score")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -274,5 +276,21 @@ describe("migration", () => {
     expect(notificationDeliveryColumnNames.has("delivery_state")).toBe(true);
     expect(notificationDeliveryColumnNames.has("provider_message_id")).toBe(true);
     expect(notificationDeliveryColumnNames.has("error_message")).toBe(true);
+
+    const contributorReputationColumns = db
+      .prepare("PRAGMA table_info(contributor_reputation)")
+      .all() as { name: string }[];
+    const contributorReputationColumnNames = new Set(contributorReputationColumns.map((column) => column.name));
+    expect(contributorReputationColumnNames.has("user_id")).toBe(true);
+    expect(contributorReputationColumnNames.has("verified_statements")).toBe(true);
+    expect(contributorReputationColumnNames.has("disputed_statements")).toBe(true);
+    expect(contributorReputationColumnNames.has("rejected_statements")).toBe(true);
+    expect(contributorReputationColumnNames.has("approved_proposals")).toBe(true);
+    expect(contributorReputationColumnNames.has("duplicate_proposals")).toBe(true);
+    expect(contributorReputationColumnNames.has("rejected_proposals")).toBe(true);
+    expect(contributorReputationColumnNames.has("merged_claims")).toBe(true);
+    expect(contributorReputationColumnNames.has("canonized_claims")).toBe(true);
+    expect(contributorReputationColumnNames.has("rejected_claims")).toBe(true);
+    expect(contributorReputationColumnNames.has("score")).toBe(true);
   });
 });
