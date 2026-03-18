@@ -17,19 +17,19 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 - `S-27` is complete: launch-safe email-code sign-in now replaces the previous shared-secret public sign-in UX, redirect-preserving auth flows are verified in-browser, and admin-only role grants now keep moderator/admin provisioning outside the public sign-in form.
 - `S-28` is complete: protected editorial ops now cover party stances, vote events, vote records, fulfillment assessments, party-line assessments, and launch coverage views from inside the product.
 - `S-29` is complete: dependency-backed Playwright coverage now exercises public discovery, auth/contributor flows, and protected moderator/editorial routes, and the CI proof workflow plus security-audit note are aligned to that browser coverage.
-- Release-readiness docs now exist, but the repo still needs an explicit launch sequencing queue from secure auth migration through final go or no-go rehearsal.
+- `S-30` is complete: the repo now has `proof:launch`, `smoke:release`, a manual release-rehearsal workflow, updated release docs, and a local staging-like smoke rehearsal proved from a clean tree.
 
 ## Top blockers
 
-1. Launch sequencing still needs deploy and smoke orchestration plus a final release rehearsal from the completed feature baseline.
-2. Backup/restore rehearsal, observability, and go/no-go evidence still need to move from docs intent into proof-backed release execution.
-3. The launch-safe auth, editorial ops, and browser automation paths now exist, but the remaining launchability queue still needs to be closed and re-verified end-to-end before release.
+1. The final launch dry run, route-wide audit, and go-or-no-go proof still need to be completed against the launch candidate baseline.
+2. Backup/restore rehearsal, observability, and go/no-go evidence now have scripts and docs, but the last release decision row still needs to be closed.
+3. The launch-safe auth, editorial ops, browser automation, and release rehearsal paths now exist; only the final S-31 closeout remains before the launchability queue is complete.
 
 ## Next actions
 
-1. Execute `S-30` to harden release sequencing, observability, backup or restore rehearsal, and release orchestration.
-2. Execute `S-31` to finish the final launch dry run, route-wide audit, and go-or-no-go proof.
-3. Re-baseline post-launch work only after the launch-readiness queue is fully closed.
+1. Execute `S-31` to finish the final launch dry run, route-wide audit, and go-or-no-go proof.
+2. Re-baseline post-launch work only after the launch-readiness queue is fully closed.
+3. Use the completed release rehearsal path as the base for the final launch decision evidence.
 
 ## Key links
 
