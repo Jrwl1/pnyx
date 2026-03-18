@@ -27,6 +27,7 @@ describe("migration", () => {
     expect(tableNames.has("promise_fulfillment_assessments")).toBe(true);
     expect(tableNames.has("party_alignment_assessments")).toBe(true);
     expect(tableNames.has("auth_login_codes")).toBe(true);
+    expect(tableNames.has("product_events")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -69,6 +70,10 @@ describe("migration", () => {
     expect(indexNames.has("idx_auth_login_codes_email_created")).toBe(true);
     expect(indexNames.has("idx_auth_login_codes_user_created")).toBe(true);
     expect(indexNames.has("idx_auth_login_codes_expires_state")).toBe(true);
+    expect(indexNames.has("idx_product_events_domain_created")).toBe(true);
+    expect(indexNames.has("idx_product_events_name_created")).toBe(true);
+    expect(indexNames.has("idx_product_events_actor_created")).toBe(true);
+    expect(indexNames.has("idx_product_events_entity_created")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -218,5 +223,17 @@ describe("migration", () => {
     expect(authLoginCodeColumnNames.has("delivery_state")).toBe(true);
     expect(authLoginCodeColumnNames.has("expires_at")).toBe(true);
     expect(authLoginCodeColumnNames.has("consumed_at")).toBe(true);
+
+    const productEventColumns = db
+      .prepare("PRAGMA table_info(product_events)")
+      .all() as { name: string }[];
+    const productEventColumnNames = new Set(productEventColumns.map((column) => column.name));
+    expect(productEventColumnNames.has("event_domain")).toBe(true);
+    expect(productEventColumnNames.has("event_name")).toBe(true);
+    expect(productEventColumnNames.has("actor_id")).toBe(true);
+    expect(productEventColumnNames.has("actor_role")).toBe(true);
+    expect(productEventColumnNames.has("entity_kind")).toBe(true);
+    expect(productEventColumnNames.has("entity_id")).toBe(true);
+    expect(productEventColumnNames.has("metadata_json")).toBe(true);
   });
 });
