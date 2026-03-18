@@ -22,8 +22,8 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 ## Top blockers
 
 1. Launch sequencing still needs deploy and smoke orchestration plus a final release rehearsal from the completed feature baseline.
-2. The launch-safe auth, editorial ops, and browser automation paths now exist, but the remaining launchability queue still needs to be closed and re-verified end-to-end before release.
-3. Backup/restore rehearsal, observability, and go/no-go evidence still need to move from docs intent into proof-backed release execution.
+2. Backup/restore rehearsal, observability, and go/no-go evidence still need to move from docs intent into proof-backed release execution.
+3. The launch-safe auth, editorial ops, and browser automation paths now exist, but the remaining launchability queue still needs to be closed and re-verified end-to-end before release.
 
 ## Next actions
 

@@ -70,4 +70,5 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [17:17] PLAN: widen S-29 to allow dependency-backed browser automation and close the scope blocker from the failed no-new-dependency path (sprint: S-29..S-31, milestone: M7)
 - [17:28] DO: add Playwright launch coverage and wire it into CI proof with the required security audit note (sprint: S-29, links: 38c17ea, 786cd17, docs/SPRINT.md)
 - [17:25] DO: add Playwright-backed launch UI coverage for public, contributor, and protected moderation routes (sprint: S-29, links: 38c17ea, docs/SPRINT.md)
+- [17:32] REVIEW: accept S-29 automated browser coverage row (findings: none)
 - [17:29] REVIEW: accept S-29 automated browser coverage row (findings: none)
