@@ -15,19 +15,20 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 - M0 through M7 are complete in code and accepted sprint evidence: public discovery, contribution flows, canonical parties, canonical promises, claim canonization, trust records, launch-safe email auth, editorial ops, browser regression coverage, release rehearsal, and final launch audit all landed.
 - `S-32` is complete in code and review evidence: the legacy `/auth/token` path is gone, protected party and canonical-promise admin surfaces now exist at `/ops/admin`, public promise discovery now has `/promises`, and Playwright coverage exercises the new routes.
 - `S-33` is complete in code and review evidence: the public surface now emits route-level title, description, canonical, Open Graph, and Twitter metadata, the frontend build generates `robots.txt` and `sitemap.xml`, and Playwright verifies the metadata on the widened public route set.
+- `S-34` is complete in code and review evidence: append-only `product_events` now cover auth, contribution, moderation, and editorial flows; notification preferences and inbox APIs exist; an authenticated `/notifications` surface is live; metrics and traceability docs now reference explicit event and notification data; and the route is covered in Playwright.
 - The launch regression floor remains `pnpm seed:launch-rehearsal`, `pnpm launch:coverage`, `pnpm proof:launch`, and `pnpm smoke:release`.
-- The next implementation gap is now the `S-34` through `S-37` queue: explicit event and notification infrastructure, moderation ergonomics, Finland-first ingest, and post-launch proof refresh.
-- The active execution queue now starts with `S-34` event logging, notifications, and metrics foundations.
+- The next implementation gap is now the `S-35` through `S-37` queue: moderation ergonomics, Finland-first ingest, and post-launch proof refresh.
+- The active execution queue now starts with `S-35` contributor reputation and moderation ergonomics.
 
 ## Top blockers
 
-1. Event-backed retention metrics, notification infrastructure, and user preference surfaces are still planned but unimplemented.
-2. Contributor reputation and deeper moderation ergonomics remain ahead in the active queue.
-3. Finland-first automated ingest and the post-launch proof refresh remain ahead in the active queue.
+1. Contributor reputation and deeper moderation ergonomics remain ahead in the active queue.
+2. Finland-first automated ingest remains ahead in the active queue.
+3. The widened post-launch proof refresh still remains ahead in the active queue.
 
 ## Next actions
 
-1. Execute `S-34` next and keep the row order in `docs/SPRINT.md` deterministic.
+1. Execute `S-35` next and keep the row order in `docs/SPRINT.md` deterministic.
 2. Hold the existing launch proof chain as the regression floor while expanding post-launch coverage.
 3. Re-baseline roadmap, backlog, and release docs only through accepted sprint evidence; do not open a parallel planning system.
 
