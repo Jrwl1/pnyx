@@ -1,6 +1,7 @@
 /* Methodology page for status definitions, evidence standards, uncertainty handling, and update cadence. */
 
 import type { ReactElement } from "react";
+import { PageMeta } from "../components/PageMeta";
 
 const SECTION_ORDER = [
   "fulfillment",
@@ -85,6 +86,11 @@ const QUICK_RULES = [
 export const MethodologyPage = (): ReactElement => {
   return (
     <div className="stack-lg">
+      <PageMeta
+        title="Methodology | PNYX"
+        description="Read how PNYX defines fulfillment, vote alignment, party context, evidence standards, and unknown-state handling."
+        path="/methodology"
+      />
       <section className="hero-panel stack-md">
         <p className="eyebrow">Methodology</p>
         <h1>How PNYX reads promises, evidence, party context, and uncertainty</h1>

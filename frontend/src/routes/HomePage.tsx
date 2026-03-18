@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactElement } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import { useAuth } from "../context/AuthContext";
 import {
   buildDirectoryRows,
@@ -194,6 +195,11 @@ export const HomePage = (): ReactElement => {
 
   return (
     <div className="stack-xl">
+      <PageMeta
+        title="PNYX | Finnish political accountability"
+        description="Search Finnish politicians, browse promises and parties, and inspect public evidence with explicit unknown-state handling."
+        path="/"
+      />
       <section className="hero-panel grid-12">
         <div className="col-span-8 stack-md">
           <p className="eyebrow">Finnish political accountability</p>

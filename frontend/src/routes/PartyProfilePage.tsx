@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import { StatusChip } from "../components/StatusChip";
 import { getPartyById, getPartyMembers, getPartyStances, listActivityFeed } from "../lib/api";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
@@ -77,15 +78,38 @@ export const PartyProfilePage = (): ReactElement => {
   const historicalMembers = useMemo(() => members.filter((member) => member.current === 0), [members]);
 
   if (loading) {
-    return <LoadingState label="Loading party profile..." />;
+    return (
+      <>
+        <PageMeta
+          title="Loading party | PNYX"
+          description="Browse Finnish political parties, stance coverage, and member context on PNYX."
+          path={id ? `/parties/${id}` : "/parties"}
+        />
+        <LoadingState label="Loading party profile..." />
+      </>
+    );
   }
 
   if (error || !party) {
-    return <ErrorState message={error ?? "Party page not found."} />;
+    return (
+      <>
+        <PageMeta
+          title="Party profile unavailable | PNYX"
+          description="Browse Finnish political parties, stance coverage, and member context on PNYX."
+          path={id ? `/parties/${id}` : "/parties"}
+        />
+        <ErrorState message={error ?? "Party page not found."} />
+      </>
+    );
   }
 
   return (
     <div className="stack-lg">
+      <PageMeta
+        title={`${party.name} | PNYX`}
+        description={`Browse party stances, memberships, and party-line context for ${party.name} on PNYX.`}
+        path={`/parties/${party.id}`}
+      />
       <section className="hero-panel stack-sm">
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link className="breadcrumb-link" to="/">

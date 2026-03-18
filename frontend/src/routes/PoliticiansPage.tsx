@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type KeyboardEvent, type ReactElement } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import {
   buildDirectoryRows,
   buildSearchText,
@@ -232,6 +233,11 @@ export const PoliticiansPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
+      <PageMeta
+        title="Politicians | PNYX"
+        description="Browse documented Finnish politicians, then filter by party, region, office, issue, and public promise context."
+        path="/politicians"
+      />
       <section className="stack-sm">
         <h1>Finnish politician directory</h1>
         <p className="lede">

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import { usePublicData } from "../context/PublicDataContext";
 import {
   getIssueTagsForStatement,
@@ -154,6 +155,11 @@ export const PromiseIndexPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
+      <PageMeta
+        title="Promises | PNYX"
+        description="Browse documented promises by politician, party, issue, and record state across the current public PNYX dataset."
+        path="/promises"
+      />
       <section className="hero-panel stack-sm">
         <p className="eyebrow">Promise directory</p>
         <h1>Browse documented promises on PNYX</h1>

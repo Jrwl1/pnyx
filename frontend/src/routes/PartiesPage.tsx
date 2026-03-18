@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import { listParties } from "../lib/api";
 import type { BackendPartySummary } from "../types";
 
@@ -57,6 +58,11 @@ export const PartiesPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
+      <PageMeta
+        title="Parties | PNYX"
+        description="Browse Finnish political parties on PNYX and inspect stance coverage, memberships, and visible data gaps."
+        path="/parties"
+      />
       <section className="hero-panel grid-12">
         <div className="col-span-8 stack-md">
           <p className="eyebrow">Finnish party directory</p>

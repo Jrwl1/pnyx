@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
@@ -140,19 +141,55 @@ export const PromiseDetailPage = (): ReactElement => {
   }, [revisions, statement]);
 
   if (loading || publicDataLoading) {
-    return <LoadingState label="Loading promise detail..." />;
+    return (
+      <>
+        <PageMeta
+          title="Loading promise | PNYX"
+          description="Browse promise detail, fulfillment, vote alignment, and evidence on PNYX."
+          path={`/promises/${promiseId}`}
+        />
+        <LoadingState label="Loading promise detail..." />
+      </>
+    );
   }
 
   if (publicDataError) {
-    return <ErrorState message={publicDataError} onRetry={() => void refresh()} />;
+    return (
+      <>
+        <PageMeta
+          title="Promise detail unavailable | PNYX"
+          description="Browse promise detail, fulfillment, vote alignment, and evidence on PNYX."
+          path={`/promises/${promiseId}`}
+        />
+        <ErrorState message={publicDataError} onRetry={() => void refresh()} />
+      </>
+    );
   }
 
   if (error) {
-    return <ErrorState message={error} />;
+    return (
+      <>
+        <PageMeta
+          title="Promise detail unavailable | PNYX"
+          description="Browse promise detail, fulfillment, vote alignment, and evidence on PNYX."
+          path={`/promises/${promiseId}`}
+        />
+        <ErrorState message={error} />
+      </>
+    );
   }
 
   if (!statement) {
-    return <ErrorState message="Promise detail not found." />;
+    return (
+      <>
+        <PageMeta
+          title="Promise not found | PNYX"
+          description="Browse promise detail, fulfillment, vote alignment, and evidence on PNYX."
+          path={`/promises/${promiseId}`}
+        />
+        <ErrorState message="Promise detail not found." />
+      </>
+    );
   }
 
   const promiseRecord = toPromiseRecord(statement);
@@ -171,6 +208,11 @@ export const PromiseDetailPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
+      <PageMeta
+        title={`${promiseRecord.promiseText.slice(0, 70)}${promiseRecord.promiseText.length > 70 ? "..." : ""} | PNYX`}
+        description={`Browse promise detail, fulfillment, vote alignment, and evidence for this PNYX record.`}
+        path={`/promises/${promiseId}`}
+      />
       <section className="hero-panel stack-sm">
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link className="breadcrumb-link" to="/">

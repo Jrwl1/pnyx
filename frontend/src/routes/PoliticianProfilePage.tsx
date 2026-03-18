@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
+import { PageMeta } from "../components/PageMeta";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
@@ -120,32 +121,69 @@ export const PoliticianProfilePage = (): ReactElement => {
 
   if (!Number.isFinite(politicianId)) {
     return (
-      <section className="page-state page-state-error" role="alert">
-        <h1>Invalid politician id</h1>
-        <p>The requested profile id is not a valid number.</p>
-      </section>
+      <>
+        <PageMeta
+          title="Politician profile | PNYX"
+          description="Browse politician profiles, promises, vote alignment, and party context on PNYX."
+          path="/politicians"
+        />
+        <section className="page-state page-state-error" role="alert">
+          <h1>Invalid politician id</h1>
+          <p>The requested profile id is not a valid number.</p>
+        </section>
+      </>
     );
   }
 
   if (loading || trustLoading) {
-    return <LoadingState label="Loading politician profile..." />;
+    return (
+      <>
+        <PageMeta
+          title="Loading politician | PNYX"
+          description="Browse politician profiles, promises, vote alignment, and party context on PNYX."
+          path={`/politicians/${politicianId}`}
+        />
+        <LoadingState label="Loading politician profile..." />
+      </>
+    );
   }
 
   if (error || trustError) {
-    return <ErrorState message={error ?? trustError ?? "Unable to load politician profile."} onRetry={() => void refresh()} />;
+    return (
+      <>
+        <PageMeta
+          title="Politician profile unavailable | PNYX"
+          description="Browse politician profiles, promises, vote alignment, and party context on PNYX."
+          path={`/politicians/${politicianId}`}
+        />
+        <ErrorState message={error ?? trustError ?? "Unable to load politician profile."} onRetry={() => void refresh()} />
+      </>
+    );
   }
 
   if (!politician) {
     return (
-      <section className="page-state page-state-error" role="alert">
-        <h1>Politician not found</h1>
-        <p>We could not find a profile for id {politicianId}.</p>
-      </section>
+      <>
+        <PageMeta
+          title="Politician not found | PNYX"
+          description="Browse politician profiles, promises, vote alignment, and party context on PNYX."
+          path={`/politicians/${politicianId}`}
+        />
+        <section className="page-state page-state-error" role="alert">
+          <h1>Politician not found</h1>
+          <p>We could not find a profile for id {politicianId}.</p>
+        </section>
+      </>
     );
   }
 
   return (
     <div className="stack-lg">
+      <PageMeta
+        title={`${politician.name} | PNYX`}
+        description={`Browse promises, vote alignment, and party context for ${politician.name} on PNYX.`}
+        path={`/politicians/${politicianId}`}
+      />
       <section className="hero-panel stack-sm">
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link className="breadcrumb-link" to="/">
