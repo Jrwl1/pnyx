@@ -90,3 +90,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [21:56] DO: verify public metadata tags and canonical links in Playwright (sprint: S-33, links: dfae8e4, docs/SPRINT.md)
 - [21:57] REVIEW: accept S-33 public metadata and crawler-artifact row (findings: none)
 - [22:02] DO: add append-only `product_events` schema and migration proof for S-34 (sprint: S-34, links: 2eb4923, docs/SPRINT.md)
+- [22:08] DO: emit auth, contribution, moderation, and editorial product events with regression proof (sprint: S-34, links: 3b64dee, docs/SPRINT.md)
