@@ -87,3 +87,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [21:48] REVIEW: accept S-32 auth-debt and missing-surface row (findings: none)
 - [21:52] DO: add shared route metadata and public search-preview tags across the main public surfaces (sprint: S-33, links: c6df348, docs/SPRINT.md)
 - [21:54] DO: add generated `robots.txt` and `sitemap.xml` artifacts to the frontend build (sprint: S-33, links: efeb947, docs/SPRINT.md)
+- [21:56] DO: verify public metadata tags and canonical links in Playwright (sprint: S-33, links: dfae8e4, docs/SPRINT.md)
