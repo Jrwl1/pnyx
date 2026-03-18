@@ -98,3 +98,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [00:19] DO: surface submitter reputation and derived risk flags in the politician proposal queue (sprint: S-35, links: dfec4f3, docs/SPRINT.md)
 - [00:40] DO: surface submitter reputation and broader abuse context in the promise claim queue (sprint: S-35, links: 6ae94e9, docs/SPRINT.md)
 - [00:43] DO: add high-risk priority filters and browser-verified queue ergonomics across both moderation queues (sprint: S-35, links: ef75359, docs/SPRINT.md)
+- [00:44] REVIEW: accept S-35 contributor reputation and moderation-ergonomics row (findings: none)
