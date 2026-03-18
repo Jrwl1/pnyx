@@ -89,3 +89,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [21:54] DO: add generated `robots.txt` and `sitemap.xml` artifacts to the frontend build (sprint: S-33, links: efeb947, docs/SPRINT.md)
 - [21:56] DO: verify public metadata tags and canonical links in Playwright (sprint: S-33, links: dfae8e4, docs/SPRINT.md)
 - [21:57] REVIEW: accept S-33 public metadata and crawler-artifact row (findings: none)
+- [22:02] DO: add append-only `product_events` schema and migration proof for S-34 (sprint: S-34, links: 2eb4923, docs/SPRINT.md)
