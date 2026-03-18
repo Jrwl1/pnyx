@@ -4,33 +4,30 @@ Last updated: 2026-03-18
 
 ## Goal
 
-Deliver Pnyx as a Finland-first public political accountability product with trustworthy politician, promise, and party-context surfaces.
+Deliver Pnyx as a Finland-first public political accountability product with trustworthy politician, promise, and party-context surfaces, then harden it into a sustainable post-launch service.
 
 ## Active milestone
 
-**M7: Launchability hardening and release orchestration** is complete in sprint evidence; the next planning move is a post-launch re-baseline in `docs/ROADMAP.md`.
+**M8: Post-launch product hardening, automation, and growth** is now active, and `docs/SPRINT.md` is re-based around `S-32` through `S-37`.
 
 ## Current state
 
-- M4 through M7 are complete in code and evidence: contribution flows, canonical parties, canonical promises, claim canonization, trust dimensions, search, activity feeds, launch-safe auth, protected editorial ops, durable browser coverage, release rehearsal, and the final launch audit all landed and passed from a clean tree.
-- The launch baseline now includes seeded Finland-first rehearsal coverage, `pnpm proof:launch`, `pnpm smoke:release`, and a route-wide browser/accessibility sweep over public, contributor, moderator, editorial, and trust surfaces.
-- `S-27` is complete: launch-safe email-code sign-in now replaces the previous shared-secret public sign-in UX, redirect-preserving auth flows are verified in-browser, and admin-only role grants now keep moderator/admin provisioning outside the public sign-in form.
-- `S-28` is complete: protected editorial ops now cover party stances, vote events, vote records, fulfillment assessments, party-line assessments, and launch coverage views from inside the product.
-- `S-29` is complete: dependency-backed Playwright coverage now exercises public discovery, auth/contributor flows, and protected moderator/editorial routes, and the CI proof workflow plus security-audit note are aligned to that browser coverage.
-- `S-30` is complete: the repo now has `proof:launch`, `smoke:release`, a manual release-rehearsal workflow, updated release docs, and a local staging-like smoke rehearsal proved from a clean tree.
-- `S-31` is complete: launch-candidate seed and coverage helpers now verify the Finland-first slice, `/claims/:id` now follows protected-route semantics, the final route audit passed on the seeded live pair, and the go-or-no-go evidence is anchored to repeatable commands rather than assumptions.
+- M0 through M7 are complete in code and accepted sprint evidence: public discovery, contribution flows, canonical parties, canonical promises, claim canonization, trust records, launch-safe email auth, editorial ops, browser regression coverage, release rehearsal, and final launch audit all landed.
+- The launch regression floor remains `pnpm seed:launch-rehearsal`, `pnpm launch:coverage`, `pnpm proof:launch`, and `pnpm smoke:release`.
+- The next implementation gap is no longer launchability. It is post-launch completeness: removing leftover auth debt, exposing missing admin and public surfaces, shipping SEO metadata, adding explicit event and notification infrastructure, improving moderation ergonomics, and automating Finland-first ingest.
+- The active execution queue now starts with `S-32` debt retirement and missing-surface delivery before it moves into SEO, metrics and notifications, reputation, ingest, and proof refresh work.
 
 ## Top blockers
 
-1. No repo-tracked launch blockers remain after `S-31`.
-2. Residual non-blocking follow-up: improve public SEO metadata and search-preview tags beyond the verified launch baseline.
-3. The next blocker is planning, not implementation: re-baseline post-launch work without disturbing the accepted launch queue.
+1. Legacy shared-secret `/auth/token` still exists as implementation debt even though public auth now uses email codes.
+2. Backend-supported party-admin and direct canonical-promise operations are not yet fully reachable through protected product UI, and public promise discovery still lacks a dedicated browse route.
+3. SEO metadata, notifications, event-backed retention metrics, contributor reputation, and Finland-first ingest are planned but unimplemented.
 
 ## Next actions
 
-1. Open a new `PLAN` to re-baseline post-launch work now that the launchability sprint is fully closed.
-2. Use the seeded rehearsal chain (`seed:launch-rehearsal`, `launch:coverage`, `proof:launch`, `smoke:release`) as the default launch-candidate proof path.
-3. Treat the SEO metadata follow-up as post-launch unless release requirements change.
+1. Execute `S-32` first and keep the row order in `docs/SPRINT.md` deterministic.
+2. Hold the existing launch proof chain as the regression floor while expanding post-launch coverage.
+3. Re-baseline roadmap, backlog, and release docs only through accepted sprint evidence; do not open a parallel planning system.
 
 ## Key links
 

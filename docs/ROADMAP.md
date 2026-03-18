@@ -1,13 +1,13 @@
 # Roadmap
 
-Last updated: 2026-03-17
+Last updated: 2026-03-18
 
 Planning baseline:
 
-- Finland-first launch scope
+- Finland-first public product scope remains the operating boundary
 - Build from current shipped `frontend/`, `src/`, `test/`, and migration reality
-- Treat launchability as a separate milestone from feature completeness
-- Keep raw submissions, canonical facts, and derived trust metrics separate
+- Treat the accepted launch baseline as complete and preserve its proof chain while widening post-launch scope
+- Keep raw submissions, canonical facts, derived trust metrics, and automated ingest provenance separate
 - Direct MCP tools are preferred for evidence and verification when they materially help
 
 ## M0: Repository OS reset and delegation removal
@@ -90,7 +90,7 @@ Planning baseline:
 
 ## M7: Launchability hardening and release orchestration
 
-**Status:** In progress.
+**Status:** Done.
 
 **Done criteria:**
 
@@ -100,21 +100,24 @@ Planning baseline:
 4. Release and deploy sequencing, backup and restore rehearsal, observability, smoke checks, and a final go or no-go UI audit are documented and verified from a clean tree.
 5. Launch browser automation may use repo-managed dependencies and lockfile changes when the no-new-dependency path is not reliable enough on the target environment, provided those changes stay inside the sprint scope and include any required security audit notes.
 
-## M8: Post-launch automation and growth
+## M8: Post-launch product hardening, automation, and growth
 
-**Status:** Planned.
+**Status:** In progress.
 
 **Done criteria:**
 
-1. Finland-first automated ingest from official party and parliamentary sources reduces manual editorial entry for launch-critical record types.
-2. Contributor reputation, moderation ergonomics, and abuse signals evolve beyond the first launch-safe baseline.
-3. Retention, notification, and post-launch operating metrics move beyond the current database-only proxy model.
+1. The legacy shared-secret auth path is removed, protected product surfaces expose party creation, alias maintenance, membership create or update, and direct canonical-promise maintenance, and public promise discovery includes a dedicated browse route.
+2. Public routes emit route-specific SEO metadata, canonical URLs, and share-preview tags, and repo-managed proof verifies those outputs on the critical public surface.
+3. Explicit event logging plus notification and preference infrastructure exist for auth, contribution, moderation, and editorial flows, replacing the current proxy-only retention assumption.
+4. Contributor reputation, queue prioritization, moderation ergonomics, and broader abuse signals evolve beyond the first launch-safe baseline without collapsing public truth into opaque scores.
+5. Finland-first automated ingest from official party and parliamentary sources lands with raw provenance, normalization, deduplication, and moderation-safe staging for the first supported source set.
+6. Proof, release, traceability, and metrics docs are refreshed for the widened post-launch stack and pass from a clean tree.
 
 ## Explicitly out of current scope
 
 1. Delegation or autopilot-based repo execution flows
-2. Cross-country rollout before the Finland-first launch path is proven in production
-3. Launching with the current shared-secret public sign-in model
+2. Cross-country rollout before the Finland-first launch and ingest paths are proven in production
+3. Retaining the legacy shared-secret public sign-in path alongside the email-code public auth flow
 4. Reusing community sentiment votes as truth-validation or vote-alignment data
-5. A single opaque trust score before promise, fulfillment, and party-alignment assessments are backed by sourceable records
-6. Full automated multi-provider ingest and contributor reputation systems inside the launchability milestone
+5. A single opaque trust score before promise, fulfillment, party-alignment, and reputation systems are backed by sourceable records and clear semantics
+6. Full automated multi-provider ingest and outbound notification campaigning before the first Finland-first ingest and preference model are stable

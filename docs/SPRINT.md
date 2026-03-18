@@ -1,6 +1,6 @@
 # Sprint
 
-Window: 2026-03-17 to 2026-05-26
+Window: 2026-03-18 to 2026-07-31
 
 Executable DO queue. Execute top-to-bottom.
 Each `Do` checklist must stay flat and each substep must be small enough to complete in one DO run.
@@ -18,7 +18,9 @@ Required substep shape:
 
 ## Goal (this sprint)
 
-Move Pnyx from a feature-complete-enough accountability product to a launchable Finland-first public service by replacing the current shared-secret auth flow, exposing protected editorial operations for launch-critical trust data, adding durable automated regression coverage, hardening release and deploy orchestration, and ending with a final launch UI audit and go-or-no-go proof pass.
+Move Pnyx from a launch-ready Finland-first public service into a sustainable post-launch product by retiring leftover auth debt, exposing missing admin and public surfaces, shipping route-level SEO, adding explicit event and notification infrastructure, improving moderation ergonomics, automating Finland-first ingest, and re-proving the widened stack from a clean tree.
+
+Launch closeout rows `S-27` through `S-31` are retained below as accepted evidence. Active execution resumes at `S-32`.
 
 ---
 
@@ -29,6 +31,12 @@ Move Pnyx from a feature-complete-enough accountability product to a launchable 
 | S-29 | Add durable automated regression coverage for critical public, contributor, moderation, and editorial flows. See `S-29` substeps below. | `package.json`, `frontend/package.json`, `pnpm-lock.yaml`, `vitest*.ts`, `playwright.config.*`, `frontend/**`, `test/**`, `.github/workflows/**`, `docs/security/**` | Critical public routes, auth flows, contributor submission flows, moderator queues, and editorial ops flows are covered by durable automated tests in repo; the launch proof chain includes those checks; workflow or dependency changes include the required security-audit note when sensitive files or CI wiring are touched. | Accepted in REVIEW. Packets `38c17ea` and `786cd17` landed dependency-backed Playwright coverage, repo scripts, CI proof wiring, and the required security audit note; `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm frontend:typecheck`, `pnpm frontend:build`, and `pnpm test:ui` all passed. | Stop if the dependency-backed browser automation path cannot be made repeatable on the target Windows environment even after widening the sprint scope to include lockfile and browser-test wiring. | DONE |
 | S-30 | Harden release sequencing, observability, backup/restore rehearsal, and launch runbooks. See `S-30` substeps below. | `src/server.ts`, `package.json`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`, `test/**` | Release docs, smoke checks, observability, backup/restore rehearsal, and deploy sequencing are updated for the completed accountability graph; launch metrics and release evidence are reproducible; any sensitive workflow/config changes ship with the required security-audit note; staging-like release rehearsal passes from a clean tree. | Accepted in REVIEW. Packets `7e61e28` and `247894b` landed the release proof scripts, manual release-rehearsal workflow, security audit note, and the smoke-script fix; `pnpm proof:launch` and `SMOKE_BASE_URL=http://127.0.0.1:3013 pnpm smoke:release` both passed. | Stop if required deploy orchestration depends on unmanaged platform state that cannot be captured through repo docs, workflows, or repeatable smoke commands. | DONE |
 | S-31 | Run the final launch dry run, route-wide audit, and go-or-no-go proof from the launch-ready baseline. See `S-31` substeps below. | `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md` | Launch candidate data coverage is loaded or verified for the Finland-first slice; the full static, automated, browser, accessibility, and manual UI audit passes from a clean tree; remaining launch risks are documented; a go-or-no-go verdict is supported by evidence rather than assumptions. | Accepted in REVIEW. Packet `f194057` landed shared launch-rehearsal seed and coverage helpers, a deterministic seed test, the protected `/claims/:id` route fix, broader Playwright route coverage, and refreshed launch runbooks; `pnpm test`, `pnpm proof:launch`, `DB_PATH=%TEMP%\\pnyx-final-launch.db pnpm seed:launch-rehearsal`, `DB_PATH=%TEMP%\\pnyx-final-launch.db pnpm launch:coverage`, and `SMOKE_BASE_URL=http://127.0.0.1:3014 pnpm smoke:release` all passed; chrome-devtools route sweep across public, auth, contributor, moderation, editorial, and trust routes on `4314 -> 3014` passed with no failed network requests or app-console errors; Lighthouse snapshot accessibility stayed `100` on home, politician profile, promise detail, and ops records, while SEO remained a documented non-blocking follow-up at `60` on dev-server pages. | Stop if the final rehearsal surfaces a blocking regression or content gap that cannot be resolved within the same launchability area. | DONE |
+| S-32 | Retire remaining auth debt and expose the missing admin and public surfaces already supported by backend reality. See `S-32` substeps below. | `src/server.ts`, `src/auth/**`, `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/context/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`, `docs/RELEASE_READINESS_RUNBOOK.md`, `frontend/README.md` | The legacy `/auth/token` shared-secret flow is removed from backend, client, tests, and docs; protected product surfaces exist for party creation, alias maintenance, membership create or update, and direct canonical-promise creation; public users can browse promises from a dedicated `/promises` route; regression and browser checks pass. | Pending. | Stop if removing the legacy auth path reveals an unmanaged deploy or bootstrap dependency that cannot be represented through repo-managed bootstrap helpers, tests, or explicit admin provisioning flows. | TODO |
+| S-33 | Add route-level SEO, search-preview metadata, and crawler-facing verification for the public discovery surface. See `S-33` substeps below. | `frontend/index.html`, `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/context/**`, `frontend/src/lib/**`, `frontend/src/types.ts`, `package.json`, `test/**` | Home, directory, profile, promise, and methodology routes emit stable titles, descriptions, canonical URLs, and social preview tags; repo-managed sitemap or robots handling exists where required; automated verification covers metadata completeness on critical public routes. | Pending. | Stop if reliable crawler-facing metadata requires an unmanaged hosting-specific SSR path that cannot be represented through repo-managed build, prerender, or proof steps. | TODO |
+| S-34 | Build explicit event logging, notification primitives, and metrics foundations for the post-launch service. See `S-34` substeps below. | `migrations/**`, `src/server.ts`, `src/auth/**`, `src/db/**`, `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/context/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/TRACEABILITY_V1.md` | Append-only product event logging exists for auth, contribution, moderation, and editorial actions; notification records, delivery tracking, and user preference surfaces exist; success-metric and traceability docs no longer depend only on proxy retention assumptions; tests and browser checks pass. | Pending. | Stop if notification delivery depends on an unmanaged external provider path that cannot be represented through repo-managed config, inline delivery, or repeatable tests. | TODO |
+| S-35 | Add contributor reputation, stronger moderation ergonomics, and broader abuse signals beyond the launch-safe baseline. See `S-35` substeps below. | `migrations/**`, `src/server.ts`, `src/db/**`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**` | Contributor reputation is derived from moderation outcomes; moderator queues expose risk and priority signals plus richer abuse telemetry; regression and browser checks prove the upgraded queue behavior without introducing opaque public scoring. | Pending. | Stop if scope expands into public-facing reputation or ranking surfaces before the internal scoring model and abuse guardrails are validated. | TODO |
+| S-36 | Add Finland-first automated ingest with provenance, normalization, dedupe, and moderation-safe staging. See `S-36` substeps below. | `migrations/**`, `package.json`, `src/server.ts`, `src/db/**`, `src/ingest/**`, `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md` | The first supported official Finland-first source set can be imported repeatably into raw provenance tables, normalized into launch-critical records, deduplicated safely, and reviewed through protected product or operator flows before public exposure where required; tests and verification pass. | Pending. | Stop if required source access or import replay depends on unmanaged credentials, cache state, or manual-only steps that cannot be captured in repo fixtures, docs, or repeatable commands. | TODO |
+| S-37 | Re-baseline proof, release, security-audit, and metrics evidence for the widened post-launch stack. See `S-37` substeps below. | `package.json`, `.github/workflows/**`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md` | Seeded verification, browser coverage, proof commands, release runbooks, and security-audit notes all cover the new public, admin, notification, reputation, and ingest surfaces; the final post-launch proof path passes from a clean tree. | Pending. | Stop if the widened proof path depends on unmanaged platform state or manual-only verification that cannot be captured in repo evidence. | TODO |
 
 ### S-27 substeps
 
@@ -164,3 +172,165 @@ Move Pnyx from a feature-complete-enough accountability product to a launchable 
   - files: `src/server.ts`, `frontend/src/**`, `package.json`, `frontend/package.json`, `test/**`, `.github/workflows/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
   - run: `ui-audit plus manual playwright or chrome-devtools verification of every launch-critical public, contributor, moderator, editorial, and trust flow`
   - evidence: packet:f194057b722f5ab7500dca249511ff44f44b7d22 | run:ui-audit plus manual chrome-devtools verification of launch-critical public, contributor, moderation, editorial, and trust flows on http://127.0.0.1:4314 with backend http://127.0.0.1:3014; no failed network requests or app-console errors; SMOKE_BASE_URL=http://127.0.0.1:3014 pnpm smoke:release -> pass | files:docs/RELEASE_READINESS_RUNBOOK.md,docs/SUCCESS_METRICS_PLAN.md,docs/TRACEABILITY_V1.md,frontend/README.md,frontend/src/App.tsx,package.json,test/helpers/launch-rehearsal.ts,test/launch-rehearsal.test.ts,test/playwright/launch-ui.spec.ts | docs:N/A | baseline:absorbed | gate-fix:frontend/src/App.tsx,test/helpers/launch-rehearsal.ts,test/playwright/launch-ui.spec.ts | status: clean
+
+### S-32 substeps
+
+- [ ] Remove the legacy `/auth/token` backend route and client or test references while keeping email-code auth and local admin bootstrap intact
+  - files: `src/server.ts`, `src/auth/**`, `frontend/src/lib/api.ts`, `test/**`, `docs/RELEASE_READINESS_RUNBOOK.md`, `frontend/README.md`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add protected party creation and alias-maintenance surfaces reachable from existing ops navigation
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add protected party membership create or update and direct canonical-promise creation surfaces
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add a public `/promises` browse route with filters for politician, party, issue, and record state
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/context/**`, `frontend/src/lib/**`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run regression and browser verification for removed auth debt, new admin surfaces, and public promise browsing
+  - files: `package.json`, `frontend/src/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
+  - evidence: Pending.
+
+### S-33 substeps
+
+- [ ] Add route-metadata primitives and environment-backed canonical-origin handling for public routes
+  - files: `frontend/index.html`, `frontend/src/App.tsx`, `frontend/src/components/**`, `frontend/src/context/**`, `frontend/src/lib/**`, `frontend/src/routes/**`, `frontend/src/types.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Define titles, descriptions, canonical URLs, and social preview tags for home, directories, profiles, promise detail, and methodology routes
+  - files: `frontend/index.html`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/**`, `frontend/src/types.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add repo-managed sitemap, robots, and metadata-generation support for public crawling and search previews
+  - files: `frontend/index.html`, `frontend/**`, `package.json`, `test/**`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add automated metadata verification to the browser or proof chain for critical public routes
+  - files: `package.json`, `frontend/**`, `test/**`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
+  - evidence: Pending.
+
+- [ ] Run browser verification for public metadata and search-preview coverage on the widened public route set
+  - files: `frontend/**`, `test/**`
+  - run: `pnpm test:ui`
+  - evidence: Pending.
+
+### S-34 substeps
+
+- [ ] Add append-only product-event schema for auth, contribution, moderation, and editorial actions
+  - files: `migrations/**`, `src/db/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Emit product events from the core auth, contribution, moderation, and editorial flows
+  - files: `src/server.ts`, `src/auth/**`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add notification records, delivery tracking, and preference schema plus backend APIs
+  - files: `migrations/**`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add authenticated notification and preference surfaces in the frontend
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/context/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Refresh metrics and traceability docs around event-backed retention and notification evidence, then verify end-to-end flows
+  - files: `docs/SUCCESS_METRICS_PLAN.md`, `docs/TRACEABILITY_V1.md`, `package.json`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
+  - evidence: Pending.
+
+### S-35 substeps
+
+- [ ] Add contributor-reputation schema, aggregation rules, and moderation-outcome backfill logic
+  - files: `migrations/**`, `src/db/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Expose reputation and risk signals in the politician-proposal queue
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Expose reputation and risk signals in the promise-claim queue and broaden abuse telemetry beyond the launch baseline
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `src/db/**`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Add queue prioritization, filter ergonomics, and moderation-state affordances for high-value or high-risk work
+  - files: `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Run regression and browser verification for the upgraded moderation surfaces and reputation-backed queue ordering
+  - files: `package.json`, `frontend/src/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
+  - evidence: Pending.
+
+### S-36 substeps
+
+- [ ] Add raw-ingest schema, provenance storage, and idempotent import bookkeeping for Finland-first official sources
+  - files: `migrations/**`, `src/db/**`, `src/ingest/**`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Implement the first official source adapters and normalization pipeline for party stances and parliamentary vote data
+  - files: `package.json`, `src/ingest/**`, `src/db/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add dedupe, reconciliation, and moderation-safe staging for automated imports before public exposure
+  - files: `src/ingest/**`, `src/db/**`, `src/server.ts`, `test/**`
+  - run: `pnpm test`
+  - evidence: Pending.
+
+- [ ] Add protected ingest-review or operator surfaces and launch-coverage visibility for imported records
+  - files: `frontend/src/App.tsx`, `frontend/src/routes/**`, `frontend/src/components/**`, `frontend/src/lib/api.ts`, `frontend/src/types.ts`, `src/server.ts`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
+  - evidence: Pending.
+
+- [ ] Refresh runbooks and verification coverage for repeatable import replay, then verify the seeded Finland-first ingest path end to end
+  - files: `package.json`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `test/**`
+  - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
+  - evidence: Pending.
+
+### S-37 substeps
+
+- [ ] Extend seeded data and proof helpers for post-launch public, admin, notification, reputation, and ingest surfaces
+  - files: `package.json`, `test/**`, `docs/TRACEABILITY_V1.md`
+  - run: `pnpm test && pnpm test:e2e`
+  - evidence: Pending.
+
+- [ ] Widen browser coverage to the new public promises, admin CRUD, notification, and ingest-review routes
+  - files: `test/**`, `frontend/src/**`, `src/server.ts`
+  - run: `pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
+  - evidence: Pending.
+
+- [ ] Refresh release, security-audit, and metrics docs for the post-launch stack and delivery path
+  - files: `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
+  - run: `N/A`
+  - evidence: Pending.
+
+- [ ] Add or update workflow and proof wiring for the widened post-launch command chain
+  - files: `package.json`, `.github/workflows/**`, `docs/security/**`, `test/**`
+  - run: `pnpm lint && pnpm typecheck && pnpm test && pnpm frontend:typecheck`
+  - evidence: Pending.
+
+- [ ] Run the full post-launch proof chain and clean-tree release rehearsal from the widened baseline
+  - files: `package.json`, `.github/workflows/**`, `test/**`, `docs/TRACEABILITY_V1.md`, `docs/RELEASE_READINESS_RUNBOOK.md`, `docs/SUCCESS_METRICS_PLAN.md`, `docs/security/**`, `frontend/README.md`
+  - run: `pnpm proof:launch && post-launch smoke rehearsal on an isolated server`
+  - evidence: Pending.

@@ -1,6 +1,6 @@
 # Canonical report
 
-Last updated: 2026-03-17
+Last updated: 2026-03-18
 
 ## Migration summary
 
@@ -110,3 +110,21 @@ Last updated: 2026-03-17
      - Resolution: the repo now has `seed:launch-rehearsal`, `launch:coverage`, shared seed helpers, and refreshed runbooks/traceability docs.
 - Residual risk:
   - Lighthouse snapshot SEO remained at `60` on the Vite dev-server audit pages. This is documented as a non-blocking post-launch follow-up in `docs/BACKLOG.md` and does not change the launchability verdict because functional, accessibility, and release-proof criteria all passed.
+
+## 2026-03-18 post-launch implementation re-baseline
+
+- Current code and accepted sprint evidence now show that the launchability milestone is closed and that the next gaps are post-launch completeness and debt retirement, not launch readiness.
+- Conflict resolved by canonical hierarchy:
+  1. `docs/ROADMAP.md` still showed `M7` in progress and `M8` as a narrow future placeholder.
+     - Winner: current code reality plus accepted `S-27` through `S-31` evidence.
+     - Resolution: `M7` is now marked done, and `M8` is widened into the active post-launch milestone covering debt retirement, missing product surfaces, SEO, event and notification infrastructure, moderation ergonomics, ingest, and proof refresh work.
+  2. `docs/SPRINT.md` still ended at the accepted launch closeout queue.
+     - Winner: current code review and the grounded post-launch gap inventory.
+     - Resolution: `docs/SPRINT.md` now adds `S-32` through `S-37`, ordered top-to-bottom for auth debt removal, missing admin and public surfaces, SEO metadata, event and notification foundations, reputation and moderation ergonomics, Finland-first ingest, and post-launch proof re-baselining.
+  3. Several backend capabilities already exist in `src/server.ts` without equivalent protected product reachability.
+     - Winner: code reality.
+     - Resolution: backlog and sprint planning now prioritize product-surface completion before larger automation work so the repo closes clear debt first.
+- Planning resolution:
+  - `docs/PROJECT_STATUS.md` now pivots from \"launch closed, planning next\" to an active `M8` execution baseline.
+  - `docs/BACKLOG.md` expands the post-launch work pool with concrete debt, discoverability, eventing, notification, reputation, and ingest tasks.
+  - No new ADR was added in this planning pass because the sequencing change is a roadmap and execution decision rather than a new architectural commitment.

@@ -73,9 +73,20 @@ Structured work pool. `docs/SPRINT.md` is the active execution queue.
 - B-707: Run launch dry run, final UI audit, and go or no-go review from a clean tree. -- DONE
 - B-708: Decide whether launch browser automation should use a new repo dependency or a different Windows-safe process model after the repo-native harness attempt failed under Vitest. -- DONE
 
-## Epic E9: Post-launch automation and growth
+## Epic E9: Post-launch product hardening, automation, and growth
 
+- B-805: Remove the legacy `/auth/token` shared-secret auth path and any remaining client, test, or doc references that still imply it is part of the supported public flow.
+- B-806: Expose protected product surfaces for party creation, party alias maintenance, party membership create or update, and direct canonical-promise creation using the backend capabilities that already exist.
+- B-807: Add a public `/promises` browse route with direct discovery filters for politician, party, issue, and record state.
 - B-804: Improve public SEO metadata and search-preview tags now that the launchable baseline is locked.
-- B-801: Automate ingest from official Finland-first party and parliamentary sources once the manual launch path is stable.
-- B-802: Add contributor reputation and moderation assist layers beyond the first launch-safe baseline.
+- B-808: Add route-level titles, descriptions, canonical URLs, and social preview tags for all critical public routes.
+- B-809: Add crawler-facing proof coverage plus sitemap and robots handling for metadata completeness.
+- B-810: Add explicit product event logging for auth, contribution, moderation, and editorial flows.
+- B-811: Add notification records, delivery tracking, and user preference surfaces for post-review and operational updates.
 - B-803: Add post-launch retention, notification, and operating metrics beyond the current database-only proxy model.
+- B-802: Add contributor reputation and moderation assist layers beyond the first launch-safe baseline.
+- B-812: Add queue prioritization, richer abuse telemetry, and stronger moderator ergonomics for high-value or high-risk work.
+- B-801: Automate ingest from official Finland-first party and parliamentary sources once the manual launch path is stable.
+- B-813: Add raw ingest provenance, normalization, and dedupe paths for the first Finland-first official source set.
+- B-814: Add moderation-safe staging or review flows for automated imports before public exposure when required.
+- B-815: Refresh proof, release, traceability, and metrics docs for the widened post-launch stack once the new systems land.

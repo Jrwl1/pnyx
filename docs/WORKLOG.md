@@ -78,3 +78,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [18:05] REVIEW: accept S-31 launch closeout row (findings: none)
 - [17:38] DO: add release proof scripts, rehearsal workflow, and backup/rollback runbook updates (sprint: S-30, links: 7e61e28, docs/SPRINT.md)
 - [17:29] REVIEW: accept S-29 automated browser coverage row (findings: none)
+- [19:19] PLAN: re-baseline from the accepted M7 launch closeout into a comprehensive M8 post-launch queue for auth debt removal, missing surfaces, SEO, eventing, reputation, ingest, and proof refresh (sprint: S-32..S-37, milestone: M8)
