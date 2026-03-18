@@ -21,6 +21,8 @@ Override the proxy target with `VITE_BACKEND_URL` when you need a different back
 
 ## Launch proof helpers
 
+- `pnpm seed:launch-rehearsal` loads the seeded launch-candidate dataset into the configured `DB_PATH`.
+- `pnpm launch:coverage` asserts the seeded launch-candidate coverage counts against the configured `DB_PATH`.
 - `pnpm test:ui` runs the dependency-backed Playwright browser suite.
 - `pnpm proof:launch` runs the repo launch proof chain.
 - `pnpm smoke:release` runs live smoke checks against a running backend using `SMOKE_BASE_URL`.
@@ -34,12 +36,14 @@ Override the proxy target with `VITE_BACKEND_URL` when you need a different back
 - `/politicians/:id`
 - `/parties`
 - `/parties/:id`
+- `/claims/:id`
 - `/promises/:id`
 - `/methodology`
 - `/contribute/politicians/new`
 - `/contribute/statements/new`
 - `/contribute/promises/new`
 - `/ops`
+- `/ops/records`
 - `/ops/claims`
 
 ## Data honesty defaults

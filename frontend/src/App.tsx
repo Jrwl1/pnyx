@@ -35,10 +35,10 @@ export const App = (): ReactElement => {
           <Route path="/politicians/:id" element={<PoliticianProfilePage />} />
           <Route path="/parties" element={<PartiesPage />} />
           <Route path="/parties/:id" element={<PartyProfilePage />} />
-          <Route path="/claims/:id" element={<PromiseClaimDetailPage />} />
           <Route path="/promises/:id" element={<PromiseDetailPage />} />
           <Route path="/methodology" element={<MethodologyPage />} />
           <Route element={<RequireAuthRoute />}>
+            <Route path="/claims/:id" element={<PromiseClaimDetailPage />} />
             <Route path="/contribute/politicians/new" element={<SubmitPoliticianProposalPage />} />
             <Route path="/contribute/promises/new" element={<SubmitPromiseClaimPage />} />
             <Route path="/contribute/statements/new" element={<SubmitStatementPage />} />

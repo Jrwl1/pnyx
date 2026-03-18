@@ -79,6 +79,7 @@ FROM statement_stats, engagement, retention;
 - Daily lightweight snapshot in development/staging.
 - Pre-release and post-release checkpoints recorded in release notes.
 - Compare week-over-week trend deltas for engagement and retention proxies.
+- Record `pnpm seed:launch-rehearsal` and `pnpm launch:coverage` outcomes for each seeded launch dry run.
 - Record `pnpm proof:launch` and `pnpm smoke:release` outcomes at each release rehearsal checkpoint.
 
 ## Notes and caveats
@@ -110,6 +111,8 @@ Output schema:
 
 At each release rehearsal, capture:
 
+- `pnpm seed:launch-rehearsal` pass/fail
+- `pnpm launch:coverage` pass/fail
 - `pnpm proof:launch` pass/fail
 - `pnpm smoke:release` pass/fail
 - browser/accessibility audit summary

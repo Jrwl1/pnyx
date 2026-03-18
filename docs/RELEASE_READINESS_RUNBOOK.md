@@ -66,6 +66,13 @@ Run full release proof before publish/deploy:
 pnpm proof:launch
 ```
 
+Seed or verify the launch-candidate rehearsal dataset before the live smoke and UI audit:
+
+```bash
+DB_PATH=/tmp/pnyx-release.db pnpm seed:launch-rehearsal
+DB_PATH=/tmp/pnyx-release.db pnpm launch:coverage
+```
+
 Optional focused checks before full run:
 
 ```bash
@@ -79,7 +86,7 @@ pnpm test -- -t "search"
 Route/browser proof after the command chain:
 
 ```bash
-chrome-devtools or playwright verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /promises/:id, /methodology, /register, /sign-in, /contribute/**, /ops, and /ops/claims
+chrome-devtools or playwright verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /claims/:id, /promises/:id, /methodology, /register, /sign-in, /contribute/**, /ops, /ops/records, and /ops/claims
 ```
 
 Smoke rehearsal after the server is up:
@@ -93,6 +100,8 @@ SMOKE_BASE_URL=http://127.0.0.1:3000 pnpm smoke:release
 Run from repo root:
 
 ```bash
+DB_PATH=/tmp/pnyx-release.db pnpm seed:launch-rehearsal
+DB_PATH=/tmp/pnyx-release.db pnpm launch:coverage
 pnpm proof:launch
 PORT=3001 DB_PATH=/tmp/pnyx-release.db AUTH_EMAIL_PROVIDER=inline pnpm exec tsx src/index.ts
 SMOKE_BASE_URL=http://127.0.0.1:3001 pnpm smoke:release
@@ -104,6 +113,9 @@ Windows PowerShell example:
 $env:PORT='3001'
 $env:DB_PATH="$env:TEMP\\pnyx-release.db"
 $env:AUTH_EMAIL_PROVIDER='inline'
+pnpm seed:launch-rehearsal
+pnpm launch:coverage
+pnpm proof:launch
 Start-Process powershell -ArgumentList '-NoProfile','-Command','Set-Location "C:\\path\\to\\Pnyx"; pnpm exec tsx src/index.ts'
 $env:SMOKE_BASE_URL='http://127.0.0.1:3001'
 pnpm smoke:release
@@ -128,6 +140,8 @@ References:
 ## 6) Release evidence to record
 
 - Commit hash of release-prep changes.
+- `pnpm seed:launch-rehearsal` output summary.
+- `pnpm launch:coverage` output summary.
 - `pnpm proof:launch` output summary.
 - `pnpm smoke:release` output summary.
 - Browser/accessibility verification summary, including any Lighthouse accessibility score used for release evidence.

@@ -47,6 +47,7 @@ WHAT IT DO? Maps locked V1 capabilities and governance controls to implemented e
 
 - Use this file with `ai/planning/API_CONTRACT.md` to validate endpoint/test drift before closeout.
 - Confirm role/access coverage with `test/role-matrix.test.ts` and path-specific suites before marking sprint proof complete.
+- Launch-candidate coverage now includes `test/launch-rehearsal.test.ts`, `pnpm seed:launch-rehearsal`, and `pnpm launch:coverage` for a seeded Finland-first rehearsal baseline.
 - Launch proof chain now includes `pnpm proof:launch`, which pulls lint, typecheck, backend tests, browser/UI tests, and builds together before release rehearsal.
 - Release rehearsal now includes `pnpm smoke:release` against a live server after the proof chain passes.
 - If an endpoint changes or a suite is renamed, update this matrix in the same commit.
