@@ -60,9 +60,14 @@ This file is the repository OS contract.
 - Parallel helper work is allowed only inside one active sprint row and only when write scopes do not overlap.
 - `docs/WORKLOG.md` is append-only.
 - `docs/DECISIONS.md` is append-only.
-- Protocol clean-tree checks use `git status --porcelain` as the authority.
+- Protocol clean-tree checks use `git status --porcelain` as the authority after excluding ignored files and the scratch-file exemption below.
 - Ignored local files are outside protocol scope and do not count as dirt.
-- Tracked changes and untracked non-ignored files do count as dirt.
+- Untracked protocol-local scratch files are also outside protocol scope and do not count as dirt when all are true:
+  1. the path is untracked,
+  2. it lives at repo root or under `tmp/` or `scratch/`,
+  3. its basename starts with `TEMP_`, `TMP_`, or `SCRATCH_`, and
+  4. its extension is `.md`, `.txt`, `.json`, or `.log`.
+- Tracked changes and other untracked non-ignored files do count as dirt.
 - Local service lifecycle is conservative: if a needed local app is already reachable, reuse it. Do not kill listeners or restart user-run services unless explicitly asked or blocked without it.
 - Helper lifecycle is strict: before any product commit, docs commit, REVIEW pass, or next-packet selection, wait for every helper launched for the active packet to finish and then re-check `git status --porcelain`.
 - `DO` and `REVIEW` must end with an absolutely clean working tree when their protocol says so.
@@ -211,11 +216,13 @@ PLAN must produce:
   4. Execute only that one packet.
 - Do not pull new scope from outside `docs/SPRINT.md`.
 - Before editing, record the DO baseline with `git status --porcelain`.
-- DO may start from a dirty baseline only when every pre-existing dirty path matches the active packet `Files` scopes and can be safely explained as part of that packet.
-- If any pre-existing dirty path falls outside scope, stop with `HARD BLOCKED: dirty baseline outside files-scope`.
+- DO may start from a dirty baseline only when every pre-existing dirty path that remains in protocol scope is either:
+  1. inside the active packet `Files` scopes and can be safely explained as part of that packet, or
+  2. one of `docs/SPRINT.md`, `docs/BACKLOG.md`, or `docs/WORKLOG.md` from prior protocol bookkeeping.
+- If any pre-existing dirty path that remains in protocol scope falls outside those allowances, stop with `HARD BLOCKED: dirty baseline outside files-scope`.
 - If a required `run:` command fails, DO may use a bounded same-area gate-fix exception: edit the minimal additional files in the same product area needed to make that required run pass.
 - Before the product commit, run a hygiene check using `git status --porcelain` plus path inspection.
-- If any tracked dirty path is outside the active packet scope or bounded same-area gate-fix scope, stop with `HARD BLOCKED: hygiene check scope mismatch`.
+- If any tracked dirty path that remains in protocol scope is outside the active packet scope, bounded same-area gate-fix scope, or the protocol-bookkeeping files `docs/SPRINT.md`, `docs/BACKLOG.md`, and `docs/WORKLOG.md`, stop with `HARD BLOCKED: hygiene check scope mismatch`.
 - DO must finish with a clean working tree at packet boundaries.
 - Two commits:
   - Product commit: `do(S-XX): <packet summary>`
@@ -298,7 +305,7 @@ PLAN must produce:
 - A REVIEW run is considered PASS only when no blocker is triggered and all intended review doc updates are complete.
 - When REVIEW is PASS, stage and commit the REVIEW doc updates in one docs-only commit containing only allowed REVIEW write files.
 - REVIEW pass commit message must be `review: evidence update`.
-- After the REVIEW pass commit, `git status --porcelain` must be empty. If not, record `BLOCKED: dirty working tree after REVIEW pass commit` and stop.
+- After the REVIEW pass commit, `git status --porcelain` must contain no protocol-scope dirt after applying the scratch-file exemption above. If not, record `BLOCKED: dirty working tree after REVIEW pass commit` and stop.
 
 ### WORKLOG format
 
