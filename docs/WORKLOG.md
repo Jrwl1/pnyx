@@ -68,4 +68,5 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [21:15] DO: blocked again on S-29 repo-native UI harness after repeated Windows-safe browser runner attempts failed to stabilize under `pnpm test:ui` (sprint: S-29, links: docs/SPRINT.md)
 - [20:48] DO: blocked on S-29 repo-native UI harness after Windows Vitest child-process launches failed to keep the frontend server up reliably (sprint: S-29, links: docs/SPRINT.md)
 - [17:17] PLAN: widen S-29 to allow dependency-backed browser automation and close the scope blocker from the failed no-new-dependency path (sprint: S-29..S-31, milestone: M7)
+- [17:28] DO: add Playwright launch coverage and wire it into CI proof with the required security audit note (sprint: S-29, links: 38c17ea, 786cd17, docs/SPRINT.md)
 - [17:25] DO: add Playwright-backed launch UI coverage for public, contributor, and protected moderation routes (sprint: S-29, links: 38c17ea, docs/SPRINT.md)
