@@ -81,3 +81,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [19:19] PLAN: re-baseline from the accepted M7 launch closeout into a comprehensive M8 post-launch queue for auth debt removal, missing surfaces, SEO, eventing, reputation, ingest, and proof refresh (sprint: S-32..S-37, milestone: M8)
 - [19:25] DO: blocked before S-32 packet start because pre-existing temp planning note sits outside the active files-scope (sprint: S-32, links: docs/SPRINT.md)
 - [21:36] DO: remove legacy `/auth/token` route and migrate auth tests to direct JWT signing (sprint: S-32, links: ee7ea23, docs/SPRINT.md)
+- [21:41] DO: add protected `/ops/admin` party and canonical-promise maintenance surfaces (sprint: S-32, links: a36e199, docs/SPRINT.md)
