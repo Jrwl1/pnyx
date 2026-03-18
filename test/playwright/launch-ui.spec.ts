@@ -36,6 +36,20 @@ const signInViaUi = async (page: import("@playwright/test").Page, email: string,
   await page.getByRole("button", { name: "Verify code and sign in" }).click();
 };
 
+const expectPublicMeta = async (
+  page: import("@playwright/test").Page,
+  input: { title: string; descriptionFragment: string; path: string }
+): Promise<void> => {
+  await expect(page).toHaveTitle(input.title);
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute("content", new RegExp(input.descriptionFragment, "i"));
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute("content", input.title);
+  await expect(page.locator('meta[name="twitter:description"]')).toHaveAttribute(
+    "content",
+    new RegExp(input.descriptionFragment, "i")
+  );
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", `${frontendBase}${input.path}`);
+};
+
 test.beforeEach(() => {
   seedBaseData();
 });
@@ -47,36 +61,76 @@ test("loads core public routes", async ({ page }) => {
 
   await page.goto(`${frontendBase}/`);
   await expect(page.getByRole("heading", { name: "What did they promise, and what does the public record show?" })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "PNYX | Finnish political accountability",
+    descriptionFragment: "Search Finnish politicians",
+    path: "/"
+  });
 
   await page.goto(`${frontendBase}/politicians`);
   await expect(page.getByRole("heading", { name: "Finnish politician directory" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Launch Rehearsal Politician", exact: true })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "Politicians | PNYX",
+    descriptionFragment: "documented Finnish politicians",
+    path: "/politicians"
+  });
 
   await page.goto(`${frontendBase}/politicians/${seededIds.politicianId}`);
   await expect(page.getByRole("heading", { name: "Launch Rehearsal Politician" })).toBeVisible();
   await expect(page.getByRole("tab", { name: "Promises", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expectPublicMeta(page, {
+    title: "Launch Rehearsal Politician | PNYX",
+    descriptionFragment: "vote alignment",
+    path: `/politicians/${seededIds.politicianId}`
+  });
 
   await page.goto(`${frontendBase}/parties`);
   await expect(page.getByRole("heading", { name: "Browse Finnish political parties on PNYX." })).toBeVisible();
   await expect(page.getByText("Launch Rehearsal Party", { exact: true })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "Parties | PNYX",
+    descriptionFragment: "Finnish political parties",
+    path: "/parties"
+  });
 
   await page.goto(`${frontendBase}/parties/${seededIds.partyId}`);
   await expect(page.getByRole("heading", { name: "Launch Rehearsal Party" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Current member politicians" })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "Launch Rehearsal Party | PNYX",
+    descriptionFragment: "party stances",
+    path: `/parties/${seededIds.partyId}`
+  });
 
   await page.goto(`${frontendBase}/promises`);
   await expect(page.getByRole("heading", { name: "Browse documented promises on PNYX" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Launch rehearsal canonical promise" })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "Promises | PNYX",
+    descriptionFragment: "Browse documented promises",
+    path: "/promises"
+  });
 
   await page.goto(`${frontendBase}/promises/${seededIds.statementId}`);
   await expect(page.getByRole("heading", { name: "Launch rehearsal canonical promise" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fulfillment verdict" })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "Launch rehearsal canonical promise | PNYX",
+    descriptionFragment: "promise detail",
+    path: `/promises/${seededIds.statementId}`
+  });
 
   await page.goto(`${frontendBase}/claims/${seededIds.claimId}`);
   await expect(page.getByRole("heading", { name: "Restore your session by email" })).toBeVisible();
 
   await page.goto(`${frontendBase}/methodology`);
   await expect(page.getByRole("heading", { name: "How PNYX reads promises, evidence, party context, and uncertainty" })).toBeVisible();
+  await expectPublicMeta(page, {
+    title: "Methodology | PNYX",
+    descriptionFragment: "fulfillment",
+    path: "/methodology"
+  });
 });
 
 test("registers, signs in, and submits contributor records", async ({ page }) => {
