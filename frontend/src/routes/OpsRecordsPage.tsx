@@ -1,6 +1,6 @@
 /* WHAT IT DO? Provides protected editorial forms for launch-critical party, vote, fulfillment, and alignment records plus coverage metrics. */
 
-import { useEffect, useState, type FormEvent, type ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { Link } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { useAuth } from "../context/AuthContext";
