@@ -47,6 +47,9 @@ import type {
   StatementRevision,
   StatementSummary,
   LaunchCoverageSummary,
+  IngestRunRecord,
+  IngestSourceSummary,
+  IngestStageItemRecord,
   NotificationPreferences,
   NotificationRecord,
   VoteEventRecord,
@@ -186,6 +189,54 @@ export const listNotifications = async (
 
 export const markNotificationRead = async (token: string, notificationId: number): Promise<{ ok: true }> => {
   return fetchJson<{ ok: true }>(`/me/notifications/${notificationId}/read`, {
+    method: "POST",
+    token
+  });
+};
+
+export const listIngestSources = async (token: string): Promise<IngestSourceSummary[]> => {
+  const response = await fetchJson<{ items: IngestSourceSummary[] }>("/ops/import-sources", { token });
+  return response.items;
+};
+
+export const getIngestCoverage = async (
+  token: string
+): Promise<{ pending: Record<string, number>; applied: Record<string, number> }> => {
+  return fetchJson<{ pending: Record<string, number>; applied: Record<string, number> }>("/ops/import-coverage", { token });
+};
+
+export const listIngestRuns = async (token: string): Promise<IngestRunRecord[]> => {
+  const response = await fetchJson<{ items: IngestRunRecord[] }>("/ops/import-runs", { token });
+  return response.items;
+};
+
+export const triggerIngestRun = async (token: string, sourceKey: string): Promise<{ run: IngestRunRecord }> => {
+  return fetchJson<{ run: IngestRunRecord }>("/ops/import-runs", {
+    method: "POST",
+    token,
+    body: { sourceKey }
+  });
+};
+
+export const getIngestRunById = async (
+  token: string,
+  runId: number
+): Promise<{ run: IngestRunRecord; stageItems: IngestStageItemRecord[] }> => {
+  return fetchJson<{ run: IngestRunRecord; stageItems: IngestStageItemRecord[] }>(`/ops/import-runs/${runId}`, { token });
+};
+
+export const applyIngestStageItem = async (
+  token: string,
+  stageItemId: number
+): Promise<{ ok: true; entityKind: string; entityId: string }> => {
+  return fetchJson<{ ok: true; entityKind: string; entityId: string }>(`/ops/stage-items/${stageItemId}/apply`, {
+    method: "POST",
+    token
+  });
+};
+
+export const rejectIngestStageItem = async (token: string, stageItemId: number): Promise<{ ok: true }> => {
+  return fetchJson<{ ok: true }>(`/ops/stage-items/${stageItemId}/reject`, {
     method: "POST",
     token
   });

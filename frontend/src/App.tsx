@@ -8,6 +8,7 @@ import { PublicLayout } from "./layout/PublicLayout";
 import { HomePage } from "./routes/HomePage";
 import { MethodologyPage } from "./routes/MethodologyPage";
 import { OpsAdminPage } from "./routes/OpsAdminPage";
+import { OpsImportsPage } from "./routes/OpsImportsPage";
 import { NotFoundPage } from "./routes/NotFoundPage";
 import { NotificationsPage } from "./routes/NotificationsPage";
 import { OpsPage } from "./routes/OpsPage";
@@ -50,6 +51,7 @@ export const App = (): ReactElement => {
             <Route element={<RequireRoleRoute minimumRole="moderator" />}>
               <Route path="/ops" element={<OpsPage />} />
               <Route path="/ops/admin" element={<OpsAdminPage />} />
+              <Route path="/ops/imports" element={<OpsImportsPage />} />
               <Route path="/ops/records" element={<OpsRecordsPage />} />
               <Route path="/ops/claims" element={<PromiseClaimsOpsPage />} />
             </Route>

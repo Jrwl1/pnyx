@@ -158,6 +158,7 @@ export const OpsRecordsPage = (): ReactElement => {
         <div className="card-link-row">
           <Link to="/ops">Open politician proposal queue</Link>
           <Link to="/ops/admin">Open party and promise admin</Link>
+          <Link to="/ops/imports">Open official imports</Link>
           <Link to="/ops/claims">Open promise claim queue</Link>
         </div>
       </section>

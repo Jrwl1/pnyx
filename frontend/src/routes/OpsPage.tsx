@@ -293,6 +293,7 @@ export const OpsPage = (): ReactElement => {
         <p className="lede">Filter the queue, claim work, review pending items, and use duplicate assist before recording a moderation decision.</p>
         <div className="card-link-row">
           <Link to="/ops/admin">Open party and promise admin</Link>
+          <Link to="/ops/imports">Open official imports</Link>
           <Link to="/ops/records">Open editorial record ops</Link>
           <Link to="/ops/claims">Open promise claim queue</Link>
         </div>

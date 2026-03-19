@@ -80,6 +80,46 @@ export interface NotificationRecord {
   createdAt: string;
 }
 
+export interface IngestSourceSummary {
+  sourceKey: string;
+  sourceFamily: string;
+  label: string;
+}
+
+export interface IngestRunRecord {
+  id: number;
+  sourceFamily: string;
+  sourceKey: string;
+  sourceUrl: string | null;
+  triggeredBy: string;
+  status: "pending" | "fetched" | "staged" | "applied" | "failed";
+  fetchedCount: number;
+  stagedCount: number;
+  appliedCount: number;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IngestStageItemRecord {
+  id: number;
+  runId: number;
+  rawRecordId: number;
+  stageType: "party_stance" | "vote_event" | "vote_record";
+  sourceKey: string;
+  dedupeKey: string;
+  normalizedJson: string;
+  normalized: Record<string, unknown>;
+  status: "pending" | "applied" | "rejected" | "failed";
+  appliedEntityKind: string | null;
+  appliedEntityId: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PoliticianProposalInput {
   name: string;
   region?: string;

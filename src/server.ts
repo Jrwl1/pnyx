@@ -14,6 +14,14 @@ import {
 } from "./db/canonical-promises.js";
 import { db } from "./db/client.js";
 import {
+  getIngestCoverage,
+  getIngestRunById,
+  getIngestStageItemById,
+  listIngestRuns,
+  listIngestStageItems,
+  refreshIngestRunCounts
+} from "./db/ingest.js";
+import {
   createNotification,
   getNotificationPreferences,
   listNotifications,
@@ -32,6 +40,8 @@ import {
   listPromiseClaims
 } from "./db/promise-claims.js";
 import { getContributorRiskSummary } from "./db/reputation.js";
+import { applyIngestStageItem, rejectIngestStageItem } from "./ingest/apply.js";
+import { listOfficialSourceSummaries, runOfficialSourceImport } from "./ingest/adapters.js";
 import {
   getLatestPromiseFulfillmentAssessment,
   getPartyStanceById,
@@ -802,6 +812,97 @@ app.get("/ops/launch-coverage", requireRole("moderator"), (_req, res) => {
     },
     pendingClaims: Number(pendingClaims.total ?? 0)
   });
+});
+
+app.get("/ops/import-sources", requireRole("moderator"), (_req, res) => {
+  res.json({ items: listOfficialSourceSummaries() });
+});
+
+app.get("/ops/import-coverage", requireRole("moderator"), (_req, res) => {
+  res.json(getIngestCoverage());
+});
+
+app.get("/ops/import-runs", requireRole("moderator"), (_req, res) => {
+  res.json({ items: listIngestRuns() });
+});
+
+app.get("/ops/import-runs/:id", requireRole("moderator"), (req, res) => {
+  const runId = Number(req.params.id);
+  if (!Number.isInteger(runId) || runId <= 0) {
+    res.status(400).json({ error: "invalid run id" });
+    return;
+  }
+  const run = getIngestRunById(runId);
+  if (!run) {
+    res.status(404).json({ error: "ingest run not found" });
+    return;
+  }
+
+  const stageItems = listIngestStageItems(runId).map((item) => ({
+    ...item,
+    normalized: JSON.parse(item.normalizedJson)
+  }));
+  res.json({ run, stageItems });
+});
+
+app.post("/ops/import-runs", requireRole("moderator"), async (req, res) => {
+  const sourceKey = ((req.body as { sourceKey?: string }).sourceKey ?? "").trim();
+  if (!sourceKey) {
+    res.status(400).json({ error: "sourceKey is required" });
+    return;
+  }
+
+  try {
+    const result = await runOfficialSourceImport(sourceKey as never, req.auth.userId ?? "moderation");
+    refreshIngestRunCounts(result.runId);
+    res.status(201).json({ run: getIngestRunById(result.runId) });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message || "ingest run failed" });
+  }
+});
+
+app.post("/ops/stage-items/:id/apply", requireRole("moderator"), (req, res) => {
+  const stageItemId = Number(req.params.id);
+  if (!Number.isInteger(stageItemId) || stageItemId <= 0) {
+    res.status(400).json({ error: "invalid stage item id" });
+    return;
+  }
+
+  const stageItem = getIngestStageItemById(stageItemId);
+  if (!stageItem) {
+    res.status(404).json({ error: "stage item not found" });
+    return;
+  }
+
+  try {
+    const result = applyIngestStageItem(stageItemId, req.auth.userId ?? "moderation");
+    refreshIngestRunCounts(stageItem.runId);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(409).json({ error: (err as Error).message || "unable to apply stage item" });
+  }
+});
+
+app.post("/ops/stage-items/:id/reject", requireRole("moderator"), (req, res) => {
+  const stageItemId = Number(req.params.id);
+  if (!Number.isInteger(stageItemId) || stageItemId <= 0) {
+    res.status(400).json({ error: "invalid stage item id" });
+    return;
+  }
+
+  const stageItem = getIngestStageItemById(stageItemId);
+  if (!stageItem) {
+    res.status(404).json({ error: "stage item not found" });
+    return;
+  }
+
+  try {
+    rejectIngestStageItem(stageItemId, req.auth.userId ?? "moderation");
+    refreshIngestRunCounts(stageItem.runId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(409).json({ error: (err as Error).message || "unable to reject stage item" });
+  }
 });
 
 app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
