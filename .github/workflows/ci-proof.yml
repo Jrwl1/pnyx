@@ -11,6 +11,9 @@ on:
 jobs:
   prove:
     runs-on: ubuntu-latest
+    env:
+      DB_PATH: ${{ runner.temp }}/pnyx-ci-proof.db
+      AUTH_EMAIL_PROVIDER: inline
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,20 +35,11 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Lint
-        run: pnpm lint
+      - name: Seed post-launch rehearsal data
+        run: pnpm seed:launch-rehearsal
 
-      - name: Typecheck
-        run: pnpm typecheck
+      - name: Verify post-launch rehearsal coverage
+        run: pnpm launch:coverage
 
-      - name: Unit and integration tests
-        run: pnpm test
-
-      - name: E2E tests
-        run: pnpm test:e2e
-
-      - name: UI browser tests
-        run: pnpm test:ui
-
-      - name: Build
-        run: pnpm build
+      - name: Run post-launch proof chain
+        run: pnpm proof:postlaunch

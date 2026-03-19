@@ -63,7 +63,7 @@ Rollback strategy:
 Run full release proof before publish/deploy:
 
 ```bash
-pnpm proof:launch
+pnpm proof:postlaunch
 ```
 
 Seed or verify the launch-candidate rehearsal dataset before the live smoke and UI audit:
@@ -109,7 +109,7 @@ Run from repo root:
 ```bash
 DB_PATH=/tmp/pnyx-release.db pnpm seed:launch-rehearsal
 DB_PATH=/tmp/pnyx-release.db pnpm launch:coverage
-pnpm proof:launch
+pnpm proof:postlaunch
 PORT=3001 DB_PATH=/tmp/pnyx-release.db AUTH_EMAIL_PROVIDER=inline pnpm exec tsx src/index.ts
 SMOKE_BASE_URL=http://127.0.0.1:3001 pnpm smoke:release
 ```
@@ -122,7 +122,7 @@ $env:DB_PATH="$env:TEMP\\pnyx-release.db"
 $env:AUTH_EMAIL_PROVIDER='inline'
 pnpm seed:launch-rehearsal
 pnpm launch:coverage
-pnpm proof:launch
+pnpm proof:postlaunch
 Start-Process powershell -ArgumentList '-NoProfile','-Command','Set-Location "C:\\path\\to\\Pnyx"; pnpm exec tsx src/index.ts'
 $env:SMOKE_BASE_URL='http://127.0.0.1:3001'
 pnpm smoke:release
@@ -150,7 +150,7 @@ References:
 - `pnpm seed:launch-rehearsal` output summary.
 - `pnpm launch:coverage` output summary.
 - official ingest replay output summary for each supported source key used in the rehearsal.
-- `pnpm proof:launch` output summary.
+- `pnpm proof:postlaunch` output summary.
 - `pnpm smoke:release` output summary.
 - Browser/accessibility verification summary, including any Lighthouse accessibility score used for release evidence.
 - Any risk notes or deferred non-P0/P1 items.

@@ -1,6 +1,6 @@
 // WHAT IT DO? Fetches and normalizes the first supported official Finland-first source set into raw and staged ingest records.
 
-import { addRawRecord, addStageItem, createIngestRun, listIngestStageItems, markIngestRunStatus } from "../db/ingest.js";
+import { addRawRecord, addStageItem, createIngestRun, markIngestRunStatus } from "../db/ingest.js";
 import { getSupportedIngestSource, listSupportedIngestSources, type SupportedIngestSourceKey } from "./sources.js";
 
 type FetchLike = typeof fetch;

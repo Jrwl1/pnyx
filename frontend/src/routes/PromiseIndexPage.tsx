@@ -15,13 +15,11 @@ import {
 } from "../lib/domain";
 import { listParties } from "../lib/api";
 import { formatDate, formatIdentityLine } from "../lib/format";
-import type { BackendPartySummary } from "../types";
 
 type RecordStateFilter = "all" | "canonical" | "legacy";
 
 export const PromiseIndexPage = (): ReactElement => {
   const { politicians, statements, loading, error, refresh } = usePublicData();
-  const [parties, setParties] = useState<BackendPartySummary[]>([]);
   const [partyLoading, setPartyLoading] = useState<boolean>(true);
   const [partyError, setPartyError] = useState<string | null>(null);
 
@@ -39,7 +37,7 @@ export const PromiseIndexPage = (): ReactElement => {
       try {
         const items = await listParties();
         if (!cancelled) {
-          setParties(items);
+          void items;
         }
       } catch (err) {
         if (!cancelled) {

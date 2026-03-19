@@ -31,7 +31,11 @@ describe("launch rehearsal seed", () => {
       stances: 1,
       voteEvents: 1,
       fulfillment: 1,
-      alignments: 1
+      alignments: 1,
+      notifications: 1,
+      reputationRows: 1,
+      ingestRuns: 1,
+      ingestPending: 1
     });
   });
 });

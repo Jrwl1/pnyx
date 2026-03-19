@@ -2434,7 +2434,25 @@ app.get("/politician-proposals", requireRole("user"), (req, res) => {
        ORDER BY created_at ${sortDirection}, id ${sortDirection}
        LIMIT ? OFFSET ?`
     )
-    .all(...params, pageSize, offset);
+    .all(...params, pageSize, offset) as Array<{
+    id: number;
+    submittedBy: string;
+    assigneeId: string | null;
+    assignedAt: string | null;
+    name: string;
+    region: string | null;
+    office: string | null;
+    externalId: string | null;
+    sourceNote: string | null;
+    status: ProposalStatus;
+    decisionBy: string | null;
+    decisionReason: string | null;
+    decisionCode: string | null;
+    linkedPoliticianId: number | null;
+    reviewVersion: number;
+    createdAt: string;
+    decidedAt: string | null;
+  }>;
 
   res.json({
     items: items.map((item) => ({
@@ -4059,7 +4077,7 @@ app.patch("/promise-claims/:id/review", requireRole("moderator"), (req, res) => 
         targetCanonicalPromiseId != null
           ? (() => {
               const canonicalPromise = getCanonicalPromiseById(targetCanonicalPromiseId!, true);
-              return canonicalPromise?.statementId ? `/promises/${canonicalPromise.statementId}` : "/promises";
+              return canonicalPromise?.primaryStatementId ? `/promises/${canonicalPromise.primaryStatementId}` : "/promises";
             })()
           : "/promises";
       createNotification({

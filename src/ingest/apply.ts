@@ -1,7 +1,6 @@
 // WHAT IT DO? Applies or rejects staged ingest items into the live accountability tables through explicit operator actions.
 
 import { db } from "../db/client.js";
-import { getCanonicalPromiseById } from "../db/canonical-promises.js";
 import { getIngestStageItemById, updateIngestStageItem } from "../db/ingest.js";
 import { getPartyById } from "../db/party-graph.js";
 import { getVoteEventById } from "../db/trust-records.js";

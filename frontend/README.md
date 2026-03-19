@@ -24,8 +24,10 @@ Override the proxy target with `VITE_BACKEND_URL` when you need a different back
 - `pnpm seed:launch-rehearsal` loads the seeded launch-candidate dataset into the configured `DB_PATH`.
 - `pnpm launch:coverage` asserts the seeded launch-candidate coverage counts against the configured `DB_PATH`.
 - `pnpm test:ui` runs the dependency-backed Playwright browser suite.
-- `pnpm proof:launch` runs the repo launch proof chain.
+- `pnpm proof:postlaunch` runs the widened post-launch proof chain.
+- `pnpm proof:launch` remains as a compatibility alias to `pnpm proof:postlaunch`.
 - `pnpm smoke:release` runs live smoke checks against a running backend using `SMOKE_BASE_URL`.
+- `pnpm ingest:run <sourceKey>` replays one supported official-source import from the CLI.
 
 ## Implemented routes
 
@@ -43,6 +45,7 @@ Override the proxy target with `VITE_BACKEND_URL` when you need a different back
 - `/contribute/statements/new`
 - `/contribute/promises/new`
 - `/ops`
+- `/ops/imports`
 - `/ops/records`
 - `/ops/claims`
 
@@ -52,3 +55,4 @@ Override the proxy target with `VITE_BACKEND_URL` when you need a different back
 - Community support/oppose is displayed as sentiment only, not politician roll-call voting.
 - Party-line status renders only from explicit party-alignment assessments; no stance match is inferred from branding or rhetoric.
 - Home and directory search suggestions are backend-backed and can surface politicians, parties, canonical promises, and trust-era topics.
+- Protected operator surfaces now include notifications, official imports, and reputation-backed moderation queues on top of the launch baseline.

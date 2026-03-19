@@ -36,8 +36,14 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
 
-      - name: Run launch proof chain
-        run: pnpm proof:launch
+      - name: Seed post-launch rehearsal data
+        run: pnpm seed:launch-rehearsal
+
+      - name: Verify post-launch rehearsal coverage
+        run: pnpm launch:coverage
+
+      - name: Run post-launch proof chain
+        run: pnpm proof:postlaunch
 
       - name: Start service
         run: |

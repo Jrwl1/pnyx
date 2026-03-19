@@ -21,6 +21,10 @@ export type LaunchCoverageSnapshot = {
   voteEvents: number;
   fulfillment: number;
   alignments: number;
+  notifications: number;
+  reputationRows: number;
+  ingestRuns: number;
+  ingestPending: number;
 };
 
 const DEFAULT_DB_PATH = "data/pnyx.db";
@@ -42,6 +46,14 @@ const FULFILLMENT_SOURCE_URL = "https://example.fi/launch-rehearsal-fulfillment"
 
 export const resetLaunchRehearsalData = (db: Database.Database): void => {
   db.prepare("DELETE FROM auth_login_codes").run();
+  db.prepare("DELETE FROM notification_deliveries").run();
+  db.prepare("DELETE FROM notifications").run();
+  db.prepare("DELETE FROM notification_preferences").run();
+  db.prepare("DELETE FROM product_events").run();
+  db.prepare("DELETE FROM contributor_reputation").run();
+  db.prepare("DELETE FROM ingest_stage_items").run();
+  db.prepare("DELETE FROM ingest_raw_records").run();
+  db.prepare("DELETE FROM ingest_runs").run();
   db.prepare("DELETE FROM party_alignment_assessments").run();
   db.prepare("DELETE FROM promise_fulfillment_assessments").run();
   db.prepare("DELETE FROM canonical_promise_vote_links").run();
@@ -210,6 +222,82 @@ export const seedLaunchRehearsalData = (db: Database.Database): LaunchRehearsalS
     ).run(canonicalPromise.id, stance.id, "launch rehearsal alignment", SEED_USER_ID);
   }
 
+  db.prepare(
+    "INSERT OR REPLACE INTO contributor_reputation (user_id, merged_claims, score, updated_at) VALUES (?, 1, 2, datetime('now'))"
+  ).run(SEED_USER_ID);
+
+  db.prepare(
+    "INSERT OR REPLACE INTO notification_preferences (user_id, in_app_enabled, email_enabled, review_updates_enabled, moderator_assignments_enabled, role_updates_enabled, updated_at) VALUES (?, 1, 0, 1, 1, 1, datetime('now'))"
+  ).run(SEED_ADMIN_ID);
+
+  const notification = db
+    .prepare("SELECT id FROM notifications WHERE user_id = ? AND notification_type = ? LIMIT 1")
+    .get(SEED_ADMIN_ID, "launch_rehearsal") as { id: number } | undefined;
+  if (!notification) {
+    const notificationId = db
+      .prepare(
+        "INSERT INTO notifications (user_id, notification_type, title, body, related_path) VALUES (?, ?, ?, ?, ?)"
+      )
+      .run(SEED_ADMIN_ID, "launch_rehearsal", "Launch rehearsal notification", "Seeded notification for post-launch proof.", "/notifications")
+      .lastInsertRowid as number;
+    db.prepare(
+      "INSERT INTO notification_deliveries (notification_id, channel, delivery_state, updated_at) VALUES (?, 'inapp', 'delivered', datetime('now'))"
+    ).run(notificationId);
+  }
+
+  const ingestRun = db
+    .prepare("SELECT id FROM ingest_runs WHERE source_key = ? LIMIT 1")
+    .get("launch-seed-ingest") as { id: number } | undefined;
+  let ingestRunId = ingestRun?.id;
+  if (!ingestRunId) {
+    ingestRunId = db
+      .prepare(
+        "INSERT INTO ingest_runs (source_family, source_key, source_url, triggered_by, status, fetched_count, staged_count, applied_count) VALUES (?, ?, ?, ?, 'staged', 1, 1, 0)"
+      )
+      .run("party_stance_pages", "launch-seed-ingest", "https://example.fi/launch-seed-ingest", SEED_ADMIN_ID).lastInsertRowid as number;
+  }
+  const rawRecord = db
+    .prepare("SELECT id FROM ingest_raw_records WHERE source_key = ? LIMIT 1")
+    .get("launch-seed-ingest") as { id: number } | undefined;
+  let rawRecordId = rawRecord?.id;
+  if (!rawRecordId) {
+    rawRecordId = db
+      .prepare(
+        "INSERT INTO ingest_raw_records (run_id, source_family, source_key, record_type, source_record_key, source_url, payload_json, payload_hash) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      )
+      .run(
+        ingestRunId,
+        "party_stance_pages",
+        "launch-seed-ingest",
+        "party_stance_page",
+        "launch-seed-record",
+        "https://example.fi/launch-seed-ingest",
+        JSON.stringify({ title: "Seeded ingest item" }),
+        "launch-seed-hash"
+      ).lastInsertRowid as number;
+  }
+  const stageItem = db
+    .prepare("SELECT id FROM ingest_stage_items WHERE source_key = ? AND dedupe_key = ? LIMIT 1")
+    .get("launch-seed-ingest", "party_stance:https://example.fi/launch-seed-ingest") as { id: number } | undefined;
+  if (!stageItem) {
+    db.prepare(
+      "INSERT INTO ingest_stage_items (run_id, raw_record_id, stage_type, source_key, dedupe_key, normalized_json, status) VALUES (?, ?, 'party_stance', ?, ?, ?, 'pending')"
+    ).run(
+      ingestRunId,
+      rawRecordId,
+      "launch-seed-ingest",
+      "party_stance:https://example.fi/launch-seed-ingest",
+      JSON.stringify({
+        partyId: PARTY_ID,
+        issue: "Economy",
+        stanceText: "Seeded import stage item",
+        sourceUrl: "https://example.fi/launch-seed-ingest",
+        sourceNote: "launch rehearsal ingest",
+        dateSaid: "2026-03-18"
+      })
+    );
+  }
+
   return {
     partyId: PARTY_ID,
     politicianId: politician.id,
@@ -232,7 +320,11 @@ export const readLaunchCoverage = (db: Database.Database): LaunchCoverageSnapsho
         (SELECT COUNT(*) FROM party_stances) AS stances,
         (SELECT COUNT(*) FROM vote_events) AS voteEvents,
         (SELECT COUNT(*) FROM promise_fulfillment_assessments) AS fulfillment,
-        (SELECT COUNT(*) FROM party_alignment_assessments) AS alignments`
+        (SELECT COUNT(*) FROM party_alignment_assessments) AS alignments,
+        (SELECT COUNT(*) FROM notifications) AS notifications,
+        (SELECT COUNT(*) FROM contributor_reputation) AS reputationRows,
+        (SELECT COUNT(*) FROM ingest_runs) AS ingestRuns,
+        (SELECT COUNT(*) FROM ingest_stage_items WHERE status = 'pending') AS ingestPending`
     )
     .get() as LaunchCoverageSnapshot;
   return row;
@@ -247,7 +339,11 @@ export const assertLaunchCoverage = (snapshot: LaunchCoverageSnapshot): void => 
     "stances",
     "voteEvents",
     "fulfillment",
-    "alignments"
+    "alignments",
+    "notifications",
+    "reputationRows",
+    "ingestRuns",
+    "ingestPending"
   ];
   for (const key of required) {
     if ((snapshot[key] ?? 0) < 1) {
