@@ -104,3 +104,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [23:03] DO: verify `/ops/imports`, ingest replay docs, and end-to-end official-source staging for S-36 (sprint: S-36, links: 1f793e7, docs/SPRINT.md)
 - [23:04] REVIEW: accept S-36 official ingest and staging row (findings: none)
 - [23:22] DO: refresh post-launch proof wiring, seeded rehearsal coverage, and release evidence for the first S-37 packet (sprint: S-37, links: 110f114, docs/SPRINT.md)
+- [23:28] DO: finalize the post-launch proof rehearsal with traceability fixes, a stable public-route browser retry, and isolated smoke on `3016` (sprint: S-37, links: cd192d6, docs/SPRINT.md)
