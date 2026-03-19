@@ -32,6 +32,9 @@ describe("migration", () => {
     expect(tableNames.has("notifications")).toBe(true);
     expect(tableNames.has("notification_deliveries")).toBe(true);
     expect(tableNames.has("contributor_reputation")).toBe(true);
+    expect(tableNames.has("ingest_runs")).toBe(true);
+    expect(tableNames.has("ingest_raw_records")).toBe(true);
+    expect(tableNames.has("ingest_stage_items")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -83,6 +86,11 @@ describe("migration", () => {
     expect(indexNames.has("idx_notification_deliveries_notification")).toBe(true);
     expect(indexNames.has("idx_notification_deliveries_channel_state")).toBe(true);
     expect(indexNames.has("idx_contributor_reputation_score")).toBe(true);
+    expect(indexNames.has("idx_ingest_runs_source_created")).toBe(true);
+    expect(indexNames.has("idx_ingest_raw_records_run")).toBe(true);
+    expect(indexNames.has("idx_ingest_raw_records_source")).toBe(true);
+    expect(indexNames.has("idx_ingest_stage_items_run")).toBe(true);
+    expect(indexNames.has("idx_ingest_stage_items_status")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -292,5 +300,40 @@ describe("migration", () => {
     expect(contributorReputationColumnNames.has("canonized_claims")).toBe(true);
     expect(contributorReputationColumnNames.has("rejected_claims")).toBe(true);
     expect(contributorReputationColumnNames.has("score")).toBe(true);
+
+    const ingestRunColumns = db
+      .prepare("PRAGMA table_info(ingest_runs)")
+      .all() as { name: string }[];
+    const ingestRunColumnNames = new Set(ingestRunColumns.map((column) => column.name));
+    expect(ingestRunColumnNames.has("source_family")).toBe(true);
+    expect(ingestRunColumnNames.has("source_key")).toBe(true);
+    expect(ingestRunColumnNames.has("status")).toBe(true);
+    expect(ingestRunColumnNames.has("fetched_count")).toBe(true);
+    expect(ingestRunColumnNames.has("staged_count")).toBe(true);
+    expect(ingestRunColumnNames.has("applied_count")).toBe(true);
+
+    const ingestRawColumns = db
+      .prepare("PRAGMA table_info(ingest_raw_records)")
+      .all() as { name: string }[];
+    const ingestRawColumnNames = new Set(ingestRawColumns.map((column) => column.name));
+    expect(ingestRawColumnNames.has("run_id")).toBe(true);
+    expect(ingestRawColumnNames.has("source_family")).toBe(true);
+    expect(ingestRawColumnNames.has("source_key")).toBe(true);
+    expect(ingestRawColumnNames.has("record_type")).toBe(true);
+    expect(ingestRawColumnNames.has("source_record_key")).toBe(true);
+    expect(ingestRawColumnNames.has("payload_json")).toBe(true);
+    expect(ingestRawColumnNames.has("payload_hash")).toBe(true);
+
+    const ingestStageColumns = db
+      .prepare("PRAGMA table_info(ingest_stage_items)")
+      .all() as { name: string }[];
+    const ingestStageColumnNames = new Set(ingestStageColumns.map((column) => column.name));
+    expect(ingestStageColumnNames.has("run_id")).toBe(true);
+    expect(ingestStageColumnNames.has("raw_record_id")).toBe(true);
+    expect(ingestStageColumnNames.has("stage_type")).toBe(true);
+    expect(ingestStageColumnNames.has("source_key")).toBe(true);
+    expect(ingestStageColumnNames.has("dedupe_key")).toBe(true);
+    expect(ingestStageColumnNames.has("normalized_json")).toBe(true);
+    expect(ingestStageColumnNames.has("status")).toBe(true);
   });
 });
