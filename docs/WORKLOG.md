@@ -100,3 +100,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [00:43] DO: add high-risk priority filters and browser-verified queue ergonomics across both moderation queues (sprint: S-35, links: ef75359, docs/SPRINT.md)
 - [00:44] REVIEW: accept S-35 contributor reputation and moderation-ergonomics row (findings: none)
 - [22:16] DO: add ingest run, raw record, and stage-item schema foundations for S-36 (sprint: S-36, links: 1f60793, docs/SPRINT.md)
+- [23:01] DO: add official-source adapters, staged apply or reject flow, and protected `/ops/imports` operator surfaces for S-36 (sprint: S-36, links: 3671e85, docs/SPRINT.md)
