@@ -195,7 +195,7 @@ Launch closeout rows `S-27` through `S-31` are retained below as accepted eviden
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build`
   - evidence: packet:806c37831b5ac53f397cb1faae0441f0211a218b | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build -> pass | files:frontend/src/App.tsx,frontend/src/routes/HomePage.tsx,frontend/src/routes/PromiseIndexPage.tsx | docs:N/A | status: clean
 
-- [ ] Run regression and browser verification for removed auth debt, new admin surfaces, and public promise browsing
+- [x] Run regression and browser verification for removed auth debt, new admin surfaces, and public promise browsing
   - files: `package.json`, `frontend/src/**`, `src/server.ts`, `test/**`
   - run: `pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui`
   - evidence: packet:8d714af949ddcd420bfa5dde7be5c9b255311ff6 | run:pnpm test && pnpm frontend:typecheck && pnpm frontend:build && pnpm test:ui -> pass | files:test/playwright/launch-ui.spec.ts | docs:N/A | status: clean

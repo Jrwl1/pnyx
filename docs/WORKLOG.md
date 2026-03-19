@@ -106,3 +106,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [23:22] DO: refresh post-launch proof wiring, seeded rehearsal coverage, and release evidence for the first S-37 packet (sprint: S-37, links: 110f114, docs/SPRINT.md)
 - [23:28] DO: finalize the post-launch proof rehearsal with traceability fixes, a stable public-route browser retry, and isolated smoke on `3016` (sprint: S-37, links: cd192d6, docs/SPRINT.md)
 - [23:30] REVIEW: accept S-36 ingest automation and S-37 post-launch proof rows; sprint queue complete (findings: none)
+- [23:31] REVIEW: normalize the accepted S-32 checklist so no active sprint row retains an unchecked substep (findings: none)
