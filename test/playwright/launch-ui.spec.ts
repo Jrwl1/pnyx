@@ -198,6 +198,10 @@ test("loads protected moderator and editorial routes under an admin session", as
   await expect(page.getByRole("heading", { name: "Create party identity" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Create canonical promise directly" })).toBeVisible();
 
+  await page.goto(`${frontendBase}/ops/imports`);
+  await expect(page.getByRole("heading", { name: "Finland-first ingest review" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Trigger supported official sources" })).toBeVisible();
+
   await page.goto(`${frontendBase}/ops/claims`);
   await expect(page.getByRole("heading", { name: "Promise claim queue" })).toBeVisible();
   await expect(page.getByLabel("Priority")).toBeVisible();

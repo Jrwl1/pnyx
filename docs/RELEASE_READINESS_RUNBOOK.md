@@ -73,6 +73,13 @@ DB_PATH=/tmp/pnyx-release.db pnpm seed:launch-rehearsal
 DB_PATH=/tmp/pnyx-release.db pnpm launch:coverage
 ```
 
+Official-source ingest replay examples:
+
+```bash
+pnpm ingest:run eduskunta_vote_55554
+pnpm ingest:run sdp_climate_article_2025_09_04
+```
+
 Optional focused checks before full run:
 
 ```bash
@@ -86,7 +93,7 @@ pnpm test -- -t "search"
 Route/browser proof after the command chain:
 
 ```bash
-chrome-devtools or playwright verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /claims/:id, /promises/:id, /methodology, /register, /sign-in, /contribute/**, /ops, /ops/records, and /ops/claims
+chrome-devtools or playwright verification of /, /politicians, /politicians/:id, /parties, /parties/:id, /claims/:id, /promises/:id, /methodology, /register, /sign-in, /contribute/**, /ops, /ops/admin, /ops/imports, /ops/records, and /ops/claims
 ```
 
 Smoke rehearsal after the server is up:
@@ -142,6 +149,7 @@ References:
 - Commit hash of release-prep changes.
 - `pnpm seed:launch-rehearsal` output summary.
 - `pnpm launch:coverage` output summary.
+- official ingest replay output summary for each supported source key used in the rehearsal.
 - `pnpm proof:launch` output summary.
 - `pnpm smoke:release` output summary.
 - Browser/accessibility verification summary, including any Lighthouse accessibility score used for release evidence.
