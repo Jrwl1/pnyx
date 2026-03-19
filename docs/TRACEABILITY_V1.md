@@ -36,7 +36,7 @@ WHAT IT DO? Maps locked V1 capabilities and governance controls to implemented e
 
 | Capability | Implemented endpoints / surfaces | Primary regression suites |
 | --- | --- | --- |
-| CAP-009: frontend auth, statement capture, voting, and contributor reachability | `POST /auth/register`, `POST /auth/token`, `POST /statements`, `POST /statements/:id/votes`, frontend routes `/register`, `/sign-in`, `/contribute/**` | `test/register-role-hardening.test.ts`, `test/register-captcha.test.ts`, `test/statement-capture.test.ts`, `test/statement-detail-viewer-vote.test.ts` |
+| CAP-009: frontend auth, statement capture, voting, and contributor reachability | `POST /auth/register`, `POST /auth/request-code`, `POST /auth/verify-code`, `GET /me`, `POST /auth/logout`, `POST /statements`, `POST /statements/:id/votes`, frontend routes `/register`, `/sign-in`, `/notifications`, `/contribute/**` | `test/register-role-hardening.test.ts`, `test/register-captcha.test.ts`, `test/email-auth.test.ts`, `test/statement-capture.test.ts`, `test/statement-detail-viewer-vote.test.ts`, `test/notifications.test.ts` |
 | CAP-010: canonical party graph and public party reads | `POST /parties`, `POST /parties/:id/aliases`, `POST|PATCH /party-memberships`, `GET /parties`, `GET /parties/:id`, `GET /parties/:id/members` | `test/party-graph.test.ts`, `test/migration.test.ts` |
 | CAP-011: canonical promises, accepted sources, and claim canonization | `POST /canonical-promises`, `GET /canonical-promises`, `GET /canonical-promises/:id`, `POST /promise-claims`, `GET /promise-claims`, `PATCH /promise-claims/:id/review`, `GET /promise-claims/:id/audits` | `test/canonical-promises.test.ts`, `test/promise-claims.test.ts`, `test/trust-records.test.ts` |
 | CAP-012: party stance, vote-event, fulfillment, and party-line trust records | `POST /party-stances`, `GET /parties/:id/stances`, `POST /vote-events`, `POST /vote-events/:id/records`, `POST /canonical-promises/:id/vote-links`, `POST /canonical-promises/:id/fulfillment-assessments`, `POST /canonical-promises/:id/party-alignments` | `test/trust-records.test.ts`, `test/migration.test.ts` |
@@ -49,7 +49,7 @@ WHAT IT DO? Maps locked V1 capabilities and governance controls to implemented e
 
 - Use this file with `ai/planning/API_CONTRACT.md` to validate endpoint/test drift before closeout.
 - Confirm role/access coverage with `test/role-matrix.test.ts` and path-specific suites before marking sprint proof complete.
-- Launch-candidate coverage now includes `test/launch-rehearsal.test.ts`, `pnpm seed:launch-rehearsal`, and `pnpm launch:coverage` for a seeded Finland-first rehearsal baseline.
-- Launch proof chain now includes `pnpm proof:launch`, which pulls lint, typecheck, backend tests, browser/UI tests, and builds together before release rehearsal.
+- Launch-candidate coverage now includes `test/launch-rehearsal.test.ts`, `pnpm seed:launch-rehearsal`, and `pnpm launch:coverage` for a seeded Finland-first rehearsal baseline with notification, reputation, and ingest counters.
+- Launch proof chain now includes `pnpm proof:postlaunch` (with `pnpm proof:launch` kept as a compatibility alias), which pulls lint, typecheck, backend tests, browser/UI tests, and builds together before release rehearsal.
 - Release rehearsal now includes `pnpm smoke:release` against a live server after the proof chain passes.
 - If an endpoint changes or a suite is renamed, update this matrix in the same commit.

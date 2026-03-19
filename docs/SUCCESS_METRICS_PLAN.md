@@ -75,7 +75,7 @@ FROM statement_stats, engagement, retention;
 - Pre-release and post-release checkpoints recorded in release notes.
 - Compare week-over-week trend deltas for explicit product-event engagement and retention counts.
 - Record `pnpm seed:launch-rehearsal` and `pnpm launch:coverage` outcomes for each seeded launch dry run.
-- Record `pnpm proof:launch` and `pnpm smoke:release` outcomes at each release rehearsal checkpoint.
+- Record `pnpm proof:postlaunch` and `pnpm smoke:release` outcomes at each release rehearsal checkpoint.
 
 ## Notes and caveats
 
@@ -88,7 +88,20 @@ FROM statement_stats, engagement, retention;
 Run from repo root against the configured `DB_PATH`:
 
 ```bash
-pnpm tsx -e "import { db } from './src/db/client.ts'; const row = db.prepare(\\`\n+SELECT\n+  (SELECT COUNT(*) FROM canonical_promises WHERE deleted_at IS NULL AND public_status = 'public') AS public_canonical_promises,\n+  (SELECT COUNT(*) FROM promise_claims WHERE status = 'pending') AS pending_promise_claims,\n+  (SELECT COUNT(*) FROM promise_claim_audits WHERE action = 'canonized') AS canonized_claim_decisions,\n+  (SELECT COUNT(*) FROM party_stances) AS party_stances,\n+  (SELECT COUNT(*) FROM vote_events) AS vote_events,\n+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM promise_fulfillment_assessments) AS promises_with_fulfillment_assessment,\n+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM canonical_promise_vote_links) AS promises_with_vote_links,\n+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM party_alignment_assessments) AS promises_with_party_alignment\n+\\`).get() as Record<string, unknown>; console.log(JSON.stringify(row, null, 2));"
+pnpm tsx -e "import { db } from './src/db/client.ts'; const row = db.prepare(\`
+SELECT
+  (SELECT COUNT(*) FROM canonical_promises WHERE deleted_at IS NULL AND public_status = 'public') AS public_canonical_promises,
+  (SELECT COUNT(*) FROM promise_claims WHERE status = 'pending') AS pending_promise_claims,
+  (SELECT COUNT(*) FROM promise_claim_audits WHERE action = 'canonized') AS canonized_claim_decisions,
+  (SELECT COUNT(*) FROM party_stances) AS party_stances,
+  (SELECT COUNT(*) FROM vote_events) AS vote_events,
+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM promise_fulfillment_assessments) AS promises_with_fulfillment_assessment,
+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM canonical_promise_vote_links) AS promises_with_vote_links,
+  (SELECT COUNT(DISTINCT canonical_promise_id) FROM party_alignment_assessments) AS promises_with_party_alignment,
+  (SELECT COUNT(*) FROM contributor_reputation) AS contributor_reputation_rows,
+  (SELECT COUNT(*) FROM ingest_runs) AS ingest_runs,
+  (SELECT COUNT(*) FROM ingest_stage_items WHERE status = 'pending') AS pending_ingest_stage_items
+\`).get() as Record<string, unknown>; console.log(JSON.stringify(row, null, 2));"
 ```
 
 Output schema:
@@ -101,6 +114,9 @@ Output schema:
 - `promises_with_fulfillment_assessment`: canonical promises with at least one fulfillment assessment.
 - `promises_with_vote_links`: canonical promises mapped to at least one vote event.
 - `promises_with_party_alignment`: canonical promises with at least one party-line assessment.
+- `contributor_reputation_rows`: contributors with a persisted moderation-outcome reputation row.
+- `ingest_runs`: tracked official-source ingest runs.
+- `pending_ingest_stage_items`: staged official-source records still waiting on operator review.
 
 ## Notification and event snapshot
 
@@ -131,7 +147,7 @@ At each release rehearsal, capture:
 
 - `pnpm seed:launch-rehearsal` pass/fail
 - `pnpm launch:coverage` pass/fail
-- `pnpm proof:launch` pass/fail
+- `pnpm proof:postlaunch` pass/fail
 - `pnpm smoke:release` pass/fail
 - browser/accessibility audit summary
-- snapshot output from the base and expanded accountability metrics
+- snapshot output from the base and expanded accountability metrics, including notification, reputation, and ingest counters
