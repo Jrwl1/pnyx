@@ -102,3 +102,4 @@ Append exactly one line per `PLAN`, `DO`, or `REVIEW` run.
 - [22:16] DO: add ingest run, raw record, and stage-item schema foundations for S-36 (sprint: S-36, links: 1f60793, docs/SPRINT.md)
 - [23:01] DO: add official-source adapters, staged apply or reject flow, and protected `/ops/imports` operator surfaces for S-36 (sprint: S-36, links: 3671e85, docs/SPRINT.md)
 - [23:03] DO: verify `/ops/imports`, ingest replay docs, and end-to-end official-source staging for S-36 (sprint: S-36, links: 1f793e7, docs/SPRINT.md)
+- [23:04] REVIEW: accept S-36 official ingest and staging row (findings: none)

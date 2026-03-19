@@ -17,19 +17,20 @@ Deliver Pnyx as a Finland-first public political accountability product with tru
 - `S-33` is complete in code and review evidence: the public surface now emits route-level title, description, canonical, Open Graph, and Twitter metadata, the frontend build generates `robots.txt` and `sitemap.xml`, and Playwright verifies the metadata on the widened public route set.
 - `S-34` is complete in code and review evidence: append-only `product_events` now cover auth, contribution, moderation, and editorial flows; notification preferences and inbox APIs exist; an authenticated `/notifications` surface is live; metrics and traceability docs now reference explicit event and notification data; and the route is covered in Playwright.
 - `S-35` is complete in code and review evidence: contributor reputation now has schema-backed scoring and backfill helpers, both moderation queues surface submitter risk summaries and high-risk priority filters, and Playwright covers the new queue controls.
+- `S-36` is complete in code and review evidence: Finland-first ingest now has official-source adapters for Eduskunta vote data and an official SDP stance article, raw/stage provenance tables, apply or reject operator controls at `/ops/imports`, a repeatable CLI trigger, regression coverage, and browser verification for the protected ingest route.
 - The launch regression floor remains `pnpm seed:launch-rehearsal`, `pnpm launch:coverage`, `pnpm proof:launch`, and `pnpm smoke:release`.
-- The next implementation gap is now the `S-36` through `S-37` queue: Finland-first ingest and post-launch proof refresh.
-- The active execution queue now starts with `S-36` ingest foundations.
+- The next implementation gap is now `S-37`: post-launch proof refresh and final release evidence.
+- The active execution queue now starts with `S-37` proof refresh.
 
 ## Top blockers
 
-1. Finland-first automated ingest remains ahead in the active queue.
-2. The widened post-launch proof refresh still remains ahead in the active queue.
-3. Remaining post-launch work is now concentrated in import provenance, staging, and final proof refresh rather than public-surface debt.
+1. The widened post-launch proof refresh still remains ahead in the active queue.
+2. Remaining work is now concentrated in proof, seeded coverage, workflow wiring, and release evidence rather than product-surface gaps.
+3. No new ingest blocker remains ahead of the final proof-refresh row.
 
 ## Next actions
 
-1. Execute `S-36` next and keep the row order in `docs/SPRINT.md` deterministic.
+1. Execute `S-37` next and keep the row order in `docs/SPRINT.md` deterministic.
 2. Hold the existing launch proof chain as the regression floor while expanding post-launch coverage.
 3. Re-baseline roadmap, backlog, and release docs only through accepted sprint evidence; do not open a parallel planning system.
 
