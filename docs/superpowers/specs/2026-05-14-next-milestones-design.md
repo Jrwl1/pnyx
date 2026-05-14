@@ -88,6 +88,7 @@ Goal: define, implement, and prove the readiness standard on representative poli
 
 Done means:
 
+- the repo has a first-pass markdown harness map for the new phase, so agents can find product truth, architecture, quality bars, plans, and evidence without reading stale or monolithic docs;
 - readiness states exist in data/API/UI for `Ready`, `Thin But Honest`, and `Not Ready`;
 - politician, party, and promise pages show completeness, freshness, provenance, and missing-data calls to action;
 - ingest/review flows can move identity, membership, promise, party stance, and source records toward readiness;
@@ -124,6 +125,7 @@ Goal: after the product is substantively useful and beta-ready, harden the repo 
 Done means:
 
 - security review covers auth, roles, moderation, rate limits, abuse paths, ingest, stored user content, comments, and admin surfaces;
+- the markdown harness is mechanically checked for freshness, cross-links, ownership, and drift against code reality;
 - codebase health work reduces risk in oversized or tangled modules without changing product behavior;
 - performance and reliability checks cover high-traffic pages, search, discussion, queues, and ingest jobs;
 - operational runbooks, backups, restore rehearsal, monitoring, incident paths, and release proof are refreshed;
@@ -170,12 +172,49 @@ Use mixed automation:
 - all imports keep raw provenance, normalized records, idempotency keys, and audit trails;
 - stale-data detection should create review work rather than silently degrading public trust.
 
+## Frontend Design Workflow
+
+Use the `impeccable` skill for page design, redesign, critique, audit, polish, or UI-shaping work during M9 and M10. It should guide the design of politician, party, promise, discussion, contribution, moderation, and operator surfaces before implementation changes land.
+
+Use `uncodixfy` (the user's "uncodexify" shorthand) whenever editing frontend UI code such as HTML, CSS, React, route components, layouts, or shared UI components. Its job is to prevent generic AI dashboard patterns and keep the UI restrained, human-designed, and consistent with the existing product surface.
+
+Frontend done means the page is not only functionally correct, but browser-verified, readable under real data density, accessible, responsive, and free of generic AI UI tells such as decorative gradients, floating dashboard shells, ornamental copy, over-rounded cards, fake metrics, or unexplained hero sections inside product workflows.
+
+## Markdown Harness System
+
+The next phase should adapt the repository markdown system toward OpenAI's harness engineering principles from "Harness engineering: leveraging Codex in an agent-first world" (`https://openai.com/index/harness-engineering/`).
+
+Key principles to encode:
+
+- `AGENTS.md` should act as a short map and router, not an encyclopedia. Deeper product, architecture, plan, quality, frontend, security, reliability, and evidence material should live in structured docs.
+- Repository-local markdown is the system of record for agent-legible context. Important product decisions, architecture constraints, quality bars, and operating beliefs should not live only in chats or temporary files.
+- Use progressive disclosure: start agents from a stable entry point, then point to specific docs by domain and task type.
+- Treat plans as first-class artifacts with active, completed, and debt-tracking states.
+- Add mechanical checks over docs where possible: freshness dates, cross-links, stale references, required sections, and code/docs drift.
+- Capture human taste and review outcomes as repo rules or docs, then promote repeated rules into linting, scripts, or structural tests.
+- Prefer small indexed docs over one giant instruction file, with clear ownership and verification status.
+
+Suggested target structure for the canonical `PLAN` pass:
+
+- `AGENTS.md`: concise mode router and documentation map, preserving required protocol behavior.
+- `docs/index.md`: entry point for product truth and doc navigation.
+- `docs/product/`: product truth, page-readiness model, participation model, data coverage policy.
+- `docs/architecture/`: backend/frontend/domain boundaries, data model, ingest, moderation, notifications.
+- `docs/plans/active/` and `docs/plans/completed/`: first-class execution plans and completed plan records.
+- `docs/quality/`: quality scorecards, proof commands, known debt, doc freshness checks.
+- `docs/frontend/`: design system, page standards, `impeccable` and `uncodixfy` workflow notes.
+- `docs/security/`: security reviews, threat notes, sensitive paths, audit templates.
+- `docs/generated/`: generated schema/API references that can be refreshed mechanically.
+
+This should be incremental. The existing repo protocol and canonical docs should not be ripped out in one pass. The next `PLAN` should first create the map, move or link only the highest-value documents, and add drift checks before larger cleanup.
+
 ## Proof And Evidence Expectations
 
 Each milestone should include command-level proof and page-level evidence.
 
 Expected proof themes:
 
+- markdown harness checks for indexed docs, freshness, required cross-links, and stale temporary planning notes;
 - data/API tests for readiness states and moderation transitions;
 - ingest fixtures for identity, membership, promise, stance, and source records;
 - browser coverage for politician, party, promise, contribution, discussion, and moderation flows;
