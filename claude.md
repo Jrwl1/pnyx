@@ -1,25 +1,15 @@
-# Claude Code repository contract
+# Claude Code map
 
-`AGENTS.md` is the repository OS contract.
+Claude should use `AGENTS.md` as the entry point.
 
-Claude must read `AGENTS.md` at the start of every session and follow all rules defined there, including:
+There are no repository mode commands. Do not route work through the old protocol command system.
 
-- the mode router (`PLAN` / `DO` / `RUNSPRINT` / `REVIEW`)
-- global rules and clean-tree semantics
-- file caps and sprint schema
-- PLAN, DO, and REVIEW read/write permissions
-- evidence, worklog, and commit rules
+Read in this order for most tasks:
 
-Quick reference:
+1. `AGENTS.md`
+2. `docs/index.md`
+3. The domain truth file linked from `docs/index.md`
+4. The relevant active plan under `docs/plans/active/`
+5. Current code and tests
 
-- Normal chat is the default. If the first line is not `PLAN`, `DO`, `RUNSPRINT`, or `REVIEW`, do not run repo actions unless the user explicitly asks.
-- Canonical planning docs live in `docs/`.
-- Use direct MCP tools when they help. If the active outer policy forbids delegation, do not delegate; if bounded delegation is permitted in another environment, follow the model-selection and RUNSPRINT completion rules in `AGENTS.md`.
-- `docs/WORKLOG.md` is append-only.
-- `docs/DECISIONS.md` is append-only.
-
-See also:
-
-- `AGENTS.md`
-- `docs/CANONICAL.md`
-- `docs/SPRINT.md`
+Old protocol documents are archived at `docs/archive/legacy-protocol/` and are not active instructions.

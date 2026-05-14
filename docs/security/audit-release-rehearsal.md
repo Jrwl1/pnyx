@@ -22,7 +22,7 @@
 
 - `.github/workflows/release-rehearsal.yml`
 - `package.json`
-- `docs/RELEASE_READINESS_RUNBOOK.md`
+- `docs/quality/release-readiness.md` (moved from `docs/RELEASE_READINESS_RUNBOOK.md`)
 
 ## Fix / mitigations
 

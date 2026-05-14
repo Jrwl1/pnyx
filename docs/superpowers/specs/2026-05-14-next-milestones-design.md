@@ -22,7 +22,7 @@ Pnyx should be a Finland-first political accountability product where a normal v
 
 The next milestones should cover current plus previous-term Finnish national and EU-level scope. Current coverage should aim for high completeness. Previous-term coverage should be materially useful and traceable, without pretending to be a perfect historical archive.
 
-The next canonical `PLAN` pass should convert this design into exact sprint thresholds. The default threshold proposal is: every current in-scope national/EU politician and major party has a public page, at least 80% of current in-scope politician pages reach `Ready`, 100% of major party pages reach `Ready`, and previous-term pages are at least `Thin But Honest` unless an identity or source conflict makes them `Not Ready`.
+The harness migration converted this design into exact milestone thresholds. The default threshold proposal is: every current in-scope national/EU politician and major party has a public page, at least 80% of current in-scope politician pages reach `Ready`, 100% of major party pages reach `Ready`, and previous-term pages are at least `Thin But Honest` unless an identity or source conflict makes them `Not Ready`.
 
 ## Page Readiness Model
 
@@ -48,7 +48,7 @@ Ready politician pages include:
 
 - current role and recent national or EU role history;
 - party memberships, including current and previous-term context where applicable;
-- source-backed promises or public positions that satisfy the readiness threshold selected in the canonical `PLAN`;
+- source-backed promises or public positions that satisfy the readiness threshold selected in the active milestone docs;
 - linked party context and party-platform promises where individual promise coverage is sparse;
 - linked vote, stance, or fulfillment evidence when available;
 - provenance and freshness metadata;
@@ -194,9 +194,9 @@ Key principles to encode:
 - Capture human taste and review outcomes as repo rules or docs, then promote repeated rules into linting, scripts, or structural tests.
 - Prefer small indexed docs over one giant instruction file, with clear ownership and verification status.
 
-Suggested target structure for the canonical `PLAN` pass:
+Target structure for the harness migration:
 
-- `AGENTS.md`: concise mode router and documentation map, preserving required protocol behavior.
+- `AGENTS.md`: concise documentation map, with old protocol behavior removed.
 - `docs/index.md`: entry point for product truth and doc navigation.
 - `docs/product/`: product truth, page-readiness model, participation model, data coverage policy.
 - `docs/architecture/`: backend/frontend/domain boundaries, data model, ingest, moderation, notifications.
@@ -206,7 +206,7 @@ Suggested target structure for the canonical `PLAN` pass:
 - `docs/security/`: security reviews, threat notes, sensitive paths, audit templates.
 - `docs/generated/`: generated schema/API references that can be refreshed mechanically.
 
-This should be incremental. The existing repo protocol and canonical docs should not be ripped out in one pass. The next `PLAN` should first create the map, move or link only the highest-value documents, and add drift checks before larger cleanup.
+The live repo now uses this structure incrementally. Old protocol docs are archived, the highest-value documents are moved or linked, and the first drift check is `pnpm docs:check`.
 
 ## Proof And Evidence Expectations
 
@@ -233,4 +233,4 @@ Expected proof themes:
 
 ## Open Planning Consequence
 
-The next formal repo action should be a `PLAN` pass that converts this design into canonical updates for `docs/ROADMAP.md`, `docs/BACKLOG.md`, `docs/SPRINT.md`, `docs/PROJECT_STATUS.md`, and `docs/CANONICAL_REPORT.md`. That pass should also resolve the current M8 doc drift where project status and sprint evidence say M8 is complete while roadmap/backlog still show stale in-progress or unmarked items.
+The next formal repo action should be implementation planning from `docs/plans/active/M9-authority-page-standard.md`. The old M8 doc drift has been resolved by archiving stale root planning files and replacing them with live product and milestone truth files.
