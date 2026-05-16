@@ -19,6 +19,8 @@
     "smoke:release": "tsx -e \"void (async () => { const base=(process.env.SMOKE_BASE_URL ?? 'http://127.0.0.1:3000').replace(/\\/$/, ''); const checks=[['/health',200],['/politicians',200],['/parties',200],['/canonical-promises',200],['/vote-events',200],['/search?q=fi',200]]; for (const [pathname, expected] of checks) { const response = await fetch(base + pathname, { headers: { Accept: 'application/json' } }); if (response.status !== expected) { throw new Error(`${pathname} expected ${expected} got ${response.status}`); } } const authResponse = await fetch(base + '/auth/request-code', { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ email: 'smoke@example.fi' }) }); if (authResponse.status !== 202) { throw new Error(`/auth/request-code expected 202 got ${authResponse.status}`); } console.log(`release smoke passed for ${base}`); })();\"",
     "docs:check": "node scripts/check-doc-harness.mjs",
     "test": "vitest run",
+    "research:pulse": "tsx src/ingest/cli.ts research_watch_pulse_fi",
+    "ollama:health": "tsx src/ingest/research/ollama-health.ts",
     "test:ui": "playwright test",
     "test:e2e": "vitest run -c vitest.e2e.config.ts",
     "frontend:dev": "pnpm --filter pnyx-frontend-v3 dev",

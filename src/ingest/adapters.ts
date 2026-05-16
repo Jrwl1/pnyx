@@ -223,7 +223,11 @@ export const runOfficialSourceImport = async (
     const result =
       config.sourceFamily === "eduskunta_votes"
         ? await stageEduskuntaVote(config.sourceKey, runId, config.voteId, fetchImpl)
-        : await stagePartyStancePage(config.sourceKey, runId, config, fetchImpl);
+        : config.sourceFamily === "research_watch_pulse"
+          ? (() => {
+              throw new Error("research watch pulse import is not implemented yet");
+            })()
+          : await stagePartyStancePage(config.sourceKey, runId, config, fetchImpl);
     markIngestRunStatus(runId, {
       status: "staged",
       fetchedCount: result.fetchedCount,
@@ -246,6 +250,8 @@ export const listOfficialSourceSummaries = (): Array<{ sourceKey: string; source
     label:
       source.sourceFamily === "eduskunta_votes"
         ? `Eduskunta vote ${source.voteId}`
+        : source.sourceFamily === "research_watch_pulse"
+          ? "Research watch pulse FI"
         : `${source.partyId.toUpperCase()} party stance page`
   }));
 };

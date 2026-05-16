@@ -141,4 +141,20 @@ describe("ingest", () => {
       | undefined;
     expect(partyStance).toMatchObject({ partyId: "sdp", dateSaid: "2025-09-04" });
   });
+
+  it("lists the research watch pulse import source", async () => {
+    const moderator = await authHeaders("research-source-mod", "moderator");
+
+    const response = await request(app).get("/ops/import-sources").set(moderator).expect(200);
+
+    expect(response.body.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          sourceKey: "research_watch_pulse_fi",
+          sourceFamily: "research_watch_pulse",
+          label: "Research watch pulse FI"
+        })
+      ])
+    );
+  });
 });
