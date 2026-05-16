@@ -7,6 +7,7 @@ import { authHeaders } from "./helpers/auth.js";
 import { app } from "../src/server.js";
 import { db } from "../src/db/client.js";
 import { addRawRecord, addStageItem, getIngestStageItemById, markIngestStageItemNeedsSource } from "../src/db/ingest.js";
+import { applyIngestStageItem } from "../src/ingest/apply.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -15,6 +16,7 @@ const clearAllTables = (): void => {
   db.exec("DELETE FROM ingest_raw_records");
   db.exec("DELETE FROM ingest_runs");
   db.exec("DELETE FROM party_stances");
+  db.exec("DELETE FROM statements");
   db.exec("DELETE FROM politician_vote_records");
   db.exec("DELETE FROM vote_events");
   db.exec("DELETE FROM party_aliases");
@@ -197,6 +199,135 @@ describe("ingest", () => {
       decidedBy: "moderator",
       errorMessage: "Needs stronger source confirmation before publication"
     });
+  });
+
+  it("applies reviewed politician statement stage items from research candidates without auto-applying during staging", () => {
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Uusimaa", "Prime Minister", "petteri-orpo", "system");
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-apply-1",
+      sourceUrl: "https://valtioneuvosto.fi/example",
+      payload: { ok: true }
+    });
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-apply-1",
+      normalized: {
+        person: "Petteri Orpo",
+        claimText: "The government will reduce debt.",
+        sourceUrl: "https://valtioneuvosto.fi/example",
+        publishedAt: "2026-05-16",
+        reviewStatus: "reviewed"
+      }
+    });
+    const duplicateStageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-apply-duplicate",
+      normalized: {
+        person: "Petteri Orpo",
+        claimText: "The government will reduce debt.",
+        sourceUrl: "https://valtioneuvosto.fi/example",
+        publishedAt: "2026-05-16",
+        reviewStatus: "reviewed"
+      }
+    });
+
+    expect(Number(db.prepare("SELECT COUNT(*) FROM statements").pluck().get())).toBe(0);
+
+    const result = applyIngestStageItem(stageItemId, "moderator");
+    const duplicateResult = applyIngestStageItem(duplicateStageItemId, "moderator");
+
+    expect(result.entityKind).toBe("statement");
+    expect(duplicateResult).toEqual(result);
+    expect(Number(db.prepare("SELECT COUNT(*) FROM statements WHERE verification_status = 'verified'").pluck().get())).toBe(1);
+  });
+
+  it("applies reviewed politician statement stage items from planned normalized shape", () => {
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Uusimaa", "Prime Minister", "petteri-orpo", "system");
+    const politicianId = db.prepare("SELECT id FROM politicians WHERE name = ?").pluck().get("Petteri Orpo") as number;
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-apply-planned",
+      sourceUrl: "https://valtioneuvosto.fi/planned",
+      payload: { ok: true }
+    });
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-apply-planned",
+      normalized: {
+        politicianId,
+        politicianName: "Petteri Orpo",
+        statementText: "The budget will prioritize employment.",
+        sourceUrl: "https://valtioneuvosto.fi/planned",
+        dateSaid: "2026-05-16",
+        reviewStatus: "reviewed"
+      }
+    });
+
+    const result = applyIngestStageItem(stageItemId, "moderator");
+
+    expect(result.entityKind).toBe("statement");
+    expect(Number(db.prepare("SELECT COUNT(*) FROM statements WHERE body = ?").pluck().get("The budget will prioritize employment."))).toBe(1);
+  });
+
+  it("rejects unreviewed politician statement stage item apply", () => {
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Uusimaa", "Prime Minister", "petteri-orpo", "system");
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-unreviewed",
+      sourceUrl: "https://valtioneuvosto.fi/unreviewed",
+      payload: { ok: true }
+    });
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-unreviewed",
+      normalized: {
+        politicianName: "Petteri Orpo",
+        statementText: "The government will reduce debt.",
+        sourceUrl: "https://valtioneuvosto.fi/unreviewed",
+        dateSaid: "2026-05-16",
+        reviewStatus: "pending"
+      }
+    });
+
+    expect(() => applyIngestStageItem(stageItemId, "moderator")).toThrow("politician statement must be reviewed before apply");
+    expect(Number(db.prepare("SELECT COUNT(*) FROM statements").pluck().get())).toBe(0);
   });
 
   it("deduplicates stage items within a single run only", () => {

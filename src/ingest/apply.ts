@@ -1,5 +1,7 @@
 // WHAT IT DO? Applies or rejects staged ingest items into the live accountability tables through explicit operator actions.
 
+import crypto from "node:crypto";
+
 import { db } from "../db/client.js";
 import { getIngestStageItemById, updateIngestStageItem } from "../db/ingest.js";
 import { getPartyById } from "../db/party-graph.js";
@@ -7,7 +9,27 @@ import { getVoteEventById } from "../db/trust-records.js";
 
 type ApplyResult = { entityKind: string; entityId: string };
 
+type PoliticianStatementStage = {
+  politicianId?: number;
+  politicianName?: string;
+  statementText?: string;
+  dateSaid?: string;
+  person?: string;
+  claimText?: string;
+  publishedAt?: string;
+  sourceUrl: string;
+  reviewStatus: string;
+};
+
 const parseJson = <T>(value: string): T => JSON.parse(value) as T;
+
+const requireTrimmed = (value: string | undefined, label: string): string => {
+  const trimmed = value?.trim() ?? "";
+  if (!trimmed) {
+    throw new Error(`politician statement requires ${label}`);
+  }
+  return trimmed;
+};
 
 export const applyIngestStageItem = (stageItemId: number, actorId: string): ApplyResult => {
   const stageItem = getIngestStageItemById(stageItemId);
@@ -111,6 +133,54 @@ export const applyIngestStageItem = (stageItemId: number, actorId: string): Appl
         errorMessage: null
       });
       return { entityKind: "vote_record", entityId: String(voteRecordId) };
+    }
+
+    if (stageItem.stageType === "politician_statement") {
+      const normalized = parseJson<PoliticianStatementStage>(stageItem.normalizedJson);
+      if (normalized.reviewStatus !== "reviewed") {
+        throw new Error("politician statement must be reviewed before apply");
+      }
+
+      const politicianName = normalized.politicianName?.trim() || normalized.person?.trim();
+      const statementText = requireTrimmed(normalized.statementText ?? normalized.claimText, "statementText");
+      const sourceUrl = requireTrimmed(normalized.sourceUrl, "sourceUrl");
+      const dateSaid = requireTrimmed(normalized.dateSaid ?? normalized.publishedAt, "dateSaid");
+
+      const politician = normalized.politicianId
+        ? (db
+            .prepare("SELECT id FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+            .get(normalized.politicianId) as { id: number } | undefined)
+        : politicianName
+          ? (db
+              .prepare("SELECT id FROM politicians WHERE name = ? AND deleted_at IS NULL LIMIT 1")
+              .get(politicianName) as { id: number } | undefined)
+          : undefined;
+      if (!politician) {
+        throw new Error("politician statement requires an existing politician");
+      }
+
+      const normalizedBodyHash = crypto.createHash("sha256").update(statementText.toLowerCase()).digest("hex");
+      const statementFingerprint = crypto.createHash("sha256").update(`${politician.id}|${normalizedBodyHash}|${sourceUrl}`).digest("hex");
+      const existing = db
+        .prepare("SELECT id FROM statements WHERE statement_fingerprint = ? AND deleted_at IS NULL LIMIT 1")
+        .get(statementFingerprint) as { id: number } | undefined;
+      const statementId =
+        existing?.id ??
+        ((db
+          .prepare(
+            "INSERT INTO statements (politician_id, source_url, body, date_said, normalized_body_hash, statement_fingerprint, verification_status, author_id) VALUES (?, ?, ?, ?, ?, ?, 'verified', ?)"
+          )
+          .run(politician.id, sourceUrl, statementText, dateSaid, normalizedBodyHash, statementFingerprint, actorId).lastInsertRowid as number));
+
+      updateIngestStageItem(stageItemId, {
+        status: "applied",
+        appliedEntityKind: "statement",
+        appliedEntityId: String(statementId),
+        decidedBy: actorId,
+        decidedAt: new Date().toISOString(),
+        errorMessage: null
+      });
+      return { entityKind: "statement", entityId: String(statementId) };
     }
 
     const normalized = parseJson<{
