@@ -105,12 +105,21 @@ export interface IngestStageItemRecord {
   id: number;
   runId: number;
   rawRecordId: number;
-  stageType: "party_stance" | "vote_event" | "vote_record";
+  stageType:
+    | "party_stance"
+    | "vote_event"
+    | "vote_record"
+    | "coverage_party_target"
+    | "coverage_politician_target"
+    | "canonical_promise"
+    | "fulfillment_assessment"
+    | "party_alignment"
+    | "politician_statement";
   sourceKey: string;
   dedupeKey: string;
   normalizedJson: string;
   normalized: Record<string, unknown>;
-  status: "pending" | "applied" | "rejected" | "failed";
+  status: "pending" | "applied" | "rejected" | "failed" | "needs_source";
   appliedEntityKind: string | null;
   appliedEntityId: string | null;
   decidedBy: string | null;

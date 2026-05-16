@@ -6,6 +6,7 @@ import request from "supertest";
 import { authHeaders } from "./helpers/auth.js";
 import { app } from "../src/server.js";
 import { db } from "../src/db/client.js";
+import { addRawRecord, addStageItem, getIngestStageItemById, markIngestStageItemNeedsSource } from "../src/db/ingest.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -156,5 +157,45 @@ describe("ingest", () => {
         })
       ])
     );
+  });
+
+  it("stores politician statement stage items and marks candidates as needing source", () => {
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-1",
+      sourceUrl: "https://valtioneuvosto.fi/example",
+      payload: { ok: true }
+    });
+
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-1",
+      normalized: {
+        politicianName: "Petteri Orpo",
+        statementText: "The government will reduce debt.",
+        sourceUrl: "https://valtioneuvosto.fi/example",
+        dateSaid: "2026-05-16",
+        reviewStatus: "pending"
+      }
+    });
+
+    expect(getIngestStageItemById(stageItemId)?.stageType).toBe("politician_statement");
+
+    markIngestStageItemNeedsSource(stageItemId, "moderator");
+
+    expect(getIngestStageItemById(stageItemId)).toMatchObject({
+      status: "needs_source",
+      decidedBy: "moderator",
+      errorMessage: "Needs stronger source confirmation before publication"
+    });
   });
 });

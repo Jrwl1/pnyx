@@ -23,11 +23,20 @@ export type IngestStageItemRow = {
   id: number;
   runId: number;
   rawRecordId: number;
-  stageType: "party_stance" | "vote_event" | "vote_record";
+  stageType:
+    | "party_stance"
+    | "vote_event"
+    | "vote_record"
+    | "coverage_party_target"
+    | "coverage_politician_target"
+    | "canonical_promise"
+    | "fulfillment_assessment"
+    | "party_alignment"
+    | "politician_statement";
   sourceKey: string;
   dedupeKey: string;
   normalizedJson: string;
-  status: "pending" | "applied" | "rejected" | "failed";
+  status: "pending" | "applied" | "rejected" | "failed" | "needs_source";
   appliedEntityKind: string | null;
   appliedEntityId: string | null;
   decidedBy: string | null;
@@ -106,7 +115,7 @@ export const addRawRecord = (input: {
 export const addStageItem = (input: {
   runId: number;
   rawRecordId: number;
-  stageType: "party_stance" | "vote_event" | "vote_record";
+  stageType: IngestStageItemRow["stageType"];
   sourceKey: string;
   dedupeKey: string;
   normalized: unknown;
@@ -276,6 +285,23 @@ export const updateIngestStageItem = (
     input.errorMessage ?? current.errorMessage,
     stageItemId
   );
+};
+
+export const markIngestStageItemNeedsSource = (stageItemId: number, actorId: string): void => {
+  const stageItem = getIngestStageItemById(stageItemId);
+  if (!stageItem) {
+    throw new Error("stage item not found");
+  }
+  if (stageItem.status !== "pending") {
+    throw new Error("stage item is not pending");
+  }
+
+  updateIngestStageItem(stageItemId, {
+    status: "needs_source",
+    decidedBy: actorId,
+    decidedAt: new Date().toISOString(),
+    errorMessage: "Needs stronger source confirmation before publication"
+  });
 };
 
 export const getIngestCoverage = (): {
