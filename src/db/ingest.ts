@@ -339,21 +339,23 @@ export const refreshIngestRunCounts = (runId: number): void => {
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ?) AS stagedCount,
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'applied') AS appliedCount,
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'pending') AS pendingCount,
+        (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'needs_source') AS needsSourceCount,
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'failed') AS failedCount
        `
     )
-    .get(runId, runId, runId, runId, runId) as {
+    .get(runId, runId, runId, runId, runId, runId) as {
     fetchedCount: number;
     stagedCount: number;
     appliedCount: number;
     pendingCount: number;
+    needsSourceCount: number;
     failedCount: number;
   };
 
   const status: IngestRunRow["status"] =
     counts.failedCount > 0
       ? "failed"
-      : counts.pendingCount > 0
+      : counts.pendingCount > 0 || counts.needsSourceCount > 0
         ? "staged"
         : counts.appliedCount > 0
           ? "applied"

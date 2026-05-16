@@ -239,6 +239,48 @@ describe("ingest", () => {
     expect(getIngestStageItemById(stageItemId)?.status).toBe("needs_source");
   });
 
+  it("keeps runs with only needs_source stage items in staged review", async () => {
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "fulfillment_assessment",
+      sourceRecordKey: "needs-source-status-1",
+      sourceUrl: "https://yle.fi/a/74-20000001",
+      payload: { ok: true }
+    });
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "fulfillment_assessment",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:needs-source-status-1",
+      normalized: {
+        status: "in_progress",
+        summary: "Article-only fulfillment signal.",
+        sourceUrl: "https://yle.fi/a/74-20000001",
+        sourceNote: "Article source",
+        evidenceDate: "2026-05-16",
+        reviewStatus: "pending",
+        needsOfficialConfirmation: true
+      }
+    });
+    const moderator = await authHeaders("needs-source-status-mod", "moderator");
+
+    await request(app).post(`/ops/stage-items/${stageItemId}/needs-source`).set(moderator).expect(200);
+
+    const response = await request(app).get(`/ops/import-runs/${runId}`).set(moderator).expect(200);
+    expect(response.body.run).toMatchObject({
+      status: "staged",
+      fetchedCount: 1,
+      stagedCount: 1,
+      appliedCount: 0
+    });
+  });
+
   it("applies reviewed politician statement stage items from research candidates without auto-applying during staging", () => {
     db.prepare(
       "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"

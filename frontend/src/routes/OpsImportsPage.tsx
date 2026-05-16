@@ -67,7 +67,7 @@ export const OpsImportsPage = (): ReactElement => {
   const [selectedRun, setSelectedRun] = useState<IngestRunRecord | null>(null);
   const [stageItems, setStageItems] = useState<IngestStageItemRecord[]>([]);
 
-  const load = async (): Promise<void> => {
+  const load = async (preferredRunIdOverride?: number | null): Promise<void> => {
     if (!session) {
       return;
     }
@@ -83,7 +83,7 @@ export const OpsImportsPage = (): ReactElement => {
       setRuns(runItems);
       setCoverage(coverageResponse);
 
-      const preferredRunId = selectedRunId ?? runItems[0]?.id ?? null;
+      const preferredRunId = preferredRunIdOverride ?? selectedRunId ?? runItems[0]?.id ?? null;
       if (preferredRunId) {
         const detail = await getIngestRunById(session.token, preferredRunId);
         setSelectedRunId(preferredRunId);
@@ -104,19 +104,27 @@ export const OpsImportsPage = (): ReactElement => {
     void load();
   }, [session]);
 
-  const runAction = async (operation: () => Promise<void>, successMessage: string): Promise<void> => {
+  const runAction = async (
+    operation: () => Promise<void>,
+    successMessage: string,
+    refreshRunId: number | null = selectedRunId
+  ): Promise<void> => {
     setSubmitting(true);
     setError(null);
     setMessage(null);
     try {
       await operation();
       setMessage(successMessage);
-      await load();
+      await load(refreshRunId);
     } catch (err) {
       setError((err as Error).message || "Unable to complete import action.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const openRun = async (runId: number): Promise<void> => {
+    await runAction(async () => undefined, `Loaded run #${runId}.`, runId);
   };
 
   if (!session) {
@@ -208,12 +216,7 @@ export const OpsImportsPage = (): ReactElement => {
                     {run.status} · fetched {run.fetchedCount} · staged {run.stagedCount} · applied {run.appliedCount}
                   </p>
                   <p className="meta-line">Created {formatDateTime(run.createdAt)}</p>
-                  <button className="button button-secondary" type="button" onClick={() => void runAction(async () => {
-                    const detail = await getIngestRunById(session.token, run.id);
-                    setSelectedRunId(run.id);
-                    setSelectedRun(detail.run);
-                    setStageItems(detail.stageItems);
-                  }, `Loaded run #${run.id}.`)}>
+                  <button className="button button-secondary" type="button" onClick={() => void openRun(run.id)}>
                     Open run
                   </button>
                 </li>
