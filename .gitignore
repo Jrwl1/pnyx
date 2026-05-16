@@ -10,3 +10,4 @@ data/research/*
 test-results/
 .audit/
 .dev-server.log
+.serena/
