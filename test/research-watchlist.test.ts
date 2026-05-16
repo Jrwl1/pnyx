@@ -87,7 +87,7 @@ describe("research watchlist", () => {
     expect(() => loadResearchWatchlist(writeWatchlist({ politicians: undefined }))).toThrow(/politicians must be an array/i);
     expect(() => loadResearchWatchlist(writeWatchlist({ politicians: "Petteri Orpo" }))).toThrow(/politicians must be an array/i);
     expect(() => loadResearchWatchlist(writeWatchlist({ seedUrls: undefined }))).toThrow(/seedUrls must be an array/i);
-    expect(() => loadResearchWatchlist(writeWatchlist({ seedUrls: "https:\/\/yle.fi" }))).toThrow(/seedUrls must be an array/i);
+    expect(() => loadResearchWatchlist(writeWatchlist({ seedUrls: "https://yle.fi" }))).toThrow(/seedUrls must be an array/i);
   });
 
   it("rejects invalid numeric limits", () => {
