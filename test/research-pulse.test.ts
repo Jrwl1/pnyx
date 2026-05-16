@@ -1,8 +1,131 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { db } from "../src/db/client.js";
+import { runOfficialSourceImport } from "../src/ingest/adapters.js";
 import { buildResearchPrompt, normalizeResearchCandidates, researchCandidateDedupeKey } from "../src/ingest/research/extraction.js";
 
+const originalFetch = globalThis.fetch;
+
+const clearResearchPulseTables = (): void => {
+  db.exec("DELETE FROM ingest_stage_items");
+  db.exec("DELETE FROM ingest_raw_records");
+  db.exec("DELETE FROM ingest_runs");
+  db.exec("DELETE FROM statements");
+};
+
 describe("research pulse extraction", () => {
+  beforeEach(() => {
+    clearResearchPulseTables();
+  });
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it("dispatches the research watch pulse through official import without auto-publishing statements", async () => {
+    const generateSnapshots: Array<{ rawCount: number; stageCount: number }> = [];
+    const prompts: string[] = [];
+
+    globalThis.fetch = vi.fn(async (input: string | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.endsWith("/api/generate")) {
+        generateSnapshots.push({
+          rawCount: Number(db.prepare("SELECT COUNT(*) FROM ingest_raw_records WHERE source_family = 'research_watch_pulse'").pluck().get()),
+          stageCount: Number(db.prepare("SELECT COUNT(*) FROM ingest_stage_items WHERE source_key = 'research_watch_pulse_fi'").pluck().get())
+        });
+        const body = JSON.parse(String(init?.body ?? "{}")) as { prompt?: string };
+        prompts.push(body.prompt ?? "");
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify({
+              candidates: [
+                {
+                  candidateType: "politician_statement",
+                  person: "Petteri Orpo",
+                  partyKey: "kok",
+                  issue: "Debt",
+                  claimText: "The government will reduce debt.",
+                  sourceUrl: "https://model.example/ignored",
+                  sourceType: "article",
+                  publishedAt: "2020-01-01",
+                  evidenceQuote: "The government will reduce debt.",
+                  confidence: 0.91,
+                  needsOfficialConfirmation: false
+                }
+              ]
+            }),
+            done: true
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (url.includes("api.hankeikkuna.fi")) {
+        return new Response(JSON.stringify({ title: "Government project", description: "The government will reduce debt." }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(
+        `
+        <html>
+          <head>
+            <title>Government programme</title>
+            <meta property="article:published_time" content="2026-05-16T10:00:00+03:00" />
+          </head>
+          <body>
+            <script>window.noise = true;</script>
+            <main>
+              <h1>Government programme</h1>
+              <p>The government will reduce debt.</p>
+            </main>
+          </body>
+        </html>
+        `,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
+    }) as typeof fetch;
+
+    const result = await runOfficialSourceImport("research_watch_pulse_fi", "research-test");
+
+    const runs = db.prepare("SELECT id, status, fetched_count AS fetchedCount, staged_count AS stagedCount FROM ingest_runs").all() as Array<{
+      id: number;
+      status: string;
+      fetchedCount: number;
+      stagedCount: number;
+    }>;
+    const rawRecords = db
+      .prepare("SELECT id, payload_json AS payloadJson FROM ingest_raw_records WHERE source_family = 'research_watch_pulse' ORDER BY id")
+      .all() as Array<{ id: number; payloadJson: string }>;
+    const stageItems = db
+      .prepare("SELECT raw_record_id AS rawRecordId, stage_type AS stageType, normalized_json AS normalizedJson FROM ingest_stage_items ORDER BY id")
+      .all() as Array<{ rawRecordId: number; stageType: string; normalizedJson: string }>;
+
+    expect(result.runId).toBe(runs[0]?.id);
+    expect(runs).toEqual([{ id: result.runId, status: "staged", fetchedCount: 2, stagedCount: 2 }]);
+    expect(generateSnapshots[0]).toEqual({ rawCount: 1, stageCount: 0 });
+    expect(rawRecords).toHaveLength(2);
+    expect(stageItems).toHaveLength(2);
+    expect(stageItems.map((item) => item.stageType)).toEqual(["politician_statement", "politician_statement"]);
+    expect(stageItems.every((item) => rawRecords.some((record) => record.id === item.rawRecordId))).toBe(true);
+    expect(JSON.parse(rawRecords[0].payloadJson)).toMatchObject({
+      title: "Government programme",
+      sourceUrl: "https://valtioneuvosto.fi/en/governments/government-programme",
+      publishedAt: "2026-05-16"
+    });
+    expect(prompts[0]).toContain("The government will reduce debt.");
+    expect(prompts[0]).not.toContain("<script>");
+    expect(JSON.parse(stageItems[0].normalizedJson)).toMatchObject({
+      sourceUrl: "https://valtioneuvosto.fi/en/governments/government-programme",
+      sourceType: "official",
+      publishedAt: "2026-05-16",
+      reviewStatus: "pending",
+      llmModel: "llama3.1:8b"
+    });
+    expect(Number(db.prepare("SELECT COUNT(*) FROM statements").pluck().get())).toBe(0);
+  });
+
   it("builds a prompt that requires JSON candidates and source quotes", () => {
     const prompt = buildResearchPrompt({
       title: "Prime minister speech",

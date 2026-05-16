@@ -1,6 +1,7 @@
 // WHAT IT DO? Fetches and normalizes the first supported official Finland-first source set into raw and staged ingest records.
 
 import { addRawRecord, addStageItem, createIngestRun, markIngestRunStatus } from "../db/ingest.js";
+import { runResearchWatchPulse } from "./research/pulse.js";
 import { getSupportedIngestSource, listSupportedIngestSources, type SupportedIngestSourceKey } from "./sources.js";
 
 type FetchLike = typeof fetch;
@@ -224,9 +225,14 @@ export const runOfficialSourceImport = async (
       config.sourceFamily === "eduskunta_votes"
         ? await stageEduskuntaVote(config.sourceKey, runId, config.voteId, fetchImpl)
         : config.sourceFamily === "research_watch_pulse"
-          ? (() => {
-              throw new Error("research watch pulse import is not implemented yet");
-            })()
+          ? await runResearchWatchPulse({
+              runId,
+              sourceKey: config.sourceKey,
+              watchlistPath: config.path,
+              ollamaEndpoint: config.ollamaUrl,
+              ollamaModel: config.ollamaModel,
+              fetchImpl
+            })
           : await stagePartyStancePage(config.sourceKey, runId, config, fetchImpl);
     markIngestRunStatus(runId, {
       status: "staged",
