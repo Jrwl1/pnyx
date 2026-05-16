@@ -10,11 +10,49 @@ import {
   getIngestRunById,
   listIngestRuns,
   listIngestSources,
+  markIngestStageItemNeedsSource,
   rejectIngestStageItem,
   triggerIngestRun
 } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 import type { IngestRunRecord, IngestSourceSummary, IngestStageItemRecord } from "../types";
+
+const toMetadataObject = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+};
+
+const renderResearchMetadata = (normalized: unknown): ReactElement | null => {
+  const metadata = toMetadataObject(normalized);
+  const sourceTier = metadata?.sourceTier ?? metadata?.sourceType;
+  const hasReviewMetadata =
+    sourceTier !== undefined ||
+    metadata?.confidence !== undefined ||
+    metadata?.needsOfficialConfirmation !== undefined;
+
+  if (!hasReviewMetadata) {
+    return null;
+  }
+
+  return (
+    <div className="stack-xs">
+      {sourceTier !== undefined ? <p className="meta-line">Source tier: {String(sourceTier)}</p> : null}
+      {metadata?.confidence !== undefined ? <p className="meta-line">Confidence: {String(metadata.confidence)}</p> : null}
+      {metadata?.needsOfficialConfirmation !== undefined ? (
+        <p className="meta-line">
+          Official confirmation:{" "}
+          {metadata.needsOfficialConfirmation === true
+            ? "Needed"
+            : metadata.needsOfficialConfirmation === false
+              ? "Not flagged"
+              : String(metadata.needsOfficialConfirmation)}
+        </p>
+      ) : null}
+    </div>
+  );
+};
 
 export const OpsImportsPage = (): ReactElement => {
   const { session } = useAuth();
@@ -206,6 +244,7 @@ export const OpsImportsPage = (): ReactElement => {
                   <pre className="meta-line" style={{ whiteSpace: "pre-wrap" }}>
                     {JSON.stringify(item.normalized, null, 2)}
                   </pre>
+                  {renderResearchMetadata(item.normalized)}
                   <div className="card-link-row">
                     {item.status === "pending" ? (
                       <>
@@ -232,6 +271,18 @@ export const OpsImportsPage = (): ReactElement => {
                           }
                         >
                           Reject
+                        </button>
+                        <button
+                          className="button button-secondary"
+                          type="button"
+                          disabled={submitting}
+                          onClick={() =>
+                            void runAction(async () => {
+                              await markIngestStageItemNeedsSource(session.token, item.id);
+                            }, `Marked stage item #${item.id} as needing stronger source confirmation.`)
+                          }
+                        >
+                          Needs source
                         </button>
                       </>
                     ) : null}

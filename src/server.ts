@@ -19,6 +19,7 @@ import {
   getIngestStageItemById,
   listIngestRuns,
   listIngestStageItems,
+  markIngestStageItemNeedsSource,
   refreshIngestRunCounts
 } from "./db/ingest.js";
 import {
@@ -266,6 +267,11 @@ const proposalAssistLimiter = createRateLimiter({
 const voteLimiter = createRateLimiter({
   name: "vote",
   max: readPositiveIntEnv("RATE_LIMIT_VOTE_MAX", 120),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const ingestStageReviewLimiter = createRateLimiter({
+  name: "ingest-stage-review",
+  max: readPositiveIntEnv("RATE_LIMIT_INGEST_STAGE_REVIEW_MAX", 80),
   windowMs: RATE_LIMIT_WINDOW_MS
 });
 
@@ -902,6 +908,28 @@ app.post("/ops/stage-items/:id/reject", requireRole("moderator"), (req, res) => 
     res.json({ ok: true });
   } catch (err) {
     res.status(409).json({ error: (err as Error).message || "unable to reject stage item" });
+  }
+});
+
+app.post("/ops/stage-items/:id/needs-source", requireRole("moderator"), ingestStageReviewLimiter, (req, res) => {
+  const stageItemId = Number(req.params.id);
+  if (!Number.isInteger(stageItemId) || stageItemId <= 0) {
+    res.status(400).json({ error: "invalid stage item id" });
+    return;
+  }
+
+  const stageItem = getIngestStageItemById(stageItemId);
+  if (!stageItem) {
+    res.status(404).json({ error: "stage item not found" });
+    return;
+  }
+
+  try {
+    markIngestStageItemNeedsSource(stageItemId, req.auth.userId ?? "moderation");
+    refreshIngestRunCounts(stageItem.runId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(409).json({ error: (err as Error).message || "unable to mark stage item as needing source" });
   }
 });
 

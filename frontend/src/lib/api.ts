@@ -242,6 +242,13 @@ export const rejectIngestStageItem = async (token: string, stageItemId: number):
   });
 };
 
+export const markIngestStageItemNeedsSource = async (token: string, stageItemId: number): Promise<{ ok: true }> => {
+  return fetchJson<{ ok: true }>(`/ops/stage-items/${stageItemId}/needs-source`, {
+    method: "POST",
+    token
+  });
+};
+
 export const submitPoliticianProposal = async (
   token: string,
   input: PoliticianProposalInput
