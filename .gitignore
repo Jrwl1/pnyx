@@ -1,6 +1,11 @@
 node_modules
 dist
 data
+!data/
+data/*
+!data/research/
+data/research/*
+!data/research/*.json
 *.tsbuildinfo
 .audit/
 .dev-server.log

@@ -1,0 +1,71 @@
+{
+  "sourceKey": "research_watch_pulse_fi",
+  "sourceFamily": "research_watch_pulse",
+  "checkedAt": "2026-05-16",
+  "politicians": [
+    {
+      "targetKey": "petteri-orpo",
+      "name": "Petteri Orpo",
+      "partyKey": "kok",
+      "keywords": ["government programme", "budget", "debt", "tax", "employment", "hallitusohjelma", "talous", "velka", "vero", "tyollisyys"]
+    },
+    {
+      "targetKey": "riikka-purra",
+      "name": "Riikka Purra",
+      "partyKey": "ps",
+      "keywords": ["budget", "tax", "debt", "spending cuts", "talousarvio", "vero", "velka", "leikkaukset"]
+    },
+    {
+      "targetKey": "mari-rantanen",
+      "name": "Mari Rantanen",
+      "partyKey": "ps",
+      "keywords": ["interior security", "immigration", "border", "police", "sisainen turvallisuus", "maahanmuutto", "raja", "poliisi"]
+    },
+    {
+      "targetKey": "anders-adlercreutz",
+      "name": "Anders Adlercreutz",
+      "partyKey": "rkp",
+      "keywords": ["education", "culture", "language", "schools", "koulutus", "kulttuuri", "kieli", "koulut"]
+    },
+    {
+      "targetKey": "sari-multala",
+      "name": "Sari Multala",
+      "partyKey": "kok",
+      "keywords": ["climate", "environment", "housing", "construction", "biodiversity", "ilmasto", "ymparisto", "asuminen", "rakentaminen", "luonnon monimuotoisuus"]
+    }
+  ],
+  "officialDomains": [
+    "valtioneuvosto.fi",
+    "intermin.fi",
+    "vm.fi",
+    "okm.fi",
+    "ym.fi",
+    "eduskunta.fi",
+    "avoindata.eduskunta.fi",
+    "finlex.fi",
+    "data.finlex.fi",
+    "hankeikkuna.fi",
+    "api.hankeikkuna.fi",
+    "julkaisut.valtioneuvosto.fi"
+  ],
+  "articleDomains": ["yle.fi", "hs.fi", "sttinfo.fi", "mtvuutiset.fi"],
+  "partyDomains": ["kokoomus.fi", "perussuomalaiset.fi", "rkp.fi", "sfp.fi"],
+  "seedUrls": [
+    {
+      "url": "https://valtioneuvosto.fi/en/governments/government-programme",
+      "sourceTier": "official",
+      "topic": "government programme"
+    },
+    {
+      "url": "https://api.hankeikkuna.fi/api/v2/projects",
+      "sourceTier": "official",
+      "topic": "government projects"
+    }
+  ],
+  "limits": {
+    "fetchTimeoutMs": 10000,
+    "maxResponseBytes": 1000000,
+    "maxDocumentsPerPulse": 30,
+    "minimumConfidence": 0.72
+  }
+}
