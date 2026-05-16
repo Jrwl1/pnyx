@@ -1,6 +1,6 @@
 # Verification
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 ## Standard proof commands
 
@@ -18,6 +18,8 @@ Use the narrowest command set that proves the change, then broaden for high-risk
 - Rehearsal coverage: `pnpm launch:coverage`
 - Live smoke: `SMOKE_BASE_URL=http://127.0.0.1:<port> pnpm smoke:release`
 - Harness docs: `pnpm docs:check`
+- Research pulse proof: `pnpm test -- test/research-watchlist.test.ts test/research-ollama.test.ts test/research-pulse.test.ts test/ingest.test.ts`
+- Local Ollama health, when Ollama is installed: `pnpm ollama:health`
 
 ## Evidence expectations
 

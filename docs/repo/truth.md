@@ -1,6 +1,6 @@
 # Repository truth
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 ## Purpose
 
@@ -32,6 +32,8 @@ This is verified by `package.json`, `frontend/package.json`, `src/server.ts`, `f
 - `pnpm launch:coverage`: verify rehearsal coverage.
 - `pnpm smoke:release`: live backend smoke check.
 - `pnpm ingest:run`: run official-source ingest CLI.
+- `pnpm research:pulse`: run the local research watch pulse through the ingest CLI.
+- `pnpm ollama:health`: verify the local Ollama endpoint and extraction model.
 
 ## Current working model
 
