@@ -80,13 +80,14 @@ export const addRawRecord = (input: {
     .prepare(
       `SELECT id
        FROM ingest_raw_records
-       WHERE source_family = ?
+       WHERE run_id = ?
+         AND source_family = ?
          AND source_key = ?
          AND record_type = ?
          AND source_record_key = ?
          AND payload_hash = ?`
     )
-    .get(input.sourceFamily, input.sourceKey, input.recordType, input.sourceRecordKey, payloadHash) as { id: number } | undefined;
+    .get(input.runId, input.sourceFamily, input.sourceKey, input.recordType, input.sourceRecordKey, payloadHash) as { id: number } | undefined;
 
   if (existing) {
     return existing.id;

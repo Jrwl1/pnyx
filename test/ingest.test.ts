@@ -262,6 +262,62 @@ describe("ingest", () => {
     });
   });
 
+  it("keeps identical raw records scoped to their ingest run when cascading deletes", () => {
+    db.pragma("foreign_keys = ON");
+    try {
+      const firstRunId = db
+        .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+        .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+      const secondRunId = db
+        .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+        .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+      const sharedRawRecord = {
+        sourceFamily: "research_watch_pulse",
+        sourceKey: "research_watch_pulse_fi",
+        recordType: "politician_statement",
+        sourceRecordKey: "shared-statement",
+        sourceUrl: "https://valtioneuvosto.fi/shared",
+        payload: { text: "same official statement" }
+      };
+
+      const firstRawRecordId = addRawRecord({ runId: firstRunId, ...sharedRawRecord });
+      const secondRawRecordId = addRawRecord({ runId: secondRunId, ...sharedRawRecord });
+
+      const firstStageItemId = addStageItem({
+        runId: firstRunId,
+        rawRecordId: firstRawRecordId,
+        stageType: "politician_statement",
+        sourceKey: "research_watch_pulse_fi",
+        dedupeKey: "research:shared-statement",
+        normalized: { statementText: "same official statement" }
+      });
+      const secondStageItemId = addStageItem({
+        runId: secondRunId,
+        rawRecordId: secondRawRecordId,
+        stageType: "politician_statement",
+        sourceKey: "research_watch_pulse_fi",
+        dedupeKey: "research:shared-statement",
+        normalized: { statementText: "same official statement" }
+      });
+
+      expect(secondRawRecordId).not.toBe(firstRawRecordId);
+      expect(getIngestStageItemById(secondStageItemId)).toMatchObject({
+        runId: secondRunId,
+        rawRecordId: secondRawRecordId
+      });
+
+      db.prepare("DELETE FROM ingest_runs WHERE id = ?").run(firstRunId);
+
+      expect(getIngestStageItemById(firstStageItemId)).toBeUndefined();
+      expect(getIngestStageItemById(secondStageItemId)).toMatchObject({
+        runId: secondRunId,
+        rawRecordId: secondRawRecordId
+      });
+    } finally {
+      db.pragma("foreign_keys = OFF");
+    }
+  });
+
   it("cascades stage item deletion when an ingest run or raw record is deleted", () => {
     db.pragma("foreign_keys = ON");
     try {
