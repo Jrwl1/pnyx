@@ -20,7 +20,6 @@
     "docs:check": "node scripts/check-doc-harness.mjs",
     "test": "vitest run",
     "research:pulse": "tsx src/ingest/cli.ts research_watch_pulse_fi",
-    "ollama:health": "tsx src/ingest/research/ollama-health.ts",
     "test:ui": "playwright test",
     "test:e2e": "vitest run -c vitest.e2e.config.ts",
     "frontend:dev": "pnpm --filter pnyx-frontend-v3 dev",
