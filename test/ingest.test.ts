@@ -15,7 +15,9 @@ const clearAllTables = (): void => {
   db.exec("DELETE FROM ingest_stage_items");
   db.exec("DELETE FROM ingest_raw_records");
   db.exec("DELETE FROM ingest_runs");
+  db.exec("DELETE FROM product_events");
   db.exec("DELETE FROM party_stances");
+  db.exec("DELETE FROM revision_audits");
   db.exec("DELETE FROM statements");
   db.exec("DELETE FROM politician_vote_records");
   db.exec("DELETE FROM vote_events");
@@ -205,6 +207,7 @@ describe("ingest", () => {
     db.prepare(
       "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
     ).run("Petteri Orpo", "Uusimaa", "Prime Minister", "petteri-orpo", "system");
+    const politicianId = db.prepare("SELECT id FROM politicians WHERE external_id = ?").pluck().get("petteri-orpo") as number;
     const runId = db
       .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
       .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
@@ -254,6 +257,29 @@ describe("ingest", () => {
     expect(result.entityKind).toBe("statement");
     expect(duplicateResult).toEqual(result);
     expect(Number(db.prepare("SELECT COUNT(*) FROM statements WHERE verification_status = 'verified'").pluck().get())).toBe(1);
+    expect(
+      db
+        .prepare(
+          "SELECT actor_id AS actorId, change_type AS changeType, to_value AS toValue FROM revision_audits WHERE statement_id = ? ORDER BY id"
+        )
+        .all(Number(result.entityId))
+    ).toEqual([{ actorId: "moderator", changeType: "createStatement", toValue: "The government will reduce debt." }]);
+    expect(
+      db
+        .prepare(
+          "SELECT event_domain AS eventDomain, event_name AS eventName, actor_id AS actorId, entity_kind AS entityKind, entity_id AS entityId, metadata_json AS metadataJson FROM product_events ORDER BY id"
+        )
+        .all()
+    ).toEqual([
+      {
+        eventDomain: "contribution",
+        eventName: "statement_submitted",
+        actorId: "moderator",
+        entityKind: "statement",
+        entityId: result.entityId,
+        metadataJson: JSON.stringify({ politicianId })
+      }
+    ]);
   });
 
   it("applies reviewed politician statement stage items from planned normalized shape", () => {
@@ -293,6 +319,90 @@ describe("ingest", () => {
 
     expect(result.entityKind).toBe("statement");
     expect(Number(db.prepare("SELECT COUNT(*) FROM statements WHERE body = ?").pluck().get("The budget will prioritize employment."))).toBe(1);
+  });
+
+  it("rejects reviewed politician statement stage items with ambiguous name-only politician lookup", () => {
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Uusimaa", "Prime Minister", "petteri-orpo-1", "system");
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Varsinais-Suomi", "MP", "petteri-orpo-2", "system");
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-ambiguous",
+      sourceUrl: "https://valtioneuvosto.fi/ambiguous",
+      payload: { ok: true }
+    });
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-ambiguous",
+      normalized: {
+        politicianName: "Petteri Orpo",
+        statementText: "The statement needs an explicit politician id.",
+        sourceUrl: "https://valtioneuvosto.fi/ambiguous",
+        dateSaid: "2026-05-16",
+        reviewStatus: "reviewed"
+      }
+    });
+
+    expect(() => applyIngestStageItem(stageItemId, "moderator")).toThrow(
+      "politician statement name is ambiguous; provide politicianId"
+    );
+    expect(Number(db.prepare("SELECT COUNT(*) FROM statements").pluck().get())).toBe(0);
+  });
+
+  it("uses politicianId for reviewed politician statement stage items when politicianName is ambiguous", () => {
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Uusimaa", "Prime Minister", "petteri-orpo-1", "system");
+    db.prepare(
+      "INSERT INTO politicians (name, region, office, external_id, verified, created_by) VALUES (?, ?, ?, ?, 1, ?)"
+    ).run("Petteri Orpo", "Varsinais-Suomi", "MP", "petteri-orpo-2", "system");
+    const politicianId = db.prepare("SELECT id FROM politicians WHERE external_id = ?").pluck().get("petteri-orpo-2") as number;
+    const runId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const rawRecordId = addRawRecord({
+      runId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-explicit-politician-id",
+      sourceUrl: "https://valtioneuvosto.fi/explicit",
+      payload: { ok: true }
+    });
+    const stageItemId = addStageItem({
+      runId,
+      rawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-explicit-politician-id",
+      normalized: {
+        politicianId,
+        politicianName: "Petteri Orpo",
+        statementText: "The explicit politician id should be used.",
+        sourceUrl: "https://valtioneuvosto.fi/explicit",
+        dateSaid: "2026-05-16",
+        reviewStatus: "reviewed"
+      }
+    });
+
+    const result = applyIngestStageItem(stageItemId, "moderator");
+
+    expect(result.entityKind).toBe("statement");
+    expect(
+      db.prepare("SELECT politician_id AS politicianId FROM statements WHERE id = ?").get(Number(result.entityId))
+    ).toEqual({ politicianId });
   });
 
   it("rejects unreviewed politician statement stage item apply", () => {

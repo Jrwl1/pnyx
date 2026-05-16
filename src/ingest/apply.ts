@@ -5,6 +5,7 @@ import crypto from "node:crypto";
 import { db } from "../db/client.js";
 import { getIngestStageItemById, updateIngestStageItem } from "../db/ingest.js";
 import { getPartyById } from "../db/party-graph.js";
+import { recordProductEvent } from "../db/product-events.js";
 import { getVoteEventById } from "../db/trust-records.js";
 
 type ApplyResult = { entityKind: string; entityId: string };
@@ -151,9 +152,15 @@ export const applyIngestStageItem = (stageItemId: number, actorId: string): Appl
             .prepare("SELECT id FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1")
             .get(normalized.politicianId) as { id: number } | undefined)
         : politicianName
-          ? (db
-              .prepare("SELECT id FROM politicians WHERE name = ? AND deleted_at IS NULL LIMIT 1")
-              .get(politicianName) as { id: number } | undefined)
+          ? (() => {
+              const matches = db
+                .prepare("SELECT id FROM politicians WHERE name = ? AND deleted_at IS NULL ORDER BY id LIMIT 2")
+                .all(politicianName) as { id: number }[];
+              if (matches.length > 1) {
+                throw new Error("politician statement name is ambiguous; provide politicianId");
+              }
+              return matches[0];
+            })()
           : undefined;
       if (!politician) {
         throw new Error("politician statement requires an existing politician");
@@ -164,13 +171,28 @@ export const applyIngestStageItem = (stageItemId: number, actorId: string): Appl
       const existing = db
         .prepare("SELECT id FROM statements WHERE statement_fingerprint = ? AND deleted_at IS NULL LIMIT 1")
         .get(statementFingerprint) as { id: number } | undefined;
-      const statementId =
-        existing?.id ??
-        ((db
+      let statementId = existing?.id;
+      if (!statementId) {
+        statementId = db
           .prepare(
             "INSERT INTO statements (politician_id, source_url, body, date_said, normalized_body_hash, statement_fingerprint, verification_status, author_id) VALUES (?, ?, ?, ?, ?, ?, 'verified', ?)"
           )
-          .run(politician.id, sourceUrl, statementText, dateSaid, normalizedBodyHash, statementFingerprint, actorId).lastInsertRowid as number));
+          .run(politician.id, sourceUrl, statementText, dateSaid, normalizedBodyHash, statementFingerprint, actorId).lastInsertRowid as number;
+        db.prepare(
+          "INSERT INTO revision_audits (statement_id, actor_id, change_type, from_value, to_value) VALUES (?, ?, 'createStatement', NULL, ?)"
+        ).run(statementId, actorId, statementText);
+        recordProductEvent({
+          eventDomain: "contribution",
+          eventName: "statement_submitted",
+          actorId,
+          actorRole: null,
+          entityKind: "statement",
+          entityId: statementId,
+          metadata: {
+            politicianId: politician.id
+          }
+        });
+      }
 
       updateIngestStageItem(stageItemId, {
         status: "applied",
