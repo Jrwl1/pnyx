@@ -126,6 +126,52 @@ describe("research pulse extraction", () => {
     expect(Number(db.prepare("SELECT COUNT(*) FROM statements").pluck().get())).toBe(0);
   });
 
+  it("marks a research pulse as fetched when documents are fetched but no candidates qualify", async () => {
+    globalThis.fetch = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/api/generate")) {
+        return new Response(JSON.stringify({ response: JSON.stringify({ candidates: [] }), done: true }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      if (url.includes("api.hankeikkuna.fi")) {
+        return new Response(JSON.stringify({ title: "Government project", description: "Fetched but no qualifying claims." }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(
+        `
+        <html>
+          <head>
+            <title>Government programme</title>
+            <meta property="article:published_time" content="2026-05-16T10:00:00+03:00" />
+          </head>
+          <body>
+            <main>
+              <h1>Government programme</h1>
+              <p>Fetched but no qualifying claims.</p>
+            </main>
+          </body>
+        </html>
+        `,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
+    }) as typeof fetch;
+
+    const result = await runOfficialSourceImport("research_watch_pulse_fi", "research-test");
+
+    const run = db
+      .prepare("SELECT status, fetched_count AS fetchedCount, staged_count AS stagedCount FROM ingest_runs WHERE id = ?")
+      .get(result.runId) as { status: string; fetchedCount: number; stagedCount: number };
+
+    expect(run).toEqual({ status: "fetched", fetchedCount: 2, stagedCount: 0 });
+    expect(Number(db.prepare("SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ?").pluck().get(result.runId))).toBe(0);
+  });
+
   it("builds a prompt that requires JSON candidates and source quotes", () => {
     const prompt = buildResearchPrompt({
       title: "Prime minister speech",

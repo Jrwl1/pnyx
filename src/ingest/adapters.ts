@@ -11,6 +11,16 @@ type AdapterResult = {
   stagedCount: number;
 };
 
+const statusForAdapterResult = ({ fetchedCount, stagedCount }: AdapterResult): "pending" | "fetched" | "staged" => {
+  if (stagedCount > 0) {
+    return "staged";
+  }
+  if (fetchedCount > 0) {
+    return "fetched";
+  }
+  return "pending";
+};
+
 const EDSKUNTA_API_BASE = "https://avoindata.eduskunta.fi/api/v1/tables";
 
 const fetchJson = async (url: string, fetchImpl: FetchLike): Promise<unknown> => {
@@ -235,7 +245,7 @@ export const runOfficialSourceImport = async (
             })
           : await stagePartyStancePage(config.sourceKey, runId, config, fetchImpl);
     markIngestRunStatus(runId, {
-      status: "staged",
+      status: statusForAdapterResult(result),
       fetchedCount: result.fetchedCount,
       stagedCount: result.stagedCount
     });
