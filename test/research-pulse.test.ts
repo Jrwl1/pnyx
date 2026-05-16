@@ -1,8 +1,14 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { db } from "../src/db/client.js";
+import { createIngestRun } from "../src/db/ingest.js";
 import { runOfficialSourceImport } from "../src/ingest/adapters.js";
 import { buildResearchPrompt, normalizeResearchCandidates, researchCandidateDedupeKey } from "../src/ingest/research/extraction.js";
+import { runResearchWatchPulse } from "../src/ingest/research/pulse.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -61,7 +67,7 @@ describe("research pulse extraction", () => {
       }
 
       if (url.includes("api.hankeikkuna.fi")) {
-        return new Response(JSON.stringify({ title: "Government project", description: "The government will reduce debt." }), {
+        return new Response(JSON.stringify({ title: "Government project", publishedAt: "2026-05-16", description: "The government will reduce debt." }), {
           status: 200,
           headers: { "Content-Type": "application/json" }
         });
@@ -170,6 +176,198 @@ describe("research pulse extraction", () => {
 
     expect(run).toEqual({ status: "fetched", fetchedCount: 2, stagedCount: 0 });
     expect(Number(db.prepare("SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ?").pluck().get(result.runId))).toBe(0);
+  });
+
+  it("does not stage candidates from source documents without valid publication dates", async () => {
+    globalThis.fetch = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/api/generate")) {
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify({
+              candidates: [
+                {
+                  candidateType: "politician_statement",
+                  person: "Petteri Orpo",
+                  claimText: "The government will reduce debt.",
+                  evidenceQuote: "The government will reduce debt.",
+                  confidence: 0.91
+                }
+              ]
+            }),
+            done: true
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (url.includes("api.hankeikkuna.fi")) {
+        return new Response(JSON.stringify({ title: "Government project", description: "The government will reduce debt." }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(
+        `
+        <html>
+          <head><title>Government programme</title></head>
+          <body><main><p>The government will reduce debt.</p></main></body>
+        </html>
+        `,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
+    }) as typeof fetch;
+
+    const result = await runOfficialSourceImport("research_watch_pulse_fi", "research-test");
+
+    const run = db
+      .prepare("SELECT status, fetched_count AS fetchedCount, staged_count AS stagedCount FROM ingest_runs WHERE id = ?")
+      .get(result.runId) as { status: string; fetchedCount: number; stagedCount: number };
+    const rawPayloads = db
+      .prepare("SELECT payload_json AS payloadJson FROM ingest_raw_records WHERE run_id = ? ORDER BY id")
+      .all(result.runId) as Array<{ payloadJson: string }>;
+
+    expect(run).toEqual({ status: "fetched", fetchedCount: 2, stagedCount: 0 });
+    expect(rawPayloads.map((row) => JSON.parse(row.payloadJson).publishedAt)).toEqual([null, null]);
+    expect(Number(db.prepare("SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ?").pluck().get(result.runId))).toBe(0);
+  });
+
+  it("allows seed URLs only from the domain list for their source tier", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "pnyx-watchlist-"));
+    const watchlistPath = join(tempDir, "watchlist.json");
+    writeFileSync(
+      watchlistPath,
+      JSON.stringify({
+        sourceKey: "research_watch_pulse_fi",
+        sourceFamily: "research_watch_pulse",
+        checkedAt: "2026-05-16",
+        politicians: [{ targetKey: "petteri-orpo", name: "Petteri Orpo", partyKey: "kok", keywords: ["debt"] }],
+        officialDomains: ["valtioneuvosto.fi"],
+        articleDomains: ["yle.fi"],
+        partyDomains: ["kokoomus.fi"],
+        seedUrls: [{ url: "https://yle.fi/a/74-20000000", sourceTier: "official", topic: "mislabeled source" }],
+        limits: { fetchTimeoutMs: 10000, maxResponseBytes: 1000000, maxDocumentsPerPulse: 30, minimumConfidence: 0.72 }
+      })
+    );
+
+    try {
+      const runId = createIngestRun({
+        sourceFamily: "research_watch_pulse",
+        sourceKey: "research_watch_pulse_fi",
+        sourceUrl: null,
+        triggeredBy: "research-test"
+      });
+      const fetchImpl = vi.fn(async () => new Response("should not fetch", { status: 200 })) as typeof fetch;
+
+      const result = await runResearchWatchPulse({
+        runId,
+        sourceKey: "research_watch_pulse_fi",
+        watchlistPath,
+        ollamaEndpoint: "http://localhost:11434/api/generate",
+        ollamaModel: "llama3.1:8b",
+        fetchImpl
+      });
+
+      expect(result).toEqual({ fetchedCount: 0, stagedCount: 0 });
+      expect(fetchImpl).not.toHaveBeenCalled();
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it("skips candidates whose evidence quote is not present in the cleaned source document", async () => {
+    globalThis.fetch = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/api/generate")) {
+        return new Response(
+          JSON.stringify({
+            response: JSON.stringify({
+              candidates: [
+                {
+                  candidateType: "politician_statement",
+                  person: "Petteri Orpo",
+                  claimText: "The government will reduce debt.",
+                  evidenceQuote: "This quote was not in the source.",
+                  confidence: 0.91
+                }
+              ]
+            }),
+            done: true
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      if (url.includes("api.hankeikkuna.fi")) {
+        return new Response(
+          JSON.stringify({
+            title: "Government project",
+            publishedAt: "2026-05-16",
+            description: "The government will reduce debt."
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        `
+        <html>
+          <head>
+            <title>Government programme</title>
+            <meta property="article:published_time" content="2026-05-16T10:00:00+03:00" />
+          </head>
+          <body><main><p>The government will reduce debt.</p></main></body>
+        </html>
+        `,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
+    }) as typeof fetch;
+
+    const result = await runOfficialSourceImport("research_watch_pulse_fi", "research-test");
+
+    const run = db
+      .prepare("SELECT status, fetched_count AS fetchedCount, staged_count AS stagedCount FROM ingest_runs WHERE id = ?")
+      .get(result.runId) as { status: string; fetchedCount: number; stagedCount: number };
+
+    expect(run).toEqual({ status: "fetched", fetchedCount: 2, stagedCount: 0 });
+    expect(Number(db.prepare("SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ?").pluck().get(result.runId))).toBe(0);
+  });
+
+  it("keeps persisted raw record counts when Ollama fails after document fetch", async () => {
+    globalThis.fetch = vi.fn(async (input: string | URL) => {
+      const url = String(input);
+      if (url.endsWith("/api/generate")) {
+        return new Response(JSON.stringify({ error: "model unavailable" }), {
+          status: 503,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+
+      return new Response(
+        `
+        <html>
+          <head>
+            <title>Government programme</title>
+            <meta property="article:published_time" content="2026-05-16T10:00:00+03:00" />
+          </head>
+          <body><main><p>The government will reduce debt.</p></main></body>
+        </html>
+        `,
+        { status: 200, headers: { "Content-Type": "text/html" } }
+      );
+    }) as typeof fetch;
+
+    await expect(runOfficialSourceImport("research_watch_pulse_fi", "research-test")).rejects.toThrow(
+      "Ollama generation failed with HTTP 503"
+    );
+
+    const run = db
+      .prepare("SELECT status, fetched_count AS fetchedCount, staged_count AS stagedCount FROM ingest_runs")
+      .get() as { status: string; fetchedCount: number; stagedCount: number };
+
+    expect(run).toEqual({ status: "failed", fetchedCount: 1, stagedCount: 0 });
+    expect(Number(db.prepare("SELECT COUNT(*) FROM ingest_raw_records").pluck().get())).toBe(1);
   });
 
   it("builds a prompt that requires JSON candidates and source quotes", () => {

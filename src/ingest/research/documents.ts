@@ -5,7 +5,7 @@ export type ResearchSourceDocument = {
   sourceTier: ResearchSourceTier;
   title: string;
   text: string;
-  publishedAt: string;
+  publishedAt: string | null;
   fetchedAt: string;
 };
 
@@ -51,13 +51,19 @@ const matchHtmlText = (html: string, tagName: string): string | null => {
   return match?.[1] ? stripHtmlToText(match[1]) : null;
 };
 
-const toPublishedDate = (value: string | null, fallbackIso: string): string => {
-  const raw = value?.trim() || fallbackIso;
-  const date = new Date(raw);
-  if (Number.isFinite(date.getTime())) {
-    return date.toISOString().slice(0, 10);
+const toPublishedDate = (value: string | null): string | null => {
+  const raw = value?.trim();
+  const datePart = raw?.match(/^(\d{4}-\d{2}-\d{2})(?:[T\s].*)?$/)?.[1];
+  if (!datePart) {
+    return null;
   }
-  return fallbackIso.slice(0, 10);
+
+  const date = new Date(`${datePart}T00:00:00.000Z`);
+  if (Number.isFinite(date.getTime())) {
+    const normalizedDate = date.toISOString().slice(0, 10);
+    return normalizedDate === datePart ? datePart : null;
+  }
+  return null;
 };
 
 const collectJsonText = (value: unknown, output: string[]): void => {
@@ -117,7 +123,7 @@ export const documentFromResponseText = (input: {
       sourceTier: input.sourceTier,
       title: jsonDocument.title ?? input.sourceUrl,
       text: jsonDocument.text,
-      publishedAt: toPublishedDate(jsonDocument.publishedAt, input.fetchedAt),
+      publishedAt: toPublishedDate(jsonDocument.publishedAt),
       fetchedAt: input.fetchedAt
     };
   }
@@ -138,7 +144,7 @@ export const documentFromResponseText = (input: {
     sourceTier: input.sourceTier,
     title,
     text: stripHtmlToText(truncated),
-    publishedAt: toPublishedDate(publishedAt, input.fetchedAt),
+    publishedAt: toPublishedDate(publishedAt),
     fetchedAt: input.fetchedAt
   };
 };

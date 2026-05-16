@@ -28,7 +28,8 @@ export type ResearchCandidate = {
 export type ResearchSourceContext = {
   sourceUrl: string;
   sourceType: ResearchSourceTier;
-  publishedAt: string;
+  publishedAt: string | null;
+  sourceText?: string;
 };
 
 const candidateTypes = new Set(["party_stance", "canonical_promise", "politician_statement", "fulfillment_assessment"]);
@@ -75,6 +76,15 @@ const isValidPublishedDate = (publishedAt: string): boolean => {
 };
 
 const normalizeClaimText = (claimText: string): string => claimText.trim().replace(/\s+/g, " ").toLowerCase();
+
+const normalizeQuoteText = (value: string): string => value.replace(/\s+/g, " ").trim().toLowerCase();
+
+const sourceContainsQuote = (sourceText: string | undefined, evidenceQuote: string): boolean => {
+  if (sourceText === undefined) {
+    return true;
+  }
+  return normalizeQuoteText(sourceText).includes(normalizeQuoteText(evidenceQuote));
+};
 
 export const buildResearchPrompt = (document: ResearchDocumentForPrompt): string => {
   return [
@@ -133,7 +143,8 @@ export const normalizeResearchCandidates = (
       !Number.isFinite(confidence) ||
       confidence < 0 ||
       confidence > 1 ||
-      confidence < minimumConfidence
+      confidence < minimumConfidence ||
+      !sourceContainsQuote(sourceContext.sourceText, evidenceQuote)
     ) {
       continue;
     }

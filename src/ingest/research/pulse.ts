@@ -2,7 +2,7 @@ import { addRawRecord, addStageItem } from "../../db/ingest.js";
 import { documentFromResponseText } from "./documents.js";
 import { buildResearchPrompt, normalizeResearchCandidates, researchCandidateDedupeKey } from "./extraction.js";
 import { generateOllamaJson } from "./ollama.js";
-import { isAllowedResearchUrl, loadResearchWatchlist } from "./watchlist.js";
+import { isAllowedResearchUrl, loadResearchWatchlist, type ResearchSourceTier, type ResearchWatchlist } from "./watchlist.js";
 
 type FetchLike = typeof fetch;
 
@@ -15,6 +15,16 @@ export type RunResearchWatchPulseInput = {
   fetchImpl?: FetchLike;
 };
 
+const allowedDomainsForTier = (watchlist: ResearchWatchlist, sourceTier: ResearchSourceTier): string[] => {
+  if (sourceTier === "official") {
+    return watchlist.officialDomains;
+  }
+  if (sourceTier === "article") {
+    return watchlist.articleDomains;
+  }
+  return watchlist.partyDomains;
+};
+
 export const runResearchWatchPulse = async ({
   runId,
   sourceKey,
@@ -24,12 +34,11 @@ export const runResearchWatchPulse = async ({
   fetchImpl = fetch
 }: RunResearchWatchPulseInput): Promise<{ fetchedCount: number; stagedCount: number }> => {
   const watchlist = loadResearchWatchlist(watchlistPath);
-  const allowedDomains = [...watchlist.officialDomains, ...watchlist.articleDomains, ...watchlist.partyDomains];
   let fetchedCount = 0;
   let stagedCount = 0;
 
   for (const seed of watchlist.seedUrls.slice(0, Math.floor(watchlist.limits.maxDocumentsPerPulse))) {
-    if (!isAllowedResearchUrl(seed.url, allowedDomains)) {
+    if (!isAllowedResearchUrl(seed.url, allowedDomainsForTier(watchlist, seed.sourceTier))) {
       continue;
     }
 
@@ -65,6 +74,10 @@ export const runResearchWatchPulse = async ({
     });
     fetchedCount += 1;
 
+    if (!document.publishedAt) {
+      continue;
+    }
+
     const extraction = await generateOllamaJson({
       endpoint: ollamaEndpoint,
       model: ollamaModel,
@@ -81,7 +94,8 @@ export const runResearchWatchPulse = async ({
     for (const candidate of normalizeResearchCandidates(extraction, watchlist.limits.minimumConfidence, {
       sourceUrl: document.sourceUrl,
       sourceType: document.sourceTier,
-      publishedAt: document.publishedAt
+      publishedAt: document.publishedAt,
+      sourceText: document.text
     })) {
       addStageItem({
         runId,
