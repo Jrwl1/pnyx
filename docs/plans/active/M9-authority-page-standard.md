@@ -1,6 +1,6 @@
 # M9 Authority Page Standard
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 ## Goal
 
@@ -26,13 +26,13 @@ Make politician, party, and promise pages measurable as `Ready`, `Thin But Hones
 ## Implementation sequence
 
 1. Keep harness docs current and run `pnpm docs:check`.
-2. Add readiness data structures and tests.
-3. Add readiness API output for representative pages.
-4. Design page states with `impeccable`.
-5. Edit frontend with `uncodixfy`.
-6. Add evidence submission and missing-data affordances.
-7. Add discussion/reporting schema and moderation paths.
-8. Add browser coverage and proof docs.
+2. Add readiness data structures and tests. Done for `page_readiness`.
+3. Add readiness API output for representative pages. Done for politician, party, and canonical promises.
+4. Design page states with `impeccable`. Done for the first public readiness panel.
+5. Edit frontend with `uncodixfy`. Done for politician, party, and canonical promise-backed promise pages.
+6. Add evidence submission and missing-data affordances. Done via existing protected contribution routes.
+7. Add discussion/reporting schema and moderation paths. Done for politician and canonical-promise discussions.
+8. Add browser coverage and proof docs. In progress.
 
 ## Done
 

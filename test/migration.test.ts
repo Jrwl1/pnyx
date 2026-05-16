@@ -35,6 +35,11 @@ describe("migration", () => {
     expect(tableNames.has("ingest_runs")).toBe(true);
     expect(tableNames.has("ingest_raw_records")).toBe(true);
     expect(tableNames.has("ingest_stage_items")).toBe(true);
+    expect(tableNames.has("page_readiness")).toBe(true);
+    expect(tableNames.has("discussion_threads")).toBe(true);
+    expect(tableNames.has("discussion_comments")).toBe(true);
+    expect(tableNames.has("discussion_reports")).toBe(true);
+    expect(tableNames.has("discussion_moderation_actions")).toBe(true);
 
     const indexes = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'index' ORDER BY name")
@@ -91,6 +96,13 @@ describe("migration", () => {
     expect(indexNames.has("idx_ingest_raw_records_source")).toBe(true);
     expect(indexNames.has("idx_ingest_stage_items_run")).toBe(true);
     expect(indexNames.has("idx_ingest_stage_items_status")).toBe(true);
+    expect(indexNames.has("idx_page_readiness_entity")).toBe(true);
+    expect(indexNames.has("idx_page_readiness_state")).toBe(true);
+    expect(indexNames.has("idx_discussion_threads_entity")).toBe(true);
+    expect(indexNames.has("idx_discussion_comments_thread")).toBe(true);
+    expect(indexNames.has("idx_discussion_reports_status")).toBe(true);
+    expect(indexNames.has("idx_discussion_reports_target")).toBe(true);
+    expect(indexNames.has("idx_discussion_moderation_actions_target")).toBe(true);
 
     const proposalColumns = db
       .prepare("PRAGMA table_info(politician_proposals)")
@@ -335,5 +347,54 @@ describe("migration", () => {
     expect(ingestStageColumnNames.has("dedupe_key")).toBe(true);
     expect(ingestStageColumnNames.has("normalized_json")).toBe(true);
     expect(ingestStageColumnNames.has("status")).toBe(true);
+
+    const pageReadinessColumns = db
+      .prepare("PRAGMA table_info(page_readiness)")
+      .all() as { name: string }[];
+    const pageReadinessColumnNames = new Set(pageReadinessColumns.map((column) => column.name));
+    expect(pageReadinessColumnNames.has("entity_kind")).toBe(true);
+    expect(pageReadinessColumnNames.has("entity_id")).toBe(true);
+    expect(pageReadinessColumnNames.has("readiness_state")).toBe(true);
+    expect(pageReadinessColumnNames.has("freshness_checked_at")).toBe(true);
+    expect(pageReadinessColumnNames.has("source_count")).toBe(true);
+    expect(pageReadinessColumnNames.has("provenance_summary")).toBe(true);
+    expect(pageReadinessColumnNames.has("missing_data_json")).toBe(true);
+    expect(pageReadinessColumnNames.has("reviewed_by")).toBe(true);
+    expect(pageReadinessColumnNames.has("reviewed_at")).toBe(true);
+
+    const discussionThreadColumns = db
+      .prepare("PRAGMA table_info(discussion_threads)")
+      .all() as { name: string }[];
+    const discussionThreadColumnNames = new Set(discussionThreadColumns.map((column) => column.name));
+    expect(discussionThreadColumnNames.has("entity_kind")).toBe(true);
+    expect(discussionThreadColumnNames.has("entity_id")).toBe(true);
+    expect(discussionThreadColumnNames.has("title")).toBe(true);
+    expect(discussionThreadColumnNames.has("status")).toBe(true);
+
+    const discussionCommentColumns = db
+      .prepare("PRAGMA table_info(discussion_comments)")
+      .all() as { name: string }[];
+    const discussionCommentColumnNames = new Set(discussionCommentColumns.map((column) => column.name));
+    expect(discussionCommentColumnNames.has("thread_id")).toBe(true);
+    expect(discussionCommentColumnNames.has("body")).toBe(true);
+    expect(discussionCommentColumnNames.has("status")).toBe(true);
+
+    const discussionReportColumns = db
+      .prepare("PRAGMA table_info(discussion_reports)")
+      .all() as { name: string }[];
+    const discussionReportColumnNames = new Set(discussionReportColumns.map((column) => column.name));
+    expect(discussionReportColumnNames.has("target_kind")).toBe(true);
+    expect(discussionReportColumnNames.has("target_id")).toBe(true);
+    expect(discussionReportColumnNames.has("reason")).toBe(true);
+    expect(discussionReportColumnNames.has("status")).toBe(true);
+
+    const discussionActionColumns = db
+      .prepare("PRAGMA table_info(discussion_moderation_actions)")
+      .all() as { name: string }[];
+    const discussionActionColumnNames = new Set(discussionActionColumns.map((column) => column.name));
+    expect(discussionActionColumnNames.has("target_kind")).toBe(true);
+    expect(discussionActionColumnNames.has("target_id")).toBe(true);
+    expect(discussionActionColumnNames.has("action")).toBe(true);
+    expect(discussionActionColumnNames.has("actor_id")).toBe(true);
   });
 });

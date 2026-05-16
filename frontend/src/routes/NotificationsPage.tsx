@@ -101,12 +101,37 @@ export const NotificationsPage = (): ReactElement => {
         path="/notifications"
       />
 
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Notifications</p>
-        <h1>Manage alerts and review updates</h1>
-        <p className="lede">
-          Control which account and moderation updates reach you, then review the current notification inbox for this signed-in identity.
-        </p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Returning user lens</p>
+          <h1>Notifications and review updates</h1>
+          <p className="lede">
+            See what changed on your submissions, assignments, and role access without mixing private account notices into the public record.
+          </p>
+          <div className="card-link-row">
+            <Link to="/contribute/promises/new">Submit evidence</Link>
+            <Link to="/contribute/politicians/new">Add a politician</Link>
+            <Link to="/ops">Moderation queue</Link>
+          </div>
+        </div>
+        <aside className="record-facts" aria-label="Notification account context">
+          <div>
+            <span>Inbox</span>
+            <strong>{preferences?.inAppEnabled === 1 ? "On" : "Off"}</strong>
+          </div>
+          <div>
+            <span>Email</span>
+            <strong>{preferences?.emailEnabled === 1 ? "On" : "Off"}</strong>
+          </div>
+          <div>
+            <span>Visible items</span>
+            <strong>{notifications.length}</strong>
+          </div>
+          <div>
+            <span>Signed in as</span>
+            <strong>{session.role}</strong>
+          </div>
+        </aside>
       </section>
 
       {message ? <p className="meta-line">{message}</p> : null}

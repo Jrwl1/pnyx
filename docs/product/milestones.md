@@ -1,6 +1,6 @@
 # Milestone truth
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 ## Completed milestones
 
@@ -32,7 +32,7 @@ Goal: make politician, party, and promise pages measurable as public-ready, thin
 Done means:
 
 - page readiness states exist in data/API/UI;
-- politician, party, and promise pages show completeness, freshness, provenance, and missing-data calls to action;
+- politician, party, and canonical promise-backed promise pages show completeness, freshness, provenance, and missing-data calls to action;
 - representative ingest and user-submission flows can move records toward readiness;
 - bounded politician/promise discussion exists separately from canonical truth;
 - moderation can review evidence, comments, and reports without polluting canonical data;
@@ -40,6 +40,13 @@ Done means:
 - the harness docs remain indexed and current.
 
 M9 should prove the standard on representative vertical slices. It should not attempt full national/EU population coverage.
+
+Current M9 implementation status:
+
+- readiness data/API/UI exists for representative politician, party, and canonical-promise surfaces;
+- conservative `not_ready` defaults prevent fabricated completeness when no reviewed readiness record exists;
+- politician and canonical-promise discussion/reporting paths are implemented separately from canonical facts;
+- party discussion and a dedicated readiness-editing moderator UI remain outside the current slice.
 
 ## Next milestone: M10 National/EU Coverage And Public Beta
 

@@ -15,6 +15,10 @@ import type {
   ClaimEquivalenceSignalInput,
   CanonicalPromiseDetailResponse,
   CanonicalPromiseSummary,
+  DiscussionBundle,
+  DiscussionEntityKind,
+  DiscussionReport,
+  DiscussionModerationAction,
   Politician,
   PromiseClaimAudit,
   PromiseClaimDuplicateAssist,
@@ -68,7 +72,7 @@ type ApiErrorPayload = {
 
 type JsonRequestOptions = {
   body?: unknown;
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "PUT";
   token?: string;
 };
 
@@ -283,6 +287,90 @@ export const listActivityFeed = async (query = ""): Promise<ActivityFeedItem[]> 
   return response.items;
 };
 
+export const listDiscussions = async (
+  entityKind: DiscussionEntityKind,
+  entityId: string | number,
+  token?: string
+): Promise<DiscussionBundle[]> => {
+  const params = new URLSearchParams({
+    entityKind,
+    entityId: String(entityId)
+  });
+  const response = await fetchJson<{ items: DiscussionBundle[] }>(`/discussions?${params.toString()}`, { token });
+  return response.items;
+};
+
+export const createDiscussion = async (
+  token: string,
+  input: {
+    entityKind: DiscussionEntityKind;
+    entityId: string | number;
+    title: string;
+    body: string;
+  }
+): Promise<DiscussionBundle> => {
+  return fetchJson<DiscussionBundle>("/discussions", {
+    method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const addDiscussionComment = async (
+  token: string,
+  threadId: number,
+  body: string
+): Promise<{ comment: DiscussionBundle["comments"][number] }> => {
+  return fetchJson<{ comment: DiscussionBundle["comments"][number] }>(`/discussions/${threadId}/comments`, {
+    method: "POST",
+    token,
+    body: { body }
+  });
+};
+
+export const reportDiscussionComment = async (
+  token: string,
+  commentId: number,
+  reason: string
+): Promise<{ report: DiscussionReport }> => {
+  return fetchJson<{ report: DiscussionReport }>(`/discussion-comments/${commentId}/reports`, {
+    method: "POST",
+    token,
+    body: { reason }
+  });
+};
+
+export const listDiscussionReports = async (token: string): Promise<DiscussionReport[]> => {
+  const response = await fetchJson<{ items: DiscussionReport[] }>("/ops/discussion-reports", { token });
+  return response.items;
+};
+
+export const moderateDiscussionComment = async (
+  token: string,
+  commentId: number,
+  action: Extract<DiscussionModerationAction, "hide" | "remove" | "restore">,
+  reason?: string
+): Promise<{ comment: DiscussionBundle["comments"][number] }> => {
+  return fetchJson<{ comment: DiscussionBundle["comments"][number] }>(`/ops/discussion-comments/${commentId}/moderation`, {
+    method: "PATCH",
+    token,
+    body: { action, reason }
+  });
+};
+
+export const moderateDiscussionThread = async (
+  token: string,
+  threadId: number,
+  action: DiscussionModerationAction,
+  reason?: string
+): Promise<{ thread: DiscussionBundle["thread"] }> => {
+  return fetchJson<{ thread: DiscussionBundle["thread"] }>(`/ops/discussions/${threadId}/moderation`, {
+    method: "PATCH",
+    token,
+    body: { action, reason }
+  });
+};
+
 export const listParties = async (): Promise<BackendPartySummary[]> => {
   const response = await fetchJson<{ items: BackendPartySummary[] }>("/parties");
   return response.items;
@@ -464,6 +552,25 @@ export const createPartyAlignment = async (
 ): Promise<{ id: number; canonicalPromiseId: number; partyStanceId: number }> => {
   return fetchJson<{ id: number; canonicalPromiseId: number; partyStanceId: number }>(`/canonical-promises/${canonicalPromiseId}/party-alignments`, {
     method: "POST",
+    token,
+    body: input
+  });
+};
+
+export const updatePageReadiness = async (
+  token: string,
+  input: {
+    entityKind: "politician" | "party" | "canonical_promise";
+    entityId: string | number;
+    readinessState: "ready" | "thin_but_honest" | "not_ready";
+    freshnessCheckedAt?: string | null;
+    sourceCount: number;
+    missingDataKeys: string[];
+    provenanceSummary: string;
+  }
+): Promise<{ readiness: NonNullable<Politician["readiness"]> }> => {
+  return fetchJson<{ readiness: NonNullable<Politician["readiness"]> }>("/ops/page-readiness", {
+    method: "PUT",
     token,
     body: input
   });

@@ -1,10 +1,11 @@
-/* WHAT IT DO? Adds a public browse surface for promises with politician, party, issue, and record-state filters. */
+/* Public promise directory with source-first filters. */
 
 import { useEffect, useMemo, useState, type ChangeEvent, type ReactElement } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { PageMeta } from "../components/PageMeta";
 import { usePublicData } from "../context/PublicDataContext";
+import { listParties } from "../lib/api";
 import {
   getIssueTagsForStatement,
   getPartyAffiliationLabel,
@@ -13,20 +14,20 @@ import {
   ISSUE_OPTIONS,
   toPromiseRecord
 } from "../lib/domain";
-import { listParties } from "../lib/api";
 import { formatDate, formatIdentityLine } from "../lib/format";
 
 type RecordStateFilter = "all" | "canonical" | "legacy";
 
 export const PromiseIndexPage = (): ReactElement => {
   const { politicians, statements, loading, error, refresh } = usePublicData();
+  const [searchParams] = useSearchParams();
   const [partyLoading, setPartyLoading] = useState<boolean>(true);
   const [partyError, setPartyError] = useState<string | null>(null);
 
   const [query, setQuery] = useState<string>("");
   const [politicianFilter, setPoliticianFilter] = useState<string>("");
   const [partyFilter, setPartyFilter] = useState<string>("");
-  const [issueFilter, setIssueFilter] = useState<string>("");
+  const [issueFilter, setIssueFilter] = useState<string>(searchParams.get("issue") ?? "");
   const [recordState, setRecordState] = useState<RecordStateFilter>("all");
 
   useEffect(() => {
@@ -35,10 +36,7 @@ export const PromiseIndexPage = (): ReactElement => {
       setPartyLoading(true);
       setPartyError(null);
       try {
-        const items = await listParties();
-        if (!cancelled) {
-          void items;
-        }
+        await listParties();
       } catch (err) {
         if (!cancelled) {
           setPartyError((err as Error).message || "Unable to load party filters.");
@@ -56,10 +54,7 @@ export const PromiseIndexPage = (): ReactElement => {
     };
   }, []);
 
-  const sortedPoliticians = useMemo(
-    () => [...politicians].sort((left, right) => left.name.localeCompare(right.name)),
-    [politicians]
-  );
+  const sortedPoliticians = useMemo(() => [...politicians].sort((left, right) => left.name.localeCompare(right.name)), [politicians]);
   const hasPartyData = useMemo(() => hasPartyAffiliationData(politicians), [politicians]);
   const partyOptions = useMemo(() => {
     if (!hasPartyData) {
@@ -158,13 +153,10 @@ export const PromiseIndexPage = (): ReactElement => {
         description="Browse documented promises by politician, party, issue, and record state across the current public PNYX dataset."
         path="/promises"
       />
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Promise directory</p>
-        <h1>Browse documented promises on PNYX</h1>
-        <p className="lede">
-          Filter by politician, party, issue, or record state, then open the full promise record with evidence, trust context, and visible unknowns.
-        </p>
-      </section>
+
+      <header className="page-heading">
+        <h1>Promises</h1>
+      </header>
 
       <section className="directory-controls stack-sm" aria-label="Promise directory filters">
         <div className="controls-grid">
@@ -182,12 +174,7 @@ export const PromiseIndexPage = (): ReactElement => {
 
           <label className="field-group" htmlFor="promise-directory-politician">
             <span>Politician</span>
-            <select
-              id="promise-directory-politician"
-              className="select-input"
-              value={politicianFilter}
-              onChange={onFilterChange(setPoliticianFilter)}
-            >
+            <select id="promise-directory-politician" className="select-input" value={politicianFilter} onChange={onFilterChange(setPoliticianFilter)}>
               <option value="">All politicians</option>
               {sortedPoliticians.map((politician) => (
                 <option key={politician.id} value={String(politician.id)}>
@@ -217,12 +204,7 @@ export const PromiseIndexPage = (): ReactElement => {
 
           <label className="field-group" htmlFor="promise-directory-issue">
             <span>Issue</span>
-            <select
-              id="promise-directory-issue"
-              className="select-input"
-              value={issueFilter}
-              onChange={onFilterChange(setIssueFilter)}
-            >
+            <select id="promise-directory-issue" className="select-input" value={issueFilter} onChange={onFilterChange(setIssueFilter)}>
               <option value="">All issues</option>
               {ISSUE_OPTIONS.map((issue) => (
                 <option key={issue} value={issue}>
@@ -233,7 +215,7 @@ export const PromiseIndexPage = (): ReactElement => {
           </label>
 
           <label className="field-group" htmlFor="promise-directory-record-state">
-            <span>Record state</span>
+            <span>Review state</span>
             <select
               id="promise-directory-record-state"
               className="select-input"
@@ -241,75 +223,51 @@ export const PromiseIndexPage = (): ReactElement => {
               onChange={onFilterChange((value) => setRecordState(value as RecordStateFilter))}
             >
               <option value="all">All records</option>
-              <option value="canonical">Canonical only</option>
-              <option value="legacy">Legacy submissions only</option>
+              <option value="canonical">Reviewed public records</option>
+              <option value="legacy">Submitted records</option>
             </select>
           </label>
         </div>
-        <p className="data-note">Showing {filteredPromises.length} promise records from the current public dataset.</p>
+        <p className="meta-line">{filteredPromises.length} matching records</p>
       </section>
 
-      <section className="cards-grid cards-grid-2">
+      <section className="record-list">
         {filteredPromises.length === 0 ? (
-          <article className="card stack-sm">
-            <h2>No promises match the current filters</h2>
-            <p>Clear one or more filters to widen the public promise view.</p>
+          <article className="record-row">
+            <div>
+              <h2>No promises match the current filters</h2>
+              <p>Clear one or more filters to widen the public promise view.</p>
+            </div>
           </article>
         ) : (
           filteredPromises.map((entry) => (
-            <article key={entry.statement.id} className="card stack-sm">
-              <p className="mono-inline">{entry.promise.recordType === "canonical" ? "Canonical promise" : "Legacy submission"}</p>
-              <h2>
-                <Link to={`/promises/${entry.statement.id}`}>{entry.promise.promiseText}</Link>
-              </h2>
-              {entry.politician ? (
-                <p className="meta-line">
-                  <Link to={`/politicians/${entry.politician.id}`}>{entry.politician.name}</Link>
-                  {" · "}
-                  {formatIdentityLine(entry.politician.office, getTerritoryLabel(entry.politician))}
-                </p>
-              ) : (
-                <p className="meta-line">Politician record not available.</p>
-              )}
-              {entry.politician ? <p>Party affiliation: {getPartyAffiliationLabel(entry.politician)}</p> : null}
-              <div className="stat-strip">
-                <span className="stat-pill">Promised {formatDate(entry.promise.datePromised)}</span>
-                <span className="stat-pill">Evidence {entry.promise.evidenceCount}</span>
-                <span className="stat-pill">{entry.promise.recordType === "canonical" ? "Canonical" : "Legacy"}</span>
-              </div>
-              {entry.issueTags.length > 0 ? (
-                <div className="shortcut-row">
-                  {entry.issueTags.map((issue) => (
-                    <span key={`${entry.statement.id}-${issue}`} className="stat-pill">
-                      {issue}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="data-note">No issue tags matched the current public keyword rules.</p>
-              )}
-              <div className="card-link-row">
-                <Link className="button button-link" to={`/promises/${entry.statement.id}`}>
-                  Open promise detail
-                </Link>
+            <article key={entry.statement.id} className="record-row">
+              <div className="record-row-main">
+                <p className="mono-inline">{entry.promise.recordType === "canonical" ? "Reviewed public record" : "Submitted record"}</p>
+                <h2>
+                  <Link to={`/promises/${entry.statement.id}`}>{entry.promise.promiseText}</Link>
+                </h2>
                 {entry.politician ? (
-                  <Link className="button button-secondary" to={`/politicians/${entry.politician.id}`}>
-                    Open politician
-                  </Link>
-                ) : null}
+                  <p className="meta-line">
+                    <Link to={`/politicians/${entry.politician.id}`}>{entry.politician.name}</Link>
+                    {" · "}
+                    {getPartyAffiliationLabel(entry.politician)}
+                    {" · "}
+                    {formatIdentityLine(entry.politician.office, getTerritoryLabel(entry.politician))}
+                  </p>
+                ) : (
+                  <p className="meta-line">Politician record not available.</p>
+                )}
+              </div>
+              <div className="record-row-side">
+                <span>{formatDate(entry.promise.datePromised)}</span>
+                <span>{entry.promise.evidenceCount} sources</span>
+                <span>{entry.issueTags.length > 0 ? entry.issueTags.join(", ") : "No issue label"}</span>
+                <Link to={`/promises/${entry.statement.id}`}>Open</Link>
               </div>
             </article>
           ))
         )}
-      </section>
-
-      <section className="card stack-sm">
-        <h2>How to read this directory</h2>
-        <ul className="placeholder-list">
-          <li>Canonical records are already merged into the public promise graph.</li>
-          <li>Legacy submissions stay visible until canonization or merge work is complete.</li>
-          <li>Issue filters use the same keyword-based public tagging rules used elsewhere in the site.</li>
-        </ul>
       </section>
     </div>
   );

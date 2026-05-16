@@ -108,11 +108,34 @@ export const PromiseClaimDetailPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Promise claim</p>
-        <h1>{claim.claimText}</h1>
-        <p className="meta-line">Status: {claim.status}</p>
-        <p className="meta-line">Source: {claim.sourceUrl}</p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Contributor lens</p>
+          <h1>Promise claim review record</h1>
+          <p className="lede">{claim.claimText}</p>
+          <div className="card-link-row">
+            <Link to="/contribute/promises/new">Submit another claim</Link>
+            <Link to={claim.linkedCanonicalPromiseId ? `/promises/${claim.linkedCanonicalPromiseId}` : "/promises"}>Public promise records</Link>
+          </div>
+        </div>
+        <aside className="record-facts" aria-label="Promise claim status">
+          <div>
+            <span>Status</span>
+            <strong>{claim.status}</strong>
+          </div>
+          <div>
+            <span>Suggestions</span>
+            <strong>{targetOptions.length}</strong>
+          </div>
+          <div>
+            <span>Signals</span>
+            <strong>{signals.length}</strong>
+          </div>
+          <div>
+            <span>Source</span>
+            <strong>{claim.sourceUrl ? "Attached" : "Missing"}</strong>
+          </div>
+        </aside>
       </section>
 
       <section className="card stack-sm">

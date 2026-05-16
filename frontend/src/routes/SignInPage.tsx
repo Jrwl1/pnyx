@@ -73,10 +73,22 @@ export const SignInPage = (): ReactElement => {
   if (session) {
     return (
       <div className="stack-lg">
-        <section className="hero-panel stack-sm">
-          <p className="eyebrow">Signed in</p>
-          <h1>Your session is active</h1>
-          <p className="lede">The browser restored a bearer token from local storage. You can continue to the target route or switch sessions.</p>
+        <section className="record-hero">
+          <div className="record-hero-main">
+            <p className="eyebrow">Returning user</p>
+            <h1>Your session is active.</h1>
+            <p className="lede">Continue where you were headed, or sign out before switching accounts.</p>
+          </div>
+          <aside className="record-facts" aria-label="Active session">
+            <div>
+              <span>Role</span>
+              <strong>{session.role}</strong>
+            </div>
+            <div>
+              <span>Identity</span>
+              <strong>{session.email ?? session.userId}</strong>
+            </div>
+          </aside>
         </section>
 
         <section className="card stack-sm">
@@ -100,12 +112,26 @@ export const SignInPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Sign in</p>
-        <h1>Restore your session by email</h1>
-        <p className="lede">
-          Enter the email address tied to your PNYX account. The backend will issue a one-time sign-in code instead of requiring a shared server secret.
-        </p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Returning user</p>
+          <h1>Restore your session by email.</h1>
+          <p className="lede">Request a one-time code for the email tied to your PNYX account.</p>
+        </div>
+        <aside className="record-facts" aria-label="Sign-in steps">
+          <div>
+            <span>Step 1</span>
+            <strong>Email</strong>
+          </div>
+          <div>
+            <span>Step 2</span>
+            <strong>Code</strong>
+          </div>
+          <div>
+            <span>Then</span>
+            <strong>Return</strong>
+          </div>
+        </aside>
       </section>
 
       <section className="card stack-sm">
@@ -125,7 +151,7 @@ export const SignInPage = (): ReactElement => {
           </label>
 
           <p className="data-note">
-            Moderator and admin access depends on a provisioned role attached to this email identity. Public sign-in no longer asks you to choose a role in the browser.
+            Moderator and admin access depends on a provisioned role attached to this email identity. You never choose a role in the browser.
           </p>
 
           {message ? <p className="meta-line">{message}</p> : null}

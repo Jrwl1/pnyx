@@ -158,14 +158,31 @@ export const OpsAdminPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Party and promise admin</p>
-        <h1>Protected party graph and canonical promise maintenance</h1>
-        <div className="card-link-row">
-          <Link to="/ops">Open politician proposal queue</Link>
-          <Link to="/ops/records">Open editorial record ops</Link>
-          <Link to="/ops/claims">Open promise claim queue</Link>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Admin lens</p>
+          <h1>Protected party graph and canonical promise maintenance</h1>
+          <p className="lede">Maintain party identity, aliases, memberships, and direct canonical promises from a single protected surface.</p>
+          <div className="card-link-row">
+            <Link to="/ops">Proposal queue</Link>
+            <Link to="/ops/records">Editorial records</Link>
+            <Link to="/ops/claims">Promise claims</Link>
+          </div>
         </div>
+        <aside className="record-facts" aria-label="Admin summary">
+          <div>
+            <span>Parties</span>
+            <strong>{parties.length}</strong>
+          </div>
+          <div>
+            <span>Memberships</span>
+            <strong>{allMembers.length}</strong>
+          </div>
+          <div>
+            <span>Promises</span>
+            <strong>{canonicalPromises.length}</strong>
+          </div>
+        </aside>
       </section>
 
       {message ? <p className="meta-line">{message}</p> : null}
@@ -606,7 +623,6 @@ export const OpsAdminPage = (): ReactElement => {
                 id="ops-admin-canonical-text"
                 className="text-input"
                 rows={4}
-                style={{ minHeight: "132px", padding: "12px" }}
                 value={canonicalPromiseForm.promiseText}
                 onChange={(event) => setCanonicalPromiseForm((current) => ({ ...current, promiseText: event.target.value }))}
                 required

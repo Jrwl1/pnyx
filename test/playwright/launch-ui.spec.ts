@@ -68,7 +68,7 @@ test("loads core public routes", async ({ page }) => {
 
   await page.goto(`${frontendBase}/`);
   await retryPublicLoadIfNeeded(page);
-  await expect(page.getByRole("heading", { name: "What did they promise, and what does the public record show?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Find the promise first. Then read the evidence." })).toBeVisible();
   await expectPublicMeta(page, {
     title: "PNYX | Finnish political accountability",
     descriptionFragment: "Search Finnish politicians",
@@ -88,7 +88,25 @@ test("loads core public routes", async ({ page }) => {
   await page.goto(`${frontendBase}/politicians/${seededIds.politicianId}`);
   await retryPublicLoadIfNeeded(page);
   await expect(page.getByRole("heading", { name: "Launch Rehearsal Politician" })).toBeVisible();
-  await expect(page.getByRole("tab", { name: "Promises", exact: true })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByRole("heading", { name: "Page readiness" })).toBeVisible();
+  await expect(page.getByText("No reviewed page readiness record yet.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Discussion" })).toBeVisible();
+  const promisesTab = page.getByRole("tab", { name: "Promises", exact: true });
+  const votesTab = page.getByRole("tab", { name: "Voting record vs promises" });
+  const evidenceTab = page.getByRole("tab", { name: "Evidence timeline" });
+  await expect(promisesTab).toHaveAttribute("aria-selected", "true");
+  await expect(promisesTab).toHaveAttribute("aria-controls", "profile-panel-promises");
+  await expect(votesTab).toHaveAttribute("aria-controls", "profile-panel-votes");
+  await expect(evidenceTab).toHaveAttribute("aria-controls", "profile-panel-evidence");
+  await expect(promisesTab).toHaveAttribute("tabindex", "0");
+  await expect(votesTab).toHaveAttribute("tabindex", "-1");
+  await promisesTab.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(votesTab).toHaveAttribute("aria-selected", "true");
+  await expect(votesTab).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(evidenceTab).toHaveAttribute("aria-selected", "true");
+  await expect(evidenceTab).toBeFocused();
   await expectPublicMeta(page, {
     title: "Launch Rehearsal Politician | PNYX",
     descriptionFragment: "vote alignment",
@@ -97,7 +115,7 @@ test("loads core public routes", async ({ page }) => {
 
   await page.goto(`${frontendBase}/parties`);
   await retryPublicLoadIfNeeded(page);
-  await expect(page.getByRole("heading", { name: "Browse Finnish political parties on PNYX." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Browse parties by sourced positions and connected members." })).toBeVisible();
   await expect(page.getByText("Launch Rehearsal Party", { exact: true })).toBeVisible();
   await expectPublicMeta(page, {
     title: "Parties | PNYX",
@@ -108,6 +126,7 @@ test("loads core public routes", async ({ page }) => {
   await page.goto(`${frontendBase}/parties/${seededIds.partyId}`);
   await retryPublicLoadIfNeeded(page);
   await expect(page.getByRole("heading", { name: "Launch Rehearsal Party" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page readiness" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Current member politicians" })).toBeVisible();
   await expectPublicMeta(page, {
     title: "Launch Rehearsal Party | PNYX",
@@ -117,7 +136,7 @@ test("loads core public routes", async ({ page }) => {
 
   await page.goto(`${frontendBase}/promises`);
   await retryPublicLoadIfNeeded(page);
-  await expect(page.getByRole("heading", { name: "Browse documented promises on PNYX" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Browse claims with sources attached." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Launch rehearsal canonical promise" })).toBeVisible();
   await expectPublicMeta(page, {
     title: "Promises | PNYX",
@@ -127,7 +146,10 @@ test("loads core public routes", async ({ page }) => {
 
   await page.goto(`${frontendBase}/promises/${seededIds.statementId}`);
   await retryPublicLoadIfNeeded(page);
-  await expect(page.getByRole("heading", { name: "Launch rehearsal canonical promise" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Launch Rehearsal Politician: promise record" })).toBeVisible();
+  await expect(page.getByText("Launch rehearsal canonical promise", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Page readiness" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Discussion" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fulfillment verdict" })).toBeVisible();
   await expectPublicMeta(page, {
     title: "Launch rehearsal canonical promise | PNYX",
@@ -189,7 +211,7 @@ test("registers, signs in, and submits contributor records", async ({ page }) =>
   await expect(page.getByRole("heading", { name: "Claim queued" })).toBeVisible();
 
   await page.goto(`${frontendBase}/notifications`);
-  await expect(page.getByRole("heading", { name: "Manage alerts and review updates" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Notifications and review updates" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Preferences" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
 });

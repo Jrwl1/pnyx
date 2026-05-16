@@ -1,6 +1,6 @@
 # API and data truth
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 This file summarizes current code reality from `src/server.ts`, `migrations/`, and `frontend/src/App.tsx`.
 
@@ -8,9 +8,11 @@ This file summarizes current code reality from `src/server.ts`, `migrations/`, a
 
 - Auth: `/auth/register`, `/auth/request-code`, `/auth/verify-code`, `/auth/logout`, `/me`.
 - Public discovery: `/politicians`, `/politicians/:id/trust-summary`, `/parties`, `/parties/:id`, `/parties/:id/members`, `/parties/:id/stances`, `/canonical-promises`, `/canonical-promises/:id`, `/statements`, `/statements/:id`, `/search`, `/activity`.
+- Page readiness: public readiness objects on politician, party, and canonical-promise reads.
+- Bounded discussion: `/discussions`, `/discussions/:id/comments`, `/discussion-comments/:id/reports`.
 - Trust records: `/vote-events`, `/vote-events/:id`, canonical-promise vote links, fulfillment assessments, and party alignments.
 - Contributions: `/politician-proposals`, `/promise-claims`, `/statements`, statement votes.
-- Moderation: proposal claim/release/review/audits/duplicate assist, promise-claim claim/release/review/audits/equivalence signals.
+- Moderation: proposal claim/release/review/audits/duplicate assist, promise-claim claim/release/review/audits/equivalence signals, discussion reports, discussion comment moderation, and discussion thread moderation.
 - Operations: `/ops/launch-coverage`, `/ops/import-*`, `/ops/stage-items/:id/apply`, `/ops/stage-items/:id/reject`, `/abuse/metrics`.
 - Notifications: `/me/notification-preferences`, `/me/notifications`, `/me/notifications/:id/read`.
 
@@ -28,7 +30,9 @@ Migrations define:
 - product events;
 - notification preferences, notifications, notification deliveries;
 - contributor reputation;
-- ingest runs, raw records, and stage items.
+- ingest runs, raw records, and stage items;
+- page readiness records;
+- discussion threads, comments, reports, and moderation actions.
 
 ## Current frontend route areas
 
@@ -39,7 +43,7 @@ Migrations define:
 
 ## Next data gaps
 
-- Page readiness state is not yet a first-class model.
-- Comment/discussion schema is not yet implemented.
+- Readiness review write tools exist through `/ops/page-readiness` and the editorial records ops page.
+- Discussion exists for politician and canonical-promise pages; party discussion remains deferred.
 - Current plus previous-term national/EU data coverage is not yet complete.
 - Readiness thresholds and freshness evidence need to become queryable.

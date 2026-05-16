@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { PageMeta } from "../components/PageMeta";
+import { PageReadinessPanel } from "../components/PageReadinessPanel";
 import { StatusChip } from "../components/StatusChip";
 import { getPartyById, getPartyMembers, getPartyStances, listActivityFeed } from "../lib/api";
 import { formatDate, formatDateTime, formatIdentityLine } from "../lib/format";
@@ -110,44 +111,69 @@ export const PartyProfilePage = (): ReactElement => {
         description={`Browse party stances, memberships, and party-line context for ${party.name} on PNYX.`}
         path={`/parties/${party.id}`}
       />
-      <section className="hero-panel stack-sm">
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <Link className="breadcrumb-link" to="/">
-            Home
-          </Link>
-          <span className="breadcrumb-separator" aria-hidden="true">
-            /
-          </span>
-          <Link className="breadcrumb-link" to="/parties">
-            Parties
-          </Link>
-          <span className="breadcrumb-separator" aria-hidden="true">
-            /
-          </span>
-          <span className="breadcrumb-current" aria-current="page">
-            {party.shortName}
-          </span>
-        </nav>
-        <p className="eyebrow">Party profile</p>
-        <h1>{party.name}</h1>
-        <span className="party-badge">{party.shortName}</span>
-        <p className="lede">
-          {party.description ??
-            "Canonical party identity, official stances, and party trust records are now connected when the source-backed record exists."}
-        </p>
-        <div className="card-link-row">
-          <Link className="button button-link" to="/parties">
-            Back to party directory
-          </Link>
-          {party.websiteUrl ? (
-            <a className="button button-secondary" href={party.websiteUrl}>
-              Open party website
-            </a>
-          ) : null}
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <Link className="breadcrumb-link" to="/">
+              Home
+            </Link>
+            <span className="breadcrumb-separator" aria-hidden="true">
+              /
+            </span>
+            <Link className="breadcrumb-link" to="/parties">
+              Parties
+            </Link>
+            <span className="breadcrumb-separator" aria-hidden="true">
+              /
+            </span>
+            <span className="breadcrumb-current" aria-current="page">
+              {party.shortName}
+            </span>
+          </nav>
+          <p className="eyebrow">Party public record</p>
+          <h1>{party.name}</h1>
+          <span className="party-badge">{party.shortName}</span>
+          <p className="lede">
+            {party.description ??
+              "Party identity, official positions, member links, and party-line context are shown only where source-backed records exist."}
+          </p>
+          <div className="card-link-row">
+            <Link className="button button-link" to="/parties">
+              Back to parties
+            </Link>
+            {party.websiteUrl ? (
+              <a className="button button-secondary" href={party.websiteUrl}>
+                Official website
+              </a>
+            ) : null}
+          </div>
         </div>
+
+        <aside className="record-facts" aria-label="Party record summary">
+          <div>
+            <span>Positions</span>
+            <strong>{party.officialStanceCount ?? stances.length}</strong>
+          </div>
+          <div>
+            <span>Current members</span>
+            <strong>{party.currentMemberCount}</strong>
+          </div>
+          <div>
+            <span>Promises assessed</span>
+            <strong>{party.trustSummary?.promiseCount ?? 0}</strong>
+          </div>
+          <div>
+            <span>Known party line</span>
+            <strong>{formatPercent(party.trustSummary?.partyLinePercentages ? 100 - party.trustSummary.partyLinePercentages.unknown : null)}</strong>
+          </div>
+        </aside>
       </section>
 
-      <section className="scorecards-grid" aria-label="Party summary cards">
+      {party.readiness ? (
+        <PageReadinessPanel readiness={party.readiness} contributionHref="/contribute/statements/new" />
+      ) : null}
+
+      <section className="record-summary-grid" aria-label="Party summary">
         <article className="card scorecard">
           <h2>Official stances tracked</h2>
           <p className="score-value">{party.officialStanceCount ?? stances.length}</p>
@@ -200,16 +226,21 @@ export const PartyProfilePage = (): ReactElement => {
             <p>No official party stance records are connected for this profile yet.</p>
           </>
         ) : (
-          <div className="cards-grid cards-grid-1">
+          <div className="record-list">
             {stances.map((stance) => (
-              <article key={stance.id} className="card stack-xs">
-                <h3>{stance.issue ?? "General policy position"}</h3>
-                <p>{stance.stanceText}</p>
-                <p className="meta-line">Date: {formatDate(stance.dateSaid)}</p>
-                <p className="meta-line">
-                  Source: <a href={stance.sourceUrl}>{stance.sourceUrl}</a>
-                </p>
-                {stance.sourceNote ? <p className="meta-line">{stance.sourceNote}</p> : null}
+              <article key={stance.id} className="record-row">
+                <div className="record-row-main">
+                  <h3>{stance.issue ?? "General policy position"}</h3>
+                  <p>{stance.stanceText}</p>
+                  <p className="meta-line">
+                    Source: <a href={stance.sourceUrl}>{stance.sourceUrl}</a>
+                  </p>
+                  {stance.sourceNote ? <p className="meta-line">{stance.sourceNote}</p> : null}
+                </div>
+                <div className="record-row-side">
+                  <span>{formatDate(stance.dateSaid)}</span>
+                  <span>Official stance</span>
+                </div>
               </article>
             ))}
           </div>

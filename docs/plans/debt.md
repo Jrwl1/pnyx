@@ -1,12 +1,11 @@
 # Debt tracker
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 ## Current known debt
 
 - `src/server.ts` is large and high-risk. Refactor only when touching related areas and after tests exist.
-- Page readiness is not yet implemented as first-class product state.
-- Comment/discussion schema and moderation paths do not exist yet.
+- Party discussion remains deferred until politician and promise discussion prove moderation capacity.
 - Current plus previous-term Finnish national/EU data coverage is incomplete.
 - Harness docs need stronger mechanical checks beyond the first `docs:check`.
 - Generated API/schema references are not yet produced under `docs/generated/`.

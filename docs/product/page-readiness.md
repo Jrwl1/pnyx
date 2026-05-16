@@ -1,8 +1,38 @@
 # Page readiness
 
-Last checked: 2026-05-14
+Last checked: 2026-05-16
 
 Page readiness is the product's acceptance unit for the next milestones. A scraper, seed file, or API route is not done until the affected public page is truthful, source-backed, and safe to expose.
+
+## Implemented model
+
+M9 stores reviewed readiness in `page_readiness`.
+
+Implemented entity kinds:
+
+- `politician`
+- `party`
+- `canonical_promise`
+
+Implemented states:
+
+- `ready`
+- `thin_but_honest`
+- `not_ready`
+
+Implemented fields:
+
+- entity kind and entity id;
+- readiness state;
+- freshness checked date;
+- source count;
+- provenance summary;
+- missing-data keys;
+- reviewer and review timestamp.
+
+Public politician, party, and canonical-promise APIs expose a public `readiness` object. If no reviewed record exists, the API returns a conservative `not_ready` default with `readiness_review` as the missing-data reason. The UI renders this state on politician, party, and canonical promise-backed promise pages.
+
+Moderators can update reviewed readiness through `/ops/page-readiness` and the editorial records ops page.
 
 ## States
 
@@ -57,6 +87,18 @@ A Ready promise page has:
 - bounded discussion for evidence debate and context.
 
 Promise pages are the primary location for detailed discussion because the claim is specific.
+
+## Discussion and reporting boundary
+
+M9 discussion uses separate `discussion_threads`, `discussion_comments`, `discussion_reports`, and `discussion_moderation_actions` tables. Threads attach only to `politician` or `canonical_promise` entities. There is no global forum.
+
+Comments are public context only. They do not update canonical facts, accepted source bundles, readiness records, promise text, party memberships, or fulfillment assessments.
+
+Implemented moderation actions:
+
+- thread actions: `lock`, `unlock`, `hide`, `remove`, `restore`, `escalate`;
+- comment actions: `hide`, `remove`, `restore`;
+- comment reports enter `/ops/discussion-reports`.
 
 ## Readiness evidence
 

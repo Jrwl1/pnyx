@@ -24,13 +24,10 @@ export const PublicLayout = (): ReactElement => {
             <span className="brand-mark" aria-hidden="true">
               P
             </span>
-            <div>
-              <p className="brand-name">PNYX</p>
-              <p className="brand-subtitle">Promises tracked against outcomes</p>
-            </div>
+            <p className="brand-name">PNYX</p>
           </div>
 
-          <div className="stack-xs">
+          <div className="site-header-actions">
             <nav className="site-nav" aria-label="Public">
               <NavLink to="/" className={navClassName} end>
                 Home
@@ -40,6 +37,9 @@ export const PublicLayout = (): ReactElement => {
               </NavLink>
               <NavLink to="/parties" className={navClassName}>
                 Parties
+              </NavLink>
+              <NavLink to="/promises" className={navClassName}>
+                Promises
               </NavLink>
               <NavLink to="/methodology" className={navClassName}>
                 Methodology
@@ -51,7 +51,7 @@ export const PublicLayout = (): ReactElement => {
               ) : null}
             </nav>
 
-            <div className="card-link-row">
+            <div className="site-auth-actions" aria-label="Account">
               {session ? (
                 <>
                   <p className="meta-line">Signed in as {session.userId}</p>

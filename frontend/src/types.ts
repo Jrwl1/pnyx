@@ -161,9 +161,22 @@ export type VoteRecordValue = "for" | "against" | "abstain" | "absent";
 export type FulfillmentStatus = "fulfilled" | "broken" | "in_progress" | "unknown";
 export type AlignmentStatus = "aligned" | "contradicted" | "mixed" | "unknown";
 export type PartyLineStatus = "aligned" | "broke_party_line" | "unknown";
+export type PageReadinessState = "ready" | "thin_but_honest" | "not_ready";
+export type PageReadinessEntityKind = "politician" | "party" | "canonical_promise";
 export type PlaceholderState = "placeholder";
 export type PartyDataState = "placeholder" | "live";
 export type SearchResultKind = "politician" | "party" | "promise" | "topic";
+
+export interface PageReadiness {
+  entityKind: PageReadinessEntityKind;
+  entityId: string;
+  readinessState: PageReadinessState;
+  freshnessCheckedAt: string | null;
+  sourceCount: number;
+  missingDataKeys: string[];
+  provenanceSummary: string;
+  reviewedAt: string | null;
+}
 
 export interface SearchResultItem {
   kind: SearchResultKind;
@@ -187,6 +200,50 @@ export interface ActivityFeedItem {
   canonicalPromiseId: number | null;
 }
 
+export type DiscussionEntityKind = "politician" | "canonical_promise";
+export type DiscussionThreadStatus = "open" | "locked" | "hidden" | "removed" | "escalated";
+export type DiscussionCommentStatus = "visible" | "hidden" | "removed";
+export type DiscussionModerationAction = "lock" | "unlock" | "hide" | "remove" | "restore" | "escalate";
+
+export interface DiscussionThread {
+  id: number;
+  entityKind: DiscussionEntityKind;
+  entityId: string;
+  title: string;
+  createdBy: string;
+  status: DiscussionThreadStatus;
+  moderationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscussionComment {
+  id: number;
+  threadId: number;
+  body: string;
+  createdBy: string;
+  status: DiscussionCommentStatus;
+  moderationReason: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscussionBundle {
+  thread: DiscussionThread;
+  comments: DiscussionComment[];
+}
+
+export interface DiscussionReport {
+  id: number;
+  targetKind: "thread" | "comment";
+  targetId: number;
+  reporterId: string;
+  reason: string;
+  status: "pending" | "reviewed" | "escalated";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Politician {
   id: number;
   name: string;
@@ -199,6 +256,7 @@ export interface Politician {
   externalId: string | null;
   verified: number;
   createdAt: string;
+  readiness?: PageReadiness;
   trustSummary?: PoliticianTrustSummary;
 }
 
@@ -574,6 +632,7 @@ export interface CanonicalPromiseSummary {
   acceptedSourceCount: number;
   createdAt: string;
   updatedAt: string;
+  readiness?: PageReadiness;
 }
 
 export interface CanonicalPromiseDetailResponse {
@@ -716,6 +775,7 @@ export interface BackendPartySummary {
   currentMemberCount: number;
   createdAt: string;
   updatedAt: string;
+  readiness?: PageReadiness;
   officialStanceCount?: number;
   trustSummary?: PartyTrustSummary;
 }

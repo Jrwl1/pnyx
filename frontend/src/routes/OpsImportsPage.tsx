@@ -24,6 +24,27 @@ const toMetadataObject = (value: unknown): Record<string, unknown> | null => {
   return value as Record<string, unknown>;
 };
 
+const IMPORT_LOAD_TIMEOUT_MS = 12000;
+
+const withImportLoadTimeout = async <T,>(operation: Promise<T>): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Import operations are taking too long to load. Check the backend connection and retry."));
+        }, IMPORT_LOAD_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
+
 const renderResearchMetadata = (normalized: unknown): ReactElement | null => {
   const metadata = toMetadataObject(normalized);
   const sourceTier = metadata?.sourceTier ?? metadata?.sourceType;
@@ -74,18 +95,16 @@ export const OpsImportsPage = (): ReactElement => {
     setLoading(true);
     setError(null);
     try {
-      const [sourceItems, runItems, coverageResponse] = await Promise.all([
-        listIngestSources(session.token),
-        listIngestRuns(session.token),
-        getIngestCoverage(session.token)
-      ]);
+      const [sourceItems, runItems, coverageResponse] = await withImportLoadTimeout(
+        Promise.all([listIngestSources(session.token), listIngestRuns(session.token), getIngestCoverage(session.token)])
+      );
       setSources(sourceItems);
       setRuns(runItems);
       setCoverage(coverageResponse);
 
       const preferredRunId = preferredRunIdOverride ?? selectedRunId ?? runItems[0]?.id ?? null;
       if (preferredRunId) {
-        const detail = await getIngestRunById(session.token, preferredRunId);
+        const detail = await withImportLoadTimeout(getIngestRunById(session.token, preferredRunId));
         setSelectedRunId(preferredRunId);
         setSelectedRun(detail.run);
         setStageItems(detail.stageItems);
@@ -141,14 +160,31 @@ export const OpsImportsPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Official imports</p>
-        <h1>Finland-first ingest review</h1>
-        <div className="card-link-row">
-          <Link to="/ops">Open politician proposal queue</Link>
-          <Link to="/ops/admin">Open party and promise admin</Link>
-          <Link to="/ops/records">Open editorial record ops</Link>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Import lens</p>
+          <h1>Finland-first ingest review</h1>
+          <p className="lede">Stage official-source records, inspect provenance, then apply, reject, or mark records as needing stronger confirmation.</p>
+          <div className="card-link-row">
+            <Link to="/ops">Proposal queue</Link>
+            <Link to="/ops/admin">Party and promise admin</Link>
+            <Link to="/ops/records">Editorial records</Link>
+          </div>
         </div>
+        <aside className="record-facts" aria-label="Import status">
+          <div>
+            <span>Sources</span>
+            <strong>{sources.length}</strong>
+          </div>
+          <div>
+            <span>Runs</span>
+            <strong>{runs.length}</strong>
+          </div>
+          <div>
+            <span>Pending</span>
+            <strong>{coverage ? Object.values(coverage.pending).reduce((total, count) => total + count, 0) : 0}</strong>
+          </div>
+        </aside>
       </section>
 
       {message ? <p className="meta-line">{message}</p> : null}
@@ -244,7 +280,7 @@ export const OpsImportsPage = (): ReactElement => {
                 <li key={item.id} className="timeline-item">
                   <p>{item.stageType}</p>
                   <p className="meta-line">{item.status} · {item.dedupeKey}</p>
-                  <pre className="meta-line" style={{ whiteSpace: "pre-wrap" }}>
+                  <pre className="meta-line pre-wrap">
                     {JSON.stringify(item.normalized, null, 2)}
                   </pre>
                   {renderResearchMetadata(item.normalized)}

@@ -15,7 +15,8 @@ import {
   listCanonicalPromises,
   listParties,
   listPoliticians,
-  listVoteEvents
+  listVoteEvents,
+  updatePageReadiness
 } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 import type {
@@ -83,6 +84,15 @@ export const OpsRecordsPage = (): ReactElement => {
     partyStanceId: "",
     status: "aligned" as "aligned" | "broke_party_line",
     reason: ""
+  });
+  const [readinessForm, setReadinessForm] = useState({
+    entityKind: "politician" as "politician" | "party" | "canonical_promise",
+    entityId: "",
+    readinessState: "thin_but_honest" as "ready" | "thin_but_honest" | "not_ready",
+    freshnessCheckedAt: "",
+    sourceCount: "0",
+    missingDataKeys: "readiness_review",
+    provenanceSummary: ""
   });
 
   const loadData = async (): Promise<void> => {
@@ -152,15 +162,32 @@ export const OpsRecordsPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Editorial operations</p>
-        <h1>Launch-critical record maintenance</h1>
-        <div className="card-link-row">
-          <Link to="/ops">Open politician proposal queue</Link>
-          <Link to="/ops/admin">Open party and promise admin</Link>
-          <Link to="/ops/imports">Open official imports</Link>
-          <Link to="/ops/claims">Open promise claim queue</Link>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Editorial lens</p>
+          <h1>Launch-critical record maintenance</h1>
+          <p className="lede">Review readiness, add stances, connect votes, and record fulfillment evidence without mixing those records with discussion.</p>
+          <div className="card-link-row">
+            <Link to="/ops">Proposal queue</Link>
+            <Link to="/ops/admin">Party and promise admin</Link>
+            <Link to="/ops/imports">Official imports</Link>
+            <Link to="/ops/claims">Promise claims</Link>
+          </div>
         </div>
+        <aside className="record-facts" aria-label="Editorial coverage">
+          <div>
+            <span>Parties with stances</span>
+            <strong>{coverage ? `${coverage.parties.withStances}/${coverage.parties.total}` : "0"}</strong>
+          </div>
+          <div>
+            <span>Memberships</span>
+            <strong>{coverage ? `${coverage.politicians.withCurrentMembership}/${coverage.politicians.total}` : "0"}</strong>
+          </div>
+          <div>
+            <span>Public promises</span>
+            <strong>{coverage?.canonicalPromises.publicTotal ?? 0}</strong>
+          </div>
+        </aside>
       </section>
 
       {coverage ? (
@@ -196,6 +223,150 @@ export const OpsRecordsPage = (): ReactElement => {
           {error}
         </p>
       ) : null}
+
+      <section className="card stack-sm" aria-label="Page readiness review">
+        <h2>Review page readiness</h2>
+        <p className="meta-line">Stores reviewed readiness separately from canonical facts and user discussion.</p>
+        <form
+          className="stack-sm"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void runAction(async () => {
+              await updatePageReadiness(session.token, {
+                entityKind: readinessForm.entityKind,
+                entityId: readinessForm.entityId,
+                readinessState: readinessForm.readinessState,
+                freshnessCheckedAt: readinessForm.freshnessCheckedAt || null,
+                sourceCount: Number(readinessForm.sourceCount || 0),
+                missingDataKeys: readinessForm.missingDataKeys
+                  .split(",")
+                  .map((entry) => entry.trim())
+                  .filter(Boolean),
+                provenanceSummary: readinessForm.provenanceSummary
+              });
+            }, "Page readiness reviewed.");
+          }}
+        >
+          <div className="controls-grid">
+            <label className="field-group" htmlFor="ops-readiness-kind">
+              <span>Page type</span>
+              <select
+                id="ops-readiness-kind"
+                className="select-input"
+                value={readinessForm.entityKind}
+                onChange={(event) =>
+                  setReadinessForm((current) => ({
+                    ...current,
+                    entityKind: event.target.value as "politician" | "party" | "canonical_promise",
+                    entityId: ""
+                  }))
+                }
+              >
+                <option value="politician">Politician</option>
+                <option value="party">Party</option>
+                <option value="canonical_promise">Canonical promise</option>
+              </select>
+            </label>
+            <label className="field-group" htmlFor="ops-readiness-entity">
+              <span>Page</span>
+              <select
+                id="ops-readiness-entity"
+                className="select-input"
+                value={readinessForm.entityId}
+                onChange={(event) => setReadinessForm((current) => ({ ...current, entityId: event.target.value }))}
+                required
+              >
+                <option value="">Choose page</option>
+                {readinessForm.entityKind === "politician"
+                  ? politicians.map((politician) => (
+                      <option key={politician.id} value={String(politician.id)}>
+                        {politician.name}
+                      </option>
+                    ))
+                  : null}
+                {readinessForm.entityKind === "party"
+                  ? parties.map((party) => (
+                      <option key={party.id} value={party.id}>
+                        {party.shortName} - {party.name}
+                      </option>
+                    ))
+                  : null}
+                {readinessForm.entityKind === "canonical_promise"
+                  ? canonicalPromises.map((promise) => (
+                      <option key={promise.id} value={String(promise.id)}>
+                        {promise.promiseText}
+                      </option>
+                    ))
+                  : null}
+              </select>
+            </label>
+            <label className="field-group" htmlFor="ops-readiness-state">
+              <span>Readiness</span>
+              <select
+                id="ops-readiness-state"
+                className="select-input"
+                value={readinessForm.readinessState}
+                onChange={(event) =>
+                  setReadinessForm((current) => ({
+                    ...current,
+                    readinessState: event.target.value as "ready" | "thin_but_honest" | "not_ready"
+                  }))
+                }
+              >
+                <option value="ready">ready</option>
+                <option value="thin_but_honest">thin_but_honest</option>
+                <option value="not_ready">not_ready</option>
+              </select>
+            </label>
+            <label className="field-group" htmlFor="ops-readiness-date">
+              <span>Freshness checked</span>
+              <input
+                id="ops-readiness-date"
+                className="text-input"
+                type="date"
+                value={readinessForm.freshnessCheckedAt}
+                onChange={(event) => setReadinessForm((current) => ({ ...current, freshnessCheckedAt: event.target.value }))}
+              />
+            </label>
+            <label className="field-group" htmlFor="ops-readiness-source-count">
+              <span>Source count</span>
+              <input
+                id="ops-readiness-source-count"
+                className="text-input"
+                type="number"
+                min="0"
+                value={readinessForm.sourceCount}
+                onChange={(event) => setReadinessForm((current) => ({ ...current, sourceCount: event.target.value }))}
+                required
+              />
+            </label>
+            <label className="field-group" htmlFor="ops-readiness-missing">
+              <span>Missing-data keys</span>
+              <input
+                id="ops-readiness-missing"
+                className="text-input"
+                type="text"
+                value={readinessForm.missingDataKeys}
+                onChange={(event) => setReadinessForm((current) => ({ ...current, missingDataKeys: event.target.value }))}
+              />
+            </label>
+          </div>
+          <label className="field-group" htmlFor="ops-readiness-provenance">
+            <span>Provenance summary</span>
+            <textarea
+              id="ops-readiness-provenance"
+              className="text-input"
+              rows={4}
+              value={readinessForm.provenanceSummary}
+              onChange={(event) => setReadinessForm((current) => ({ ...current, provenanceSummary: event.target.value }))}
+              required
+            />
+          </label>
+          <button className="button button-primary" type="submit" disabled={submitting}>
+            {submitting ? "Saving..." : "Save readiness review"}
+          </button>
+        </form>
+      </section>
 
       <section className="split-grid">
         <article className="card stack-sm">
@@ -270,7 +441,6 @@ export const OpsRecordsPage = (): ReactElement => {
                 id="ops-record-party-text"
                 className="text-input"
                 rows={4}
-                style={{ minHeight: "132px", padding: "12px" }}
                 value={partyStanceForm.stanceText}
                 onChange={(event) => setPartyStanceForm((current) => ({ ...current, stanceText: event.target.value }))}
                 required
@@ -583,7 +753,6 @@ export const OpsRecordsPage = (): ReactElement => {
                 id="ops-fulfillment-summary"
                 className="text-input"
                 rows={4}
-                style={{ minHeight: "132px", padding: "12px" }}
                 value={fulfillmentForm.summary}
                 onChange={(event) => setFulfillmentForm((current) => ({ ...current, summary: event.target.value }))}
                 required
@@ -728,7 +897,6 @@ export const OpsRecordsPage = (): ReactElement => {
               id="ops-alignment-reason"
               className="text-input"
               rows={4}
-              style={{ minHeight: "132px", padding: "12px" }}
               value={partyAlignmentForm.reason}
               onChange={(event) => setPartyAlignmentForm((current) => ({ ...current, reason: event.target.value }))}
             />

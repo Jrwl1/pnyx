@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState, type ReactElement } from "react";
 import { Link, useParams } from "react-router-dom";
+import { DiscussionPanel } from "../components/DiscussionPanel";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { PageMeta } from "../components/PageMeta";
+import { PageReadinessPanel } from "../components/PageReadinessPanel";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
@@ -198,13 +200,15 @@ export const PromiseDetailPage = (): ReactElement => {
   const linkedPartyShell = findPartyShellForPolitician(politician);
   const partyAffiliationLabel = politician ? getPartyAffiliationLabel(politician) : "Data not yet available";
   const totalSentiment = statement.aggregate.support + statement.aggregate.oppose;
-  const supportPercent = totalSentiment > 0 ? (statement.aggregate.support / totalSentiment) * 100 : 0;
-  const opposePercent = totalSentiment > 0 ? (statement.aggregate.oppose / totalSentiment) * 100 : 0;
+  const sentimentUnits = 20;
+  const supportUnits = totalSentiment > 0 ? Math.round((statement.aggregate.support / totalSentiment) * sentimentUnits) : 0;
+  const opposeUnits = totalSentiment > 0 ? sentimentUnits - supportUnits : 0;
   const fulfillmentStatus = trustContext?.latestFulfillment?.status ?? promiseRecord.fulfillmentStatus;
   const fulfillmentSummary = trustContext?.latestFulfillment?.summary ?? promiseRecord.fulfillmentSummary;
   const voteAlignmentStatus = trustContext?.voteAlignmentSummary ?? promiseRecord.voteAlignment;
   const latestPartyAlignment = trustContext?.latestPartyAlignment ?? null;
   const latestAssessmentDate = trustContext?.latestFulfillment?.evidenceDate ?? latestEvidenceDate;
+  const readinessContributionTarget = `/contribute/promises/new?politicianId=${statement.politicianId}`;
 
   return (
     <div className="stack-lg">
@@ -213,71 +217,86 @@ export const PromiseDetailPage = (): ReactElement => {
         description={`Browse promise detail, fulfillment, vote alignment, and evidence for this PNYX record.`}
         path={`/promises/${promiseId}`}
       />
-      <section className="hero-panel stack-sm">
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <Link className="breadcrumb-link" to="/">
-            Home
-          </Link>
-          <span className="breadcrumb-separator" aria-hidden="true">
-            /
-          </span>
-          <Link className="breadcrumb-link" to="/politicians">
-            Politicians
-          </Link>
-          {politician ? (
-            <>
-              <span className="breadcrumb-separator" aria-hidden="true">
-                /
-              </span>
-              <Link className="breadcrumb-link" to={`/politicians/${politician.id}`}>
-                {politician.name}
-              </Link>
-            </>
-          ) : null}
-          <span className="breadcrumb-separator" aria-hidden="true">
-            /
-          </span>
-          <span className="breadcrumb-current" aria-current="page">
-            Promise
-          </span>
-        </nav>
-        <p className="eyebrow">Promise detail</p>
-        <h1>{promiseRecord.promiseText}</h1>
-        <p className="meta-line">
-          {statement.canonical
-            ? `Canonical promise status: ${statement.canonical.publicStatus}.`
-            : "Legacy statement detail without a linked canonical promise yet."}
-        </p>
-        <p className="meta-line">
-          {politician ? (
-            <>
-              <Link to={`/politicians/${politician.id}`}>{politician.name}</Link>
-              {" \u00b7 "}
-              {formatIdentityLine(politician.office, getTerritoryLabel(politician))}
-            </>
-          ) : (
-            <>Linked politician record not available</>
-          )}
-        </p>
-        <p className="meta-line">
-          Party affiliation:{" "}
-          {linkedPartyShell ? (
-            <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
-              {partyAffiliationLabel}
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <Link className="breadcrumb-link" to="/">
+              Home
             </Link>
-          ) : (
-            partyAffiliationLabel
-          )}
-        </p>
-        <div className="card-link-row">
-          <Link className="button button-link" to={politician ? `/politicians/${politician.id}` : "/politicians"}>
-            {politician ? "Back to politician profile" : "Back to politician directory"}
-          </Link>
-          <Link className="button button-secondary" to={`/contribute/promises/new?politicianId=${statement.politicianId}`}>
-            Submit source claim
-          </Link>
+            <span className="breadcrumb-separator" aria-hidden="true">
+              /
+            </span>
+            <Link className="breadcrumb-link" to="/promises">
+              Promises
+            </Link>
+            {politician ? (
+              <>
+                <span className="breadcrumb-separator" aria-hidden="true">
+                  /
+                </span>
+                <Link className="breadcrumb-link" to={`/politicians/${politician.id}`}>
+                  {politician.name}
+                </Link>
+              </>
+            ) : null}
+          </nav>
+          <p className="eyebrow">{statement.canonical ? "Reviewed promise record" : "Submitted promise record"}</p>
+          <h1>{politician ? `${politician.name}: promise record` : "Promise record"}</h1>
+          <p className="lede">Source-backed claim, current assessment state, and missing evidence are kept separate below.</p>
+          <p className="meta-line">
+            {politician ? (
+              <>
+                <Link to={`/politicians/${politician.id}`}>{politician.name}</Link>
+                {" · "}
+                {formatIdentityLine(politician.office, getTerritoryLabel(politician))}
+              </>
+            ) : (
+              <>Linked politician record not available</>
+            )}
+          </p>
+          <p className="meta-line">
+            Party:{" "}
+            {linkedPartyShell ? (
+              <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
+                {partyAffiliationLabel}
+              </Link>
+            ) : (
+              partyAffiliationLabel
+            )}
+          </p>
+          <div className="card-link-row">
+            <Link className="button button-link" to={politician ? `/politicians/${politician.id}` : "/politicians"}>
+              {politician ? "Back to person record" : "Back to directory"}
+            </Link>
+            <Link className="button button-secondary" to={`/contribute/promises/new?politicianId=${statement.politicianId}`}>
+              Submit source claim
+            </Link>
+          </div>
         </div>
+
+        <aside className="record-facts" aria-label="Promise record summary">
+          <div>
+            <span>Date</span>
+            <strong>{formatDate(statement.dateSaid)}</strong>
+          </div>
+          <div>
+            <span>Sources</span>
+            <strong>{statement.canonical?.acceptedSourceCount ?? promiseRecord.evidenceCount}</strong>
+          </div>
+          <div>
+            <span>Fulfillment</span>
+            <strong>{fulfillmentStatus === "unknown" ? "Not assessed" : fulfillmentStatus}</strong>
+          </div>
+          <div>
+            <span>Vote comparison</span>
+            <strong>{voteAlignmentStatus === "unknown" ? "Missing" : voteAlignmentStatus}</strong>
+          </div>
+        </aside>
       </section>
+
+      {canonicalDetail?.promise.readiness ? (
+        <PageReadinessPanel readiness={canonicalDetail.promise.readiness} contributionHref={readinessContributionTarget} />
+      ) : null}
 
       <section className="card stack-sm claim-block" aria-label="Promise claim">
         <h2>{statement.canonical ? "Canonical promise framing" : "Promise claim"}</h2>
@@ -352,26 +371,42 @@ export const PromiseDetailPage = (): ReactElement => {
         )}
       </section>
 
-      <section className="card stack-sm" aria-label="Evidence list">
-        <h2>Evidence list</h2>
-        <p className="meta-line">Newest first</p>
-        <ol>
+      <section className="question-panel" aria-label="Evidence list">
+        <div className="section-header">
+          <h2>Source evidence</h2>
+          <p className="data-note">Accepted sources are listed separately from community sentiment and discussion.</p>
+        </div>
+        <div className="record-list">
           {statement.acceptedSources.length > 0 ? (
             statement.acceptedSources.map((source) => (
-              <li key={source.id}>
-                <a href={source.sourceUrl}>{source.sourceUrl}</a>
-                <span className="meta-line">
-                  Accepted source{source.sourceNote ? ` · ${source.sourceNote}` : ""}
-                </span>
-              </li>
+              <article key={source.id} className="record-row">
+                <div className="record-row-main">
+                  <h3>
+                    <a href={source.sourceUrl}>{source.sourceNote || "Accepted source"}</a>
+                  </h3>
+                  <p className="meta-line">{source.sourceUrl}</p>
+                </div>
+                <div className="record-row-side">
+                  <span>Accepted</span>
+                  <span>Evidence bundle</span>
+                </div>
+              </article>
             ))
           ) : (
-            <li>
-              <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
-              <span className="meta-line">Original source for this promise statement</span>
-            </li>
+            <article className="record-row">
+              <div className="record-row-main">
+                <h3>
+                  <a href={statement.sourceUrl}>Original statement source</a>
+                </h3>
+                <p className="meta-line">{statement.sourceUrl}</p>
+              </div>
+              <div className="record-row-side">
+                <span>Submitted</span>
+                <span>Awaiting accepted bundle</span>
+              </div>
+            </article>
           )}
-        </ol>
+        </div>
       </section>
 
       <section className="card stack-sm" aria-label="Revision and audit history">
@@ -414,8 +449,13 @@ export const PromiseDetailPage = (): ReactElement => {
       <section className="card stack-sm sentiment-card" aria-label="Community confidence">
         <h2>Community confidence</h2>
         <div className="sentiment-track" aria-hidden="true">
-          <div className="sentiment-fill sentiment-fill-support" style={{ width: `${supportPercent}%` }} />
-          <div className="sentiment-fill sentiment-fill-oppose" style={{ width: `${opposePercent}%` }} />
+          {totalSentiment === 0 ? <span className="sentiment-segment sentiment-segment-empty" /> : null}
+          {Array.from({ length: supportUnits }, (_, index) => (
+            <span key={`support-${index}`} className="sentiment-segment sentiment-fill-support" />
+          ))}
+          {Array.from({ length: opposeUnits }, (_, index) => (
+            <span key={`oppose-${index}`} className="sentiment-segment sentiment-fill-oppose" />
+          ))}
         </div>
         <div className="sentiment-metrics" aria-label="Community sentiment totals">
           <p>
@@ -468,6 +508,15 @@ export const PromiseDetailPage = (): ReactElement => {
           </p>
         ) : null}
       </section>
+
+      {statement.canonical ? (
+        <DiscussionPanel
+          entityKind="canonical_promise"
+          entityId={statement.canonical.id}
+          currentPath={`/promises/${promiseId}`}
+          session={session}
+        />
+      ) : null}
     </div>
   );
 };
