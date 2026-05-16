@@ -122,8 +122,8 @@ export const addStageItem = (input: {
 }): number => {
   const normalizedJson = JSON.stringify(input.normalized);
   const existing = db
-    .prepare("SELECT id FROM ingest_stage_items WHERE source_key = ? AND dedupe_key = ?")
-    .get(input.sourceKey, input.dedupeKey) as { id: number } | undefined;
+    .prepare("SELECT id FROM ingest_stage_items WHERE run_id = ? AND source_key = ? AND dedupe_key = ?")
+    .get(input.runId, input.sourceKey, input.dedupeKey) as { id: number } | undefined;
 
   if (existing) {
     db.prepare("UPDATE ingest_stage_items SET raw_record_id = ?, normalized_json = ?, updated_at = datetime('now') WHERE id = ?").run(

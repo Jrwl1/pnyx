@@ -198,4 +198,120 @@ describe("ingest", () => {
       errorMessage: "Needs stronger source confirmation before publication"
     });
   });
+
+  it("deduplicates stage items within a single run only", () => {
+    const firstRunId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const secondRunId = db
+      .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+      .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+    const firstRawRecordId = addRawRecord({
+      runId: firstRunId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-1",
+      payload: { text: "first" }
+    });
+    const secondRawRecordId = addRawRecord({
+      runId: secondRunId,
+      sourceFamily: "research_watch_pulse",
+      sourceKey: "research_watch_pulse_fi",
+      recordType: "politician_statement",
+      sourceRecordKey: "statement-2",
+      payload: { text: "second" }
+    });
+
+    const firstStageItemId = addStageItem({
+      runId: firstRunId,
+      rawRecordId: firstRawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-shared",
+      normalized: { statementText: "first" }
+    });
+    const secondStageItemId = addStageItem({
+      runId: secondRunId,
+      rawRecordId: secondRawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-shared",
+      normalized: { statementText: "second" }
+    });
+    const updatedFirstStageItemId = addStageItem({
+      runId: firstRunId,
+      rawRecordId: firstRawRecordId,
+      stageType: "politician_statement",
+      sourceKey: "research_watch_pulse_fi",
+      dedupeKey: "research:statement-shared",
+      normalized: { statementText: "first updated" }
+    });
+
+    expect(secondStageItemId).not.toBe(firstStageItemId);
+    expect(updatedFirstStageItemId).toBe(firstStageItemId);
+    expect(getIngestStageItemById(firstStageItemId)).toMatchObject({
+      runId: firstRunId,
+      rawRecordId: firstRawRecordId,
+      normalizedJson: JSON.stringify({ statementText: "first updated" })
+    });
+    expect(getIngestStageItemById(secondStageItemId)).toMatchObject({
+      runId: secondRunId,
+      rawRecordId: secondRawRecordId,
+      normalizedJson: JSON.stringify({ statementText: "second" })
+    });
+  });
+
+  it("cascades stage item deletion when an ingest run or raw record is deleted", () => {
+    db.pragma("foreign_keys = ON");
+    try {
+      const runDeletedId = db
+        .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+        .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+      const runDeletedRawRecordId = addRawRecord({
+        runId: runDeletedId,
+        sourceFamily: "research_watch_pulse",
+        sourceKey: "research_watch_pulse_fi",
+        recordType: "politician_statement",
+        sourceRecordKey: "run-deleted",
+        payload: { text: "run deleted" }
+      });
+      const runDeletedStageItemId = addStageItem({
+        runId: runDeletedId,
+        rawRecordId: runDeletedRawRecordId,
+        stageType: "politician_statement",
+        sourceKey: "research_watch_pulse_fi",
+        dedupeKey: "research:run-deleted",
+        normalized: { statementText: "run deleted" }
+      });
+
+      db.prepare("DELETE FROM ingest_runs WHERE id = ?").run(runDeletedId);
+      expect(getIngestStageItemById(runDeletedStageItemId)).toBeUndefined();
+
+      const rawDeletedRunId = db
+        .prepare("INSERT INTO ingest_runs (source_family, source_key, triggered_by) VALUES (?, ?, ?)")
+        .run("research_watch_pulse", "research_watch_pulse_fi", "test").lastInsertRowid as number;
+      const rawDeletedRawRecordId = addRawRecord({
+        runId: rawDeletedRunId,
+        sourceFamily: "research_watch_pulse",
+        sourceKey: "research_watch_pulse_fi",
+        recordType: "politician_statement",
+        sourceRecordKey: "raw-deleted",
+        payload: { text: "raw deleted" }
+      });
+      const rawDeletedStageItemId = addStageItem({
+        runId: rawDeletedRunId,
+        rawRecordId: rawDeletedRawRecordId,
+        stageType: "politician_statement",
+        sourceKey: "research_watch_pulse_fi",
+        dedupeKey: "research:raw-deleted",
+        normalized: { statementText: "raw deleted" }
+      });
+
+      db.prepare("DELETE FROM ingest_raw_records WHERE id = ?").run(rawDeletedRawRecordId);
+      expect(getIngestStageItemById(rawDeletedStageItemId)).toBeUndefined();
+    } finally {
+      db.pragma("foreign_keys = OFF");
+    }
+  });
 });

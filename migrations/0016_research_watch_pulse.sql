@@ -19,8 +19,8 @@ CREATE TABLE ingest_stage_items (
   error_message TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (run_id) REFERENCES ingest_runs(id),
-  FOREIGN KEY (raw_record_id) REFERENCES ingest_raw_records(id),
+  FOREIGN KEY (run_id) REFERENCES ingest_runs(id) ON DELETE CASCADE,
+  FOREIGN KEY (raw_record_id) REFERENCES ingest_raw_records(id) ON DELETE CASCADE,
   UNIQUE(run_id, source_key, dedupe_key)
 );
 
