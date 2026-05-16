@@ -81,7 +81,7 @@ FROM statement_stats, engagement, retention;
 
 - Retention now comes from append-only `product_events` rather than a derived proxy over mixed domain tables.
 - Soft-deleted statements are excluded from tracked statement counts.
-- If schema changes affect these queries, update this file and `docs/TRACEABILITY_V1.md` in the same commit.
+- If schema changes affect these queries, update this file and `docs/quality/traceability.md` in the same commit.
 
 ## Expanded accountability snapshot (S21..S26)
 

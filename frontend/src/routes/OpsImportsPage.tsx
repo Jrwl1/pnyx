@@ -10,11 +10,70 @@ import {
   getIngestRunById,
   listIngestRuns,
   listIngestSources,
+  markIngestStageItemNeedsSource,
   rejectIngestStageItem,
   triggerIngestRun
 } from "../lib/api";
 import { formatDateTime } from "../lib/format";
 import type { IngestRunRecord, IngestSourceSummary, IngestStageItemRecord } from "../types";
+
+const toMetadataObject = (value: unknown): Record<string, unknown> | null => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value as Record<string, unknown>;
+};
+
+const IMPORT_LOAD_TIMEOUT_MS = 12000;
+
+const withImportLoadTimeout = async <T,>(operation: Promise<T>): Promise<T> => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new Error("Import operations are taking too long to load. Check the backend connection and retry."));
+        }, IMPORT_LOAD_TIMEOUT_MS);
+      })
+    ]);
+  } finally {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+  }
+};
+
+const renderResearchMetadata = (normalized: unknown): ReactElement | null => {
+  const metadata = toMetadataObject(normalized);
+  const sourceTier = metadata?.sourceTier ?? metadata?.sourceType;
+  const hasReviewMetadata =
+    sourceTier !== undefined ||
+    metadata?.confidence !== undefined ||
+    metadata?.needsOfficialConfirmation !== undefined;
+
+  if (!hasReviewMetadata) {
+    return null;
+  }
+
+  return (
+    <div className="stack-xs">
+      {sourceTier !== undefined ? <p className="meta-line">Source tier: {String(sourceTier)}</p> : null}
+      {metadata?.confidence !== undefined ? <p className="meta-line">Confidence: {String(metadata.confidence)}</p> : null}
+      {metadata?.needsOfficialConfirmation !== undefined ? (
+        <p className="meta-line">
+          Official confirmation:{" "}
+          {metadata.needsOfficialConfirmation === true
+            ? "Needed"
+            : metadata.needsOfficialConfirmation === false
+              ? "Not flagged"
+              : String(metadata.needsOfficialConfirmation)}
+        </p>
+      ) : null}
+    </div>
+  );
+};
 
 export const OpsImportsPage = (): ReactElement => {
   const { session } = useAuth();
@@ -29,25 +88,23 @@ export const OpsImportsPage = (): ReactElement => {
   const [selectedRun, setSelectedRun] = useState<IngestRunRecord | null>(null);
   const [stageItems, setStageItems] = useState<IngestStageItemRecord[]>([]);
 
-  const load = async (): Promise<void> => {
+  const load = async (preferredRunIdOverride?: number | null): Promise<void> => {
     if (!session) {
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const [sourceItems, runItems, coverageResponse] = await Promise.all([
-        listIngestSources(session.token),
-        listIngestRuns(session.token),
-        getIngestCoverage(session.token)
-      ]);
+      const [sourceItems, runItems, coverageResponse] = await withImportLoadTimeout(
+        Promise.all([listIngestSources(session.token), listIngestRuns(session.token), getIngestCoverage(session.token)])
+      );
       setSources(sourceItems);
       setRuns(runItems);
       setCoverage(coverageResponse);
 
-      const preferredRunId = selectedRunId ?? runItems[0]?.id ?? null;
+      const preferredRunId = preferredRunIdOverride ?? selectedRunId ?? runItems[0]?.id ?? null;
       if (preferredRunId) {
-        const detail = await getIngestRunById(session.token, preferredRunId);
+        const detail = await withImportLoadTimeout(getIngestRunById(session.token, preferredRunId));
         setSelectedRunId(preferredRunId);
         setSelectedRun(detail.run);
         setStageItems(detail.stageItems);
@@ -66,19 +123,27 @@ export const OpsImportsPage = (): ReactElement => {
     void load();
   }, [session]);
 
-  const runAction = async (operation: () => Promise<void>, successMessage: string): Promise<void> => {
+  const runAction = async (
+    operation: () => Promise<void>,
+    successMessage: string,
+    refreshRunId: number | null = selectedRunId
+  ): Promise<void> => {
     setSubmitting(true);
     setError(null);
     setMessage(null);
     try {
       await operation();
       setMessage(successMessage);
-      await load();
+      await load(refreshRunId);
     } catch (err) {
       setError((err as Error).message || "Unable to complete import action.");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const openRun = async (runId: number): Promise<void> => {
+    await runAction(async () => undefined, `Loaded run #${runId}.`, runId);
   };
 
   if (!session) {
@@ -95,14 +160,31 @@ export const OpsImportsPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Official imports</p>
-        <h1>Finland-first ingest review</h1>
-        <div className="card-link-row">
-          <Link to="/ops">Open politician proposal queue</Link>
-          <Link to="/ops/admin">Open party and promise admin</Link>
-          <Link to="/ops/records">Open editorial record ops</Link>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Import lens</p>
+          <h1>Finland-first ingest review</h1>
+          <p className="lede">Stage official-source records, inspect provenance, then apply, reject, or mark records as needing stronger confirmation.</p>
+          <div className="card-link-row">
+            <Link to="/ops">Proposal queue</Link>
+            <Link to="/ops/admin">Party and promise admin</Link>
+            <Link to="/ops/records">Editorial records</Link>
+          </div>
         </div>
+        <aside className="record-facts" aria-label="Import status">
+          <div>
+            <span>Sources</span>
+            <strong>{sources.length}</strong>
+          </div>
+          <div>
+            <span>Runs</span>
+            <strong>{runs.length}</strong>
+          </div>
+          <div>
+            <span>Pending</span>
+            <strong>{coverage ? Object.values(coverage.pending).reduce((total, count) => total + count, 0) : 0}</strong>
+          </div>
+        </aside>
       </section>
 
       {message ? <p className="meta-line">{message}</p> : null}
@@ -170,12 +252,7 @@ export const OpsImportsPage = (): ReactElement => {
                     {run.status} · fetched {run.fetchedCount} · staged {run.stagedCount} · applied {run.appliedCount}
                   </p>
                   <p className="meta-line">Created {formatDateTime(run.createdAt)}</p>
-                  <button className="button button-secondary" type="button" onClick={() => void runAction(async () => {
-                    const detail = await getIngestRunById(session.token, run.id);
-                    setSelectedRunId(run.id);
-                    setSelectedRun(detail.run);
-                    setStageItems(detail.stageItems);
-                  }, `Loaded run #${run.id}.`)}>
+                  <button className="button button-secondary" type="button" onClick={() => void openRun(run.id)}>
                     Open run
                   </button>
                 </li>
@@ -203,9 +280,10 @@ export const OpsImportsPage = (): ReactElement => {
                 <li key={item.id} className="timeline-item">
                   <p>{item.stageType}</p>
                   <p className="meta-line">{item.status} · {item.dedupeKey}</p>
-                  <pre className="meta-line" style={{ whiteSpace: "pre-wrap" }}>
+                  <pre className="meta-line pre-wrap">
                     {JSON.stringify(item.normalized, null, 2)}
                   </pre>
+                  {renderResearchMetadata(item.normalized)}
                   <div className="card-link-row">
                     {item.status === "pending" ? (
                       <>
@@ -232,6 +310,18 @@ export const OpsImportsPage = (): ReactElement => {
                           }
                         >
                           Reject
+                        </button>
+                        <button
+                          className="button button-secondary"
+                          type="button"
+                          disabled={submitting}
+                          onClick={() =>
+                            void runAction(async () => {
+                              await markIngestStageItemNeedsSource(session.token, item.id);
+                            }, `Marked stage item #${item.id} as needing stronger source confirmation.`)
+                          }
+                        >
+                          Needs source
                         </button>
                       </>
                     ) : null}

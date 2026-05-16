@@ -85,12 +85,26 @@ export const SubmitPromiseClaimPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Promise source claim</p>
-        <h1>Submit a source-backed promise claim</h1>
-        <p className="lede">
-          Contributors can propose a source-backed promise record here before moderation merges it into an existing canonical promise or canonizes a new one.
-        </p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Contributor lens</p>
+          <h1>Submit a promise source.</h1>
+          <p className="lede">Send the claim, source URL, and date into moderation. Duplicate hints help you avoid adding the same record twice.</p>
+        </div>
+        <aside className="record-facts" aria-label="Submission checklist">
+          <div>
+            <span>Required</span>
+            <strong>Politician</strong>
+          </div>
+          <div>
+            <span>Required</span>
+            <strong>Source URL</strong>
+          </div>
+          <div>
+            <span>Before submit</span>
+            <strong>Check duplicates</strong>
+          </div>
+        </aside>
       </section>
 
       {submittedClaimId ? (
@@ -132,7 +146,7 @@ export const SubmitPromiseClaimPage = (): ReactElement => {
 
             <label className="field-group" htmlFor="claim-text">
               <span>Claim text</span>
-              <textarea id="claim-text" className="text-input" value={claimText} onChange={(event) => setClaimText(event.target.value)} rows={5} style={{ minHeight: "160px", padding: "12px" }} required />
+              <textarea id="claim-text" className="text-input text-area-large" value={claimText} onChange={(event) => setClaimText(event.target.value)} rows={5} required />
             </label>
 
             <label className="field-group" htmlFor="claim-note">

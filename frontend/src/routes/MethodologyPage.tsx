@@ -91,21 +91,16 @@ export const MethodologyPage = (): ReactElement => {
         description="Read how PNYX defines fulfillment, vote alignment, party context, evidence standards, and unknown-state handling."
         path="/methodology"
       />
-      <section className="hero-panel stack-md">
-        <p className="eyebrow">Methodology</p>
-        <h1>How PNYX reads promises, evidence, party context, and uncertainty</h1>
-        <p className="lede">
-          This page explains how public promise records are interpreted, when a status stays Unknown, and how party context is kept separate from an individual politician's record.
-        </p>
+      <header className="page-heading">
+        <h1>Methodology</h1>
+      </header>
 
-        <div className="cards-grid cards-grid-3 methodology-highlight-grid" aria-label="Quick methodology rules">
-          {QUICK_RULES.map((rule, index) => (
-            <article key={rule} className="card methodology-highlight-card">
-              <p className="mono-inline">Rule {index + 1}</p>
-              <p>{rule}</p>
-            </article>
+      <section className="methodology-rules" aria-label="Core methodology rules">
+        <ul>
+          {QUICK_RULES.map((rule) => (
+            <li key={rule}>{rule}</li>
           ))}
-        </div>
+        </ul>
       </section>
 
       <div className="methodology-layout">
@@ -126,7 +121,6 @@ export const MethodologyPage = (): ReactElement => {
 
             return (
               <section key={sectionId} id={sectionId} className="card stack-sm methodology-section" aria-labelledby={`${sectionId}-title`}>
-                <p className="mono-inline">Section</p>
                 <h2 id={`${sectionId}-title`}>{section.title}</h2>
                 <p>{section.intro}</p>
                 <ul className="placeholder-list">

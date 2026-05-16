@@ -57,12 +57,26 @@ export const SubmitPoliticianProposalPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Politician proposal</p>
-        <h1>Submit a missing politician profile</h1>
-        <p className="lede">
-          This route writes to the existing backend proposal queue. If the server blocks a duplicate, captcha, or rate-limit condition, that response is shown directly.
-        </p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Contributor lens</p>
+          <h1>Submit a missing politician profile.</h1>
+          <p className="lede">Add a public figure candidate with enough source context for moderators to approve, reject, or merge it.</p>
+        </div>
+        <aside className="record-facts" aria-label="Proposal checklist">
+          <div>
+            <span>Required</span>
+            <strong>Name</strong>
+          </div>
+          <div>
+            <span>Helpful</span>
+            <strong>Office</strong>
+          </div>
+          <div>
+            <span>Helpful</span>
+            <strong>Source note</strong>
+          </div>
+        </aside>
       </section>
 
       {createdProposal ? (

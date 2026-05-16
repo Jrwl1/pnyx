@@ -198,14 +198,37 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Claim moderation</p>
-        <h1>Promise claim queue</h1>
-        <div className="card-link-row">
-          <Link to="/ops">Open politician proposal queue</Link>
-          <Link to="/ops/records">Open editorial record ops</Link>
-          <Link to="/contribute/promises/new">Open contributor claim form</Link>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Claim moderation lens</p>
+          <h1>Promise claim queue</h1>
+          <p className="lede">
+            Merge, canonize, or reject contributor promise claims after checking duplicate context, equivalence signals, and source evidence.
+          </p>
+          <div className="card-link-row">
+            <Link to="/ops">Proposal queue</Link>
+            <Link to="/ops/records">Editorial records</Link>
+            <Link to="/contribute/promises/new">Contributor claim form</Link>
+          </div>
         </div>
+        <aside className="record-facts" aria-label="Claim moderation context">
+          <div>
+            <span>Pending backlog</span>
+            <strong>{metrics?.pending.total ?? 0}</strong>
+          </div>
+          <div>
+            <span>High risk</span>
+            <strong>{metrics?.priority.highRisk ?? 0}</strong>
+          </div>
+          <div>
+            <span>Shared blocks</span>
+            <strong>{abuseMetrics?.rateLimit?.login?.blocked ?? 0}</strong>
+          </div>
+          <div>
+            <span>Role</span>
+            <strong>{session.role}</strong>
+          </div>
+        </aside>
       </section>
 
       {metrics ? (
@@ -347,7 +370,7 @@ export const PromiseClaimsOpsPage = (): ReactElement => {
               ) : null}
               <label className="field-group" htmlFor="claim-review-reason">
                 <span>Reason note</span>
-                <textarea id="claim-review-reason" className="text-input" value={reason} onChange={(event) => setReason(event.target.value)} rows={4} style={{ minHeight: "132px", padding: "12px" }} />
+                <textarea id="claim-review-reason" className="text-input" value={reason} onChange={(event) => setReason(event.target.value)} rows={4} />
               </label>
               <label className="field-group" htmlFor="claim-review-reason-code">
                 <span>Reason code</span>

@@ -238,12 +238,14 @@ export const PoliticiansPage = (): ReactElement => {
         description="Browse documented Finnish politicians, then filter by party, region, office, issue, and public promise context."
         path="/politicians"
       />
-      <section className="stack-sm">
-        <h1>Finnish politician directory</h1>
-        <p className="lede">
-          Browse documented politicians, filter by constituency or region, and follow promises, evidence, and visible gaps in the public record.
-        </p>
-      </section>
+      <header className="page-heading">
+        <h1>Politicians</h1>
+        <nav className="page-heading-links" aria-label="Related public records">
+          <Link to="/promises">Promises</Link>
+          <Link to="/parties">Parties</Link>
+          <Link to="/methodology">Methodology</Link>
+        </nav>
+      </header>
 
       <section className="directory-controls stack-sm" aria-label="Directory filters">
         <div className="controls-grid">
@@ -348,7 +350,7 @@ export const PoliticiansPage = (): ReactElement => {
       </section>
 
       <section className="stack-sm" aria-label="Politician listing">
-        <p className="meta-line">Showing {filteredRows.length} politicians</p>
+        <p className="meta-line">{filteredRows.length} matching people</p>
 
         <div className="table-wrapper desktop-only">
           <table className="data-table">
@@ -403,9 +405,9 @@ export const PoliticiansPage = (): ReactElement => {
               onClick={() => openPoliticianProfile(row.politician.id)}
               onKeyDown={(event) => onRowKeyDown(event, row.politician.id)}
             >
-              <h3>
+              <h2>
                 <Link to={`/politicians/${row.politician.id}`}>{row.politician.name}</Link>
-              </h3>
+              </h2>
               <p className="meta-line">{formatIdentityLine(row.politician.office, getTerritoryLabel(row.politician))}</p>
               <p>Party affiliation: {getPartyAffiliationLabel(row.politician)}</p>
               <p>

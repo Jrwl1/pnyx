@@ -1,6 +1,7 @@
 // WHAT IT DO? Fetches and normalizes the first supported official Finland-first source set into raw and staged ingest records.
 
-import { addRawRecord, addStageItem, createIngestRun, markIngestRunStatus } from "../db/ingest.js";
+import { addRawRecord, addStageItem, createIngestRun, markIngestRunStatus, refreshIngestRunCounts } from "../db/ingest.js";
+import { runResearchWatchPulse } from "./research/pulse.js";
 import { getSupportedIngestSource, listSupportedIngestSources, type SupportedIngestSourceKey } from "./sources.js";
 
 type FetchLike = typeof fetch;
@@ -8,6 +9,16 @@ type FetchLike = typeof fetch;
 type AdapterResult = {
   fetchedCount: number;
   stagedCount: number;
+};
+
+const statusForAdapterResult = ({ fetchedCount, stagedCount }: AdapterResult): "pending" | "fetched" | "staged" => {
+  if (stagedCount > 0) {
+    return "staged";
+  }
+  if (fetchedCount > 0) {
+    return "fetched";
+  }
+  return "pending";
 };
 
 const EDSKUNTA_API_BASE = "https://avoindata.eduskunta.fi/api/v1/tables";
@@ -223,14 +234,24 @@ export const runOfficialSourceImport = async (
     const result =
       config.sourceFamily === "eduskunta_votes"
         ? await stageEduskuntaVote(config.sourceKey, runId, config.voteId, fetchImpl)
-        : await stagePartyStancePage(config.sourceKey, runId, config, fetchImpl);
+        : config.sourceFamily === "research_watch_pulse"
+          ? await runResearchWatchPulse({
+              runId,
+              sourceKey: config.sourceKey,
+              watchlistPath: config.path,
+              ollamaEndpoint: config.ollamaUrl,
+              ollamaModel: config.ollamaModel,
+              fetchImpl
+            })
+          : await stagePartyStancePage(config.sourceKey, runId, config, fetchImpl);
     markIngestRunStatus(runId, {
-      status: "staged",
+      status: statusForAdapterResult(result),
       fetchedCount: result.fetchedCount,
       stagedCount: result.stagedCount
     });
     return { runId };
   } catch (err) {
+    refreshIngestRunCounts(runId);
     markIngestRunStatus(runId, {
       status: "failed",
       errorMessage: (err as Error).message || "ingest failed"
@@ -246,6 +267,8 @@ export const listOfficialSourceSummaries = (): Array<{ sourceKey: string; source
     label:
       source.sourceFamily === "eduskunta_votes"
         ? `Eduskunta vote ${source.voteId}`
+        : source.sourceFamily === "research_watch_pulse"
+          ? "Research watch pulse FI"
         : `${source.partyId.toUpperCase()} party stance page`
   }));
 };

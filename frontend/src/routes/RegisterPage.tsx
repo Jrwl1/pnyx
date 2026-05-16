@@ -55,12 +55,26 @@ export const RegisterPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Register</p>
-        <h1>Create a contributor account</h1>
-        <p className="lede">
-          Public registration creates a user identity tied to your email address. Sign-in now uses a one-time email code instead of asking for a shared server secret.
-        </p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Contributor account</p>
+          <h1>Create an account for source submissions.</h1>
+          <p className="lede">Use one email identity for promise claims, sourced statements, notifications, and moderation updates.</p>
+        </div>
+        <aside className="record-facts" aria-label="Registration path">
+          <div>
+            <span>Step 1</span>
+            <strong>Email</strong>
+          </div>
+          <div>
+            <span>Step 2</span>
+            <strong>Sign-in code</strong>
+          </div>
+          <div>
+            <span>Role</span>
+            <strong>User</strong>
+          </div>
+        </aside>
       </section>
 
       {createdAccount ? (
@@ -111,7 +125,7 @@ export const RegisterPage = (): ReactElement => {
           </div>
 
           <p className="data-note">
-            If registration is rate limited or CAPTCHA enforcement is active, the backend response is shown directly instead of being hidden behind generic copy.
+            If registration is rate limited or CAPTCHA enforcement is active, the exact reason is shown here so the next step is clear.
           </p>
 
           {error ? (

@@ -73,12 +73,26 @@ export const SubmitStatementPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Statement submission</p>
-        <h1>Add a sourced statement to an existing politician</h1>
-        <p className="lede">
-          This form writes to the current backend statement flow. Required-field, duplicate, and not-found responses are shown directly so the public contribution rules stay visible.
-        </p>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Contributor lens</p>
+          <h1>Add a sourced statement.</h1>
+          <p className="lede">Attach a quoted statement to an existing politician. The quote remains separate from reviewed canonical promises.</p>
+        </div>
+        <aside className="record-facts" aria-label="Statement checklist">
+          <div>
+            <span>Required</span>
+            <strong>Politician</strong>
+          </div>
+          <div>
+            <span>Required</span>
+            <strong>Source URL</strong>
+          </div>
+          <div>
+            <span>Required</span>
+            <strong>Quote</strong>
+          </div>
+        </aside>
       </section>
 
       {createdStatement ? (
@@ -156,12 +170,11 @@ export const SubmitStatementPage = (): ReactElement => {
                 <span>Quoted statement</span>
                 <textarea
                   id="statement-body"
-                  className="text-input"
+                  className="text-input text-area-xl"
                   value={body}
                   onChange={(event) => setBody(event.target.value)}
                   placeholder="Paste the promise or statement text exactly as it appears in the source."
                   rows={6}
-                  style={{ minHeight: "168px", padding: "12px" }}
                   required
                 />
               </label>

@@ -63,83 +63,41 @@ export const PartiesPage = (): ReactElement => {
         description="Browse Finnish political parties on PNYX and inspect stance coverage, memberships, and visible data gaps."
         path="/parties"
       />
-      <section className="hero-panel grid-12">
-        <div className="col-span-8 stack-md">
-          <p className="eyebrow">Finnish party directory</p>
-          <h1>Browse Finnish political parties on PNYX.</h1>
-          <p className="lede">
-            Open each party page to see the public context available today, the politician links already connected, and the gaps that are still visible.
-          </p>
-        </div>
-
-        <aside className="col-span-4 stack-sm info-panel" aria-label="Directory notes">
-          <h2>What to expect</h2>
-          <ul>
-            <li>Unknown counts mean the supporting public data has not been connected yet.</li>
-            <li>Party pages keep party records separate from individual politician records.</li>
-            <li>The directory will expand as more party coverage is added.</li>
-          </ul>
-        </aside>
-      </section>
+      <header className="page-heading">
+        <h1>Parties</h1>
+      </header>
 
       <section className="stack-sm" aria-label="Party directory">
         <div className="section-header">
-          <h2>Parties on PNYX</h2>
-          <p className="data-note">Each card opens a party page with current context, linked records, and clearly marked unknowns.</p>
+          <h2>Directory</h2>
         </div>
 
-        <div className="cards-grid route-shell-grid">
+        <div className="record-list">
           {parties.length === 0 ? (
-            <article className="card stack-sm">
+            <article className="record-row">
               <h3>No canonical parties yet</h3>
               <p>Party cards will appear here as canonical party identities and memberships are populated.</p>
             </article>
           ) : (
           parties.map((entry) => (
-            <article key={entry.id} className="card stack-sm card-interactive">
-              <div className="stack-xs">
-                <span className="party-badge">{entry.shortName}</span>
+            <article key={entry.id} className="record-row">
+              <div className="record-row-main">
+                <p className="mono-inline">{entry.shortName}</p>
                 <h3>{entry.name}</h3>
                 <p>
                   {entry.description ??
-                    "Canonical party identity is available here now. Source-backed stance and trust records are shown directly when they exist."}
+                    "Canonical party identity is available; stance and member coverage appear when source-backed records exist."}
                 </p>
               </div>
 
-              <div className="stack-xs" aria-label={`${entry.name} summary`}>
-                <p className="metric-pair">
-                  <span>Official stances tracked</span>
-                  <strong>{entry.officialStanceCount ?? 0}</strong>
-                </p>
-                <p className="metric-pair">
-                  <span>Members on PNYX</span>
-                  <strong>{entry.currentMemberCount}</strong>
-                </p>
-                <p className="metric-pair">
-                  <span>Promises assessed</span>
-                  <strong>{entry.trustSummary?.promiseCount ?? 0}</strong>
-                </p>
-                <p className="metric-pair">
-                  <span>Fulfillment counts</span>
-                  <strong>{formatFulfillmentCounts(entry)}</strong>
-                </p>
-                <p className="metric-pair">
-                  <span>Party-line counts</span>
-                  <strong>{formatPartyLineCounts(entry)}</strong>
-                </p>
-                <p className="meta-line">
-                  Known party-line record:{" "}
-                  {formatPercent(
-                    entry.trustSummary?.partyLinePercentages
-                      ? 100 - entry.trustSummary.partyLinePercentages.unknown
-                      : null
-                  )}
-                </p>
-              </div>
-
-              <div className="card-link-row">
+              <div className="record-row-side" aria-label={`${entry.name} summary`}>
+                <span>{entry.officialStanceCount ?? 0} positions</span>
+                <span>{entry.currentMemberCount} members</span>
+                <span>{entry.trustSummary?.promiseCount ?? 0} promises</span>
+                <span>{formatFulfillmentCounts(entry)}</span>
+                <span>{formatPartyLineCounts(entry)}</span>
+                <span>Known party line {formatPercent(entry.trustSummary?.partyLinePercentages ? 100 - entry.trustSummary.partyLinePercentages.unknown : null)}</span>
                 <Link to={`/parties/${entry.id}`}>View party profile</Link>
-                <Link to="/methodology">Read methodology</Link>
               </div>
             </article>
           )))}

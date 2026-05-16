@@ -1,9 +1,11 @@
 /* Politician profile with scorecards, required tabs, and promise-level accountability fields. */
 
-import { useEffect, useMemo, useState, type ReactElement } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent, type ReactElement } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { DiscussionPanel } from "../components/DiscussionPanel";
 import { ErrorState, LoadingState } from "../components/PageState";
 import { PageMeta } from "../components/PageMeta";
+import { PageReadinessPanel } from "../components/PageReadinessPanel";
 import { StatusChip } from "../components/StatusChip";
 import { useAuth } from "../context/AuthContext";
 import { usePublicData } from "../context/PublicDataContext";
@@ -15,6 +17,11 @@ import type { PartyLineStatus, PoliticianTrustSummary as PoliticianTrustSummaryT
 type ProfileTab = "promises" | "votes" | "evidence";
 
 const PROFILE_TABS: ProfileTab[] = ["promises", "votes", "evidence"];
+const PROFILE_TAB_LABELS: Record<ProfileTab, string> = {
+  promises: "Promises",
+  votes: "Voting record vs promises",
+  evidence: "Evidence timeline"
+};
 
 const REVIEW_STATUS_LABELS: Record<string, string> = {
   pending: "Pending review",
@@ -35,6 +42,10 @@ const buildSignInRedirectLink = (target: string): string => {
 const formatPercent = (value: number | null | undefined): string => {
   return value == null ? "Unknown" : `${value}%`;
 };
+
+const getTabPanelId = (tab: ProfileTab): string => `profile-panel-${tab}`;
+
+const getTabId = (tab: ProfileTab): string => `profile-tab-${tab}`;
 
 const renderPartyLineBadge = (status: PartyLineStatus): ReactElement => {
   if (status === "aligned") {
@@ -108,7 +119,6 @@ export const PoliticianProfilePage = (): ReactElement => {
 
   const totalPromises = trustSummary?.fulfillmentCounts.total ?? 0;
   const unknownCount = trustSummary?.fulfillmentCounts.unknown ?? 0;
-  const tabPanelId = `profile-panel-${activeTab}`;
   const statementContributionTarget = session
     ? `/contribute/statements/new?politicianId=${politicianId}`
     : buildSignInRedirectLink(`/contribute/statements/new?politicianId=${politicianId}`);
@@ -117,6 +127,34 @@ export const PoliticianProfilePage = (): ReactElement => {
     const next = new URLSearchParams(searchParams);
     next.set("tab", tab);
     setSearchParams(next);
+  };
+
+  const focusTab = (tab: ProfileTab): void => {
+    onTabChange(tab);
+    window.requestAnimationFrame(() => {
+      document.getElementById(getTabId(tab))?.focus();
+    });
+  };
+
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, tab: ProfileTab): void => {
+    const currentIndex = PROFILE_TABS.indexOf(tab);
+    if (currentIndex === -1) {
+      return;
+    }
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      focusTab(PROFILE_TABS[(currentIndex + 1) % PROFILE_TABS.length]);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      focusTab(PROFILE_TABS[(currentIndex - 1 + PROFILE_TABS.length) % PROFILE_TABS.length]);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      focusTab(PROFILE_TABS[0]);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      focusTab(PROFILE_TABS[PROFILE_TABS.length - 1]);
+    }
   };
 
   if (!Number.isFinite(politicianId)) {
@@ -184,49 +222,74 @@ export const PoliticianProfilePage = (): ReactElement => {
         description={`Browse promises, vote alignment, and party context for ${politician.name} on PNYX.`}
         path={`/politicians/${politicianId}`}
       />
-      <section className="hero-panel stack-sm">
-        <nav className="breadcrumbs" aria-label="Breadcrumb">
-          <Link className="breadcrumb-link" to="/">
-            Home
-          </Link>
-          <span className="breadcrumb-separator" aria-hidden="true">
-            /
-          </span>
-          <Link className="breadcrumb-link" to="/politicians">
-            Politicians
-          </Link>
-          <span className="breadcrumb-separator" aria-hidden="true">
-            /
-          </span>
-          <span className="breadcrumb-current" aria-current="page">
-            {politician.name}
-          </span>
-        </nav>
-        <p className="eyebrow">Politician profile</p>
-        <h1>{politician.name}</h1>
-        <p className="lede">{formatIdentityLine(politician.office, getTerritoryLabel(politician))}</p>
-        <p className="meta-line">
-          Party affiliation:{" "}
-          {linkedPartyShell ? (
-            <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
-              {getPartyAffiliationLabel(politician)}
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <Link className="breadcrumb-link" to="/">
+              Home
             </Link>
-          ) : (
-            getPartyAffiliationLabel(politician)
-          )}
-        </p>
-        <p className="meta-line mono-inline">External id: {politician.externalId ?? "Data not yet available"}</p>
-        <div className="card-link-row">
-          <Link className="button button-link" to="/politicians">
-            Back to politician directory
-          </Link>
-          <Link className="button button-secondary" to={statementContributionTarget}>
-            {session ? "Submit statement for this politician" : "Sign in to submit a statement"}
-          </Link>
+            <span className="breadcrumb-separator" aria-hidden="true">
+              /
+            </span>
+            <Link className="breadcrumb-link" to="/politicians">
+              Politicians
+            </Link>
+            <span className="breadcrumb-separator" aria-hidden="true">
+              /
+            </span>
+            <span className="breadcrumb-current" aria-current="page">
+              {politician.name}
+            </span>
+          </nav>
+          <p className="eyebrow">Public person record</p>
+          <h1>{politician.name}</h1>
+          <p className="lede">{formatIdentityLine(politician.office, getTerritoryLabel(politician))}</p>
+          <p className="meta-line">
+            Party:{" "}
+            {linkedPartyShell ? (
+              <Link className="party-badge" to={`/parties/${linkedPartyShell.party.id}`}>
+                {getPartyAffiliationLabel(politician)}
+              </Link>
+            ) : (
+              getPartyAffiliationLabel(politician)
+            )}
+          </p>
+          <p className="meta-line mono-inline">Profile source: {politician.externalId ?? "Not connected yet"}</p>
+          <div className="card-link-row">
+            <Link className="button button-link" to="/politicians">
+              Back to directory
+            </Link>
+            <Link className="button button-secondary" to={statementContributionTarget}>
+              {session ? "Submit sourced statement" : "Sign in to submit a source"}
+            </Link>
+          </div>
         </div>
+
+        <aside className="record-facts" aria-label="Profile record summary">
+          <div>
+            <span>Tracked promises</span>
+            <strong>{totalPromises}</strong>
+          </div>
+          <div>
+            <span>Unknown outcomes</span>
+            <strong>{unknownCount}</strong>
+          </div>
+          <div>
+            <span>Vote comparisons</span>
+            <strong>{trustSummary?.voteAlignmentCounts.aligned ?? 0} known</strong>
+          </div>
+          <div>
+            <span>Party line</span>
+            <strong>{formatPercent(trustSummary?.partyLinePercentages ? 100 - trustSummary.partyLinePercentages.unknown : null)}</strong>
+          </div>
+        </aside>
       </section>
 
-      <section className="scorecards-grid" aria-label="Promise and alignment scorecards">
+      {politician.readiness ? (
+        <PageReadinessPanel readiness={politician.readiness} contributionHref={statementContributionTarget} />
+      ) : null}
+
+      <section className="record-summary-grid" aria-label="Promise and alignment summary">
         <article className="card scorecard">
           <h2>Total promises tracked</h2>
           <p className="score-value">{totalPromises}</p>
@@ -298,44 +361,31 @@ export const PoliticianProfilePage = (): ReactElement => {
 
       <section className="card stack-sm" aria-label="Profile tabs">
         <div className="tabs" role="tablist" aria-label="Politician profile tabs">
-          <button
-            id="profile-tab-promises"
-            className={activeTab === "promises" ? "tab active" : "tab"}
-            role="tab"
-            aria-controls={tabPanelId}
-            aria-selected={activeTab === "promises"}
-            onClick={() => onTabChange("promises")}
-            type="button"
-          >
-            Promises
-          </button>
-          <button
-            id="profile-tab-votes"
-            className={activeTab === "votes" ? "tab active" : "tab"}
-            role="tab"
-            aria-controls={tabPanelId}
-            aria-selected={activeTab === "votes"}
-            onClick={() => onTabChange("votes")}
-            type="button"
-          >
-            Voting record vs promises
-          </button>
-          <button
-            id="profile-tab-evidence"
-            className={activeTab === "evidence" ? "tab active" : "tab"}
-            role="tab"
-            aria-controls={tabPanelId}
-            aria-selected={activeTab === "evidence"}
-            onClick={() => onTabChange("evidence")}
-            type="button"
-          >
-            Evidence timeline
-          </button>
+          {PROFILE_TABS.map((tab) => (
+            <button
+              key={tab}
+              id={getTabId(tab)}
+              className={activeTab === tab ? "tab active" : "tab"}
+              role="tab"
+              aria-controls={getTabPanelId(tab)}
+              aria-selected={activeTab === tab}
+              onClick={() => onTabChange(tab)}
+              onKeyDown={(event) => onTabKeyDown(event, tab)}
+              tabIndex={activeTab === tab ? 0 : -1}
+              type="button"
+            >
+              {PROFILE_TAB_LABELS[tab]}
+            </button>
+          ))}
         </div>
 
-        <div key={activeTab} id={tabPanelId} className="tab-panel-motion" role="tabpanel" aria-labelledby={`profile-tab-${activeTab}`}>
-          {activeTab === "promises" ? (
-            <>
+        <div
+          id={getTabPanelId("promises")}
+          className="tab-panel-motion"
+          role="tabpanel"
+          aria-labelledby={getTabId("promises")}
+          hidden={activeTab !== "promises"}
+        >
             <p className="data-note">
               Canonical promises are listed first when they exist. Raw statement submissions stay visible separately so public readers can distinguish the canon from submission history.
             </p>
@@ -413,46 +463,67 @@ export const PoliticianProfilePage = (): ReactElement => {
                 </ul>
               )}
             </article>
-            </>
-          ) : null}
+        </div>
 
-          {activeTab === "votes" ? (
-            <div className="stack-sm">
-              <p className="data-note">Vote alignment now comes from mapped vote events and the politician's recorded vote on those linked events.</p>
-              <div className="cards-grid cards-grid-1">
-                {(trustSummary?.promises ?? []).map((promise) => (
-                  <article key={promise.canonicalPromiseId} className="card stack-xs">
-                    <h3>{promise.promiseText}</h3>
-                    <p className="meta-line">Promised on {formatDate(promise.datePromised)}</p>
-                    <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
-                    <p className="meta-line">Mapped vote events: {promise.voteComparisonCount}</p>
-                    <p className="meta-line">Latest evidence date: {formatDateTime(promise.latestEvidenceDate)}</p>
-                  </article>
-                ))}
-              </div>
+        <div
+          id={getTabPanelId("votes")}
+          className="tab-panel-motion"
+          role="tabpanel"
+          aria-labelledby={getTabId("votes")}
+          hidden={activeTab !== "votes"}
+        >
+          <div className="stack-sm">
+            <p className="data-note">Vote alignment now comes from mapped vote events and the politician's recorded vote on those linked events.</p>
+            <div className="cards-grid cards-grid-1">
+              {(trustSummary?.promises ?? []).map((promise) => (
+                <article key={promise.canonicalPromiseId} className="card stack-xs">
+                  <h3>{promise.promiseText}</h3>
+                  <p className="meta-line">Promised on {formatDate(promise.datePromised)}</p>
+                  <StatusChip status={promise.voteAlignment} prefix="Vote alignment" />
+                  <p className="meta-line">Mapped vote events: {promise.voteComparisonCount}</p>
+                  <p className="meta-line">Latest evidence date: {formatDateTime(promise.latestEvidenceDate)}</p>
+                </article>
+              ))}
             </div>
-          ) : null}
+          </div>
+        </div>
 
-          {activeTab === "evidence" ? (
-            <div className="timeline-list" role="list" aria-label="Evidence timeline">
-              {statements
-                .filter((statement) => statement.politicianId === politician.id)
-                .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
-                .map((statement) => (
-                  <article key={statement.id} className="timeline-item" role="listitem">
+        <div
+          id={getTabPanelId("evidence")}
+          className="tab-panel-motion"
+          role="tabpanel"
+          aria-labelledby={getTabId("evidence")}
+          hidden={activeTab !== "evidence"}
+        >
+          <div className="record-list" role="list" aria-label="Evidence timeline">
+            {statements
+              .filter((statement) => statement.politicianId === politician.id)
+              .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+              .map((statement) => (
+                <article key={statement.id} className="record-row" role="listitem">
+                  <div className="record-row-main">
                     <p className="mono-inline">{formatDateTime(statement.createdAt)}</p>
                     <h3>{statement.body}</h3>
-                    <p>
+                    <p className="meta-line">
                       Source: <a href={statement.sourceUrl}>{statement.sourceUrl}</a>
                     </p>
-                    <p className="meta-line">Evidence review: {formatReviewStatus(statement.verificationStatus)}</p>
-                    <Link to={`/promises/${statement.id}`}>Review full promise record</Link>
-                  </article>
-                ))}
-            </div>
-          ) : null}
+                  </div>
+                  <div className="record-row-side">
+                    <span>{formatReviewStatus(statement.verificationStatus)}</span>
+                    <Link to={`/promises/${statement.id}`}>Open record</Link>
+                  </div>
+                </article>
+              ))}
+          </div>
         </div>
       </section>
+
+      <DiscussionPanel
+        entityKind="politician"
+        entityId={politicianId}
+        currentPath={`/politicians/${politicianId}`}
+        session={session}
+      />
     </div>
   );
 };

@@ -9,12 +9,14 @@ import {
   grantUserRole,
   getPoliticianProposalDuplicateAssist,
   getPoliticianProposalMetrics,
+  listDiscussionReports,
   listPoliticianProposals,
+  moderateDiscussionComment,
   releasePoliticianProposal,
   reviewPoliticianProposal
 } from "../lib/api";
 import { formatDateTime, formatIdentityLine } from "../lib/format";
-import type { ProposalAgeBucket, ProposalDuplicateAssist, ProposalQueueMetrics, ProposalQueueResponse, ProposalStatus } from "../types";
+import type { DiscussionReport, ProposalAgeBucket, ProposalDuplicateAssist, ProposalQueueMetrics, ProposalQueueResponse, ProposalStatus } from "../types";
 
 const rejectCodes = ["insufficient_evidence", "invalid_identity", "not_public_figure", "out_of_scope"] as const;
 const duplicateCodes = ["duplicate_canonical", "duplicate_pending", "already_tracked"] as const;
@@ -81,6 +83,8 @@ export const OpsPage = (): ReactElement => {
   const [grantPending, setGrantPending] = useState<boolean>(false);
   const [grantMessage, setGrantMessage] = useState<string | null>(null);
   const [grantError, setGrantError] = useState<string | null>(null);
+  const [discussionReports, setDiscussionReports] = useState<DiscussionReport[]>([]);
+  const [discussionActionMessage, setDiscussionActionMessage] = useState<string | null>(null);
 
   const loadQueue = async (): Promise<void> => {
     if (!session) {
@@ -110,9 +114,24 @@ export const OpsPage = (): ReactElement => {
     }
   };
 
+  const loadDiscussionReports = async (): Promise<void> => {
+    if (!session) {
+      return;
+    }
+    try {
+      setDiscussionReports(await listDiscussionReports(session.token));
+    } catch {
+      setDiscussionReports([]);
+    }
+  };
+
   useEffect(() => {
     void loadQueue();
   }, [ageBucket, assignee, page, priority, session, sort, status]);
+
+  useEffect(() => {
+    void loadDiscussionReports();
+  }, [session]);
 
   const selectedProposal = useMemo(() => queue?.items.find((item) => item.id === selectedId) ?? null, [queue, selectedId]);
 
@@ -273,6 +292,23 @@ export const OpsPage = (): ReactElement => {
     }
   };
 
+  const onModerateReportedComment = async (
+    commentId: number,
+    action: "hide" | "remove" | "restore"
+  ): Promise<void> => {
+    if (!session) {
+      return;
+    }
+    setDiscussionActionMessage(null);
+    try {
+      await moderateDiscussionComment(session.token, commentId, action, `Moderator ${action} from discussion report queue`);
+      setDiscussionActionMessage(`Applied ${action} to comment #${commentId}.`);
+      await loadDiscussionReports();
+    } catch (err) {
+      setDiscussionActionMessage((err as Error).message || "Unable to moderate discussion comment.");
+    }
+  };
+
   if (!session) {
     return <LoadingState label="Restoring moderator session..." />;
   }
@@ -287,16 +323,32 @@ export const OpsPage = (): ReactElement => {
 
   return (
     <div className="stack-lg">
-      <section className="hero-panel stack-sm">
-        <p className="eyebrow">Moderation</p>
-        <h1>Politician proposal queue</h1>
-        <p className="lede">Filter the queue, claim work, review pending items, and use duplicate assist before recording a moderation decision.</p>
-        <div className="card-link-row">
-          <Link to="/ops/admin">Open party and promise admin</Link>
-          <Link to="/ops/imports">Open official imports</Link>
-          <Link to="/ops/records">Open editorial record ops</Link>
-          <Link to="/ops/claims">Open promise claim queue</Link>
+      <section className="record-hero">
+        <div className="record-hero-main">
+          <p className="eyebrow">Moderator lens</p>
+          <h1>Politician proposal queue</h1>
+          <p className="lede">Claim pending work, inspect duplicate hints, handle discussion reports, and record the moderation decision.</p>
+          <div className="card-link-row">
+            <Link to="/ops/admin">Party and promise admin</Link>
+            <Link to="/ops/imports">Official imports</Link>
+            <Link to="/ops/records">Editorial records</Link>
+            <Link to="/ops/claims">Promise claims</Link>
+          </div>
         </div>
+        <aside className="record-facts" aria-label="Moderation tasks">
+          <div>
+            <span>Backlog</span>
+            <strong>{metrics?.pending.total ?? 0}</strong>
+          </div>
+          <div>
+            <span>Reports</span>
+            <strong>{discussionReports.length}</strong>
+          </div>
+          <div>
+            <span>Role</span>
+            <strong>{session.role}</strong>
+          </div>
+        </aside>
       </section>
 
       {metrics ? (
@@ -369,6 +421,48 @@ export const OpsPage = (): ReactElement => {
           </form>
         </section>
       ) : null}
+
+      <section className="card stack-sm" aria-label="Discussion reports">
+        <div className="section-header">
+          <div className="stack-xs">
+            <h2>Discussion reports</h2>
+            <p className="meta-line">Reports are separate from canonical facts and evidence review.</p>
+          </div>
+          <button className="button button-secondary" type="button" onClick={() => void loadDiscussionReports()}>
+            Refresh
+          </button>
+        </div>
+        {discussionActionMessage ? <p className="meta-line">{discussionActionMessage}</p> : null}
+        {discussionReports.length === 0 ? (
+          <p className="meta-line">No discussion reports are currently queued.</p>
+        ) : (
+          <ul className="timeline-list">
+            {discussionReports.map((report) => (
+              <li key={report.id} className="timeline-item">
+                <p>
+                  {report.targetKind} #{report.targetId}: {report.reason}
+                </p>
+                <p className="meta-line">
+                  {report.status} by {report.reporterId} on {formatDateTime(report.createdAt)}
+                </p>
+                {report.targetKind === "comment" ? (
+                  <div className="card-link-row">
+                    <button className="button button-secondary" type="button" onClick={() => void onModerateReportedComment(report.targetId, "hide")}>
+                      Hide comment
+                    </button>
+                    <button className="button button-secondary" type="button" onClick={() => void onModerateReportedComment(report.targetId, "restore")}>
+                      Restore comment
+                    </button>
+                    <button className="button button-secondary" type="button" onClick={() => void onModerateReportedComment(report.targetId, "remove")}>
+                      Remove comment
+                    </button>
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="directory-controls stack-sm" aria-label="Queue filters">
         <div className="controls-grid">
@@ -549,7 +643,7 @@ export const OpsPage = (): ReactElement => {
                 ) : null}
                 <label className="field-group" htmlFor="ops-reason">
                   <span>Reason note</span>
-                  <textarea id="ops-reason" className="text-input" value={reason} onChange={(event) => setReason(event.target.value)} rows={4} style={{ minHeight: "132px", padding: "12px" }} disabled={!canReview || actionPending} />
+                  <textarea id="ops-reason" className="text-input" value={reason} onChange={(event) => setReason(event.target.value)} rows={4} disabled={!canReview || actionPending} />
                 </label>
                 <button className="button button-primary" type="submit" disabled={!canReview || actionPending}>
                   {actionPending ? "Saving..." : "Apply decision"}

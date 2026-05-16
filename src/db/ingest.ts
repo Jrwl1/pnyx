@@ -23,11 +23,20 @@ export type IngestStageItemRow = {
   id: number;
   runId: number;
   rawRecordId: number;
-  stageType: "party_stance" | "vote_event" | "vote_record";
+  stageType:
+    | "party_stance"
+    | "vote_event"
+    | "vote_record"
+    | "coverage_party_target"
+    | "coverage_politician_target"
+    | "canonical_promise"
+    | "fulfillment_assessment"
+    | "party_alignment"
+    | "politician_statement";
   sourceKey: string;
   dedupeKey: string;
   normalizedJson: string;
-  status: "pending" | "applied" | "rejected" | "failed";
+  status: "pending" | "applied" | "rejected" | "failed" | "needs_source";
   appliedEntityKind: string | null;
   appliedEntityId: string | null;
   decidedBy: string | null;
@@ -71,13 +80,14 @@ export const addRawRecord = (input: {
     .prepare(
       `SELECT id
        FROM ingest_raw_records
-       WHERE source_family = ?
+       WHERE run_id = ?
+         AND source_family = ?
          AND source_key = ?
          AND record_type = ?
          AND source_record_key = ?
          AND payload_hash = ?`
     )
-    .get(input.sourceFamily, input.sourceKey, input.recordType, input.sourceRecordKey, payloadHash) as { id: number } | undefined;
+    .get(input.runId, input.sourceFamily, input.sourceKey, input.recordType, input.sourceRecordKey, payloadHash) as { id: number } | undefined;
 
   if (existing) {
     return existing.id;
@@ -106,15 +116,15 @@ export const addRawRecord = (input: {
 export const addStageItem = (input: {
   runId: number;
   rawRecordId: number;
-  stageType: "party_stance" | "vote_event" | "vote_record";
+  stageType: IngestStageItemRow["stageType"];
   sourceKey: string;
   dedupeKey: string;
   normalized: unknown;
 }): number => {
   const normalizedJson = JSON.stringify(input.normalized);
   const existing = db
-    .prepare("SELECT id FROM ingest_stage_items WHERE source_key = ? AND dedupe_key = ?")
-    .get(input.sourceKey, input.dedupeKey) as { id: number } | undefined;
+    .prepare("SELECT id FROM ingest_stage_items WHERE run_id = ? AND source_key = ? AND dedupe_key = ?")
+    .get(input.runId, input.sourceKey, input.dedupeKey) as { id: number } | undefined;
 
   if (existing) {
     db.prepare("UPDATE ingest_stage_items SET raw_record_id = ?, normalized_json = ?, updated_at = datetime('now') WHERE id = ?").run(
@@ -278,6 +288,23 @@ export const updateIngestStageItem = (
   );
 };
 
+export const markIngestStageItemNeedsSource = (stageItemId: number, actorId: string): void => {
+  const stageItem = getIngestStageItemById(stageItemId);
+  if (!stageItem) {
+    throw new Error("stage item not found");
+  }
+  if (stageItem.status !== "pending") {
+    throw new Error("stage item is not pending");
+  }
+
+  updateIngestStageItem(stageItemId, {
+    status: "needs_source",
+    decidedBy: actorId,
+    decidedAt: new Date().toISOString(),
+    errorMessage: "Needs stronger source confirmation before publication"
+  });
+};
+
 export const getIngestCoverage = (): {
   pending: Record<string, number>;
   applied: Record<string, number>;
@@ -312,21 +339,23 @@ export const refreshIngestRunCounts = (runId: number): void => {
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ?) AS stagedCount,
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'applied') AS appliedCount,
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'pending') AS pendingCount,
+        (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'needs_source') AS needsSourceCount,
         (SELECT COUNT(*) FROM ingest_stage_items WHERE run_id = ? AND status = 'failed') AS failedCount
        `
     )
-    .get(runId, runId, runId, runId, runId) as {
+    .get(runId, runId, runId, runId, runId, runId) as {
     fetchedCount: number;
     stagedCount: number;
     appliedCount: number;
     pendingCount: number;
+    needsSourceCount: number;
     failedCount: number;
   };
 
   const status: IngestRunRow["status"] =
     counts.failedCount > 0
       ? "failed"
-      : counts.pendingCount > 0
+      : counts.pendingCount > 0 || counts.needsSourceCount > 0
         ? "staged"
         : counts.appliedCount > 0
           ? "applied"

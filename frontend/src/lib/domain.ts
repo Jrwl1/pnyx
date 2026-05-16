@@ -17,18 +17,30 @@ import { getPartyRouteShell, PARTY_ROUTE_SHELLS } from "../types";
 import { DATA_NOT_AVAILABLE, formatIdentityLine, normalizeForSearch } from "./format";
 
 export const ISSUE_OPTIONS = [
-  "Economy and jobs",
+  "Public finances",
+  "Employment",
   "Healthcare and care",
   "Climate and energy",
   "Education",
+  "Welfare and social security",
+  "Research and innovation",
+  "Environment",
+  "Mental health",
+  "Work incentives",
   "Security and preparedness"
 ] as const;
 
 const ISSUE_KEYWORDS: Record<(typeof ISSUE_OPTIONS)[number], string[]> = {
-  "Economy and jobs": ["economy", "jobs", "tax", "inflation", "wage", "trade", "budget", "growth", "business"],
+  "Public finances": ["public finances", "fiscal", "debt", "budget", "tax", "taxation", "adjustment", "welfare state"],
+  Employment: ["employment", "jobs", "work", "labour", "labor", "worker", "unemployment"],
   "Healthcare and care": ["health", "hospital", "care", "clinic", "nurse", "doctor", "social care", "wellbeing"],
   "Climate and energy": ["climate", "emission", "energy", "renewable", "environment", "nature", "electricity"],
   Education: ["school", "education", "teacher", "student", "university", "curriculum", "learning", "vocational"],
+  "Welfare and social security": ["welfare", "social security", "basic income", "benefit", "vulnerable"],
+  "Research and innovation": ["research", "innovation", "rdi", "development", "competence"],
+  Environment: ["environment", "nature", "biodiversity", "archipelago", "baltic sea", "eutrophication"],
+  "Mental health": ["mental health", "therapy", "wellbeing", "timely services"],
+  "Work incentives": ["work incentives", "work should pay", "entrepreneurship", "mobility costs"],
   "Security and preparedness": ["security", "defence", "defense", "nato", "border", "police", "emergency", "military", "preparedness"]
 };
 

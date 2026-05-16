@@ -14,11 +14,32 @@ import {
 } from "./db/canonical-promises.js";
 import { db } from "./db/client.js";
 import {
+  getPageReadiness,
+  getPageReadinessMap,
+  type PageReadinessEntityKind,
+  type PageReadinessRow,
+  upsertPageReadiness
+} from "./db/page-readiness.js";
+import {
+  addDiscussionComment,
+  createDiscussionReport,
+  createDiscussionThread,
+  discussionEntityExists,
+  getDiscussionCommentById,
+  getDiscussionThreadById,
+  isDiscussionEntityKind,
+  listDiscussionBundles,
+  listDiscussionReports,
+  moderateDiscussionComment,
+  moderateDiscussionThread
+} from "./db/discussions.js";
+import {
   getIngestCoverage,
   getIngestRunById,
   getIngestStageItemById,
   listIngestRuns,
   listIngestStageItems,
+  markIngestStageItemNeedsSource,
   refreshIngestRunCounts
 } from "./db/ingest.js";
 import {
@@ -266,6 +287,11 @@ const proposalAssistLimiter = createRateLimiter({
 const voteLimiter = createRateLimiter({
   name: "vote",
   max: readPositiveIntEnv("RATE_LIMIT_VOTE_MAX", 120),
+  windowMs: RATE_LIMIT_WINDOW_MS
+});
+const ingestStageReviewLimiter = createRateLimiter({
+  name: "ingest-stage-review",
+  max: readPositiveIntEnv("RATE_LIMIT_INGEST_STAGE_REVIEW_MAX", 80),
   windowMs: RATE_LIMIT_WINDOW_MS
 });
 
@@ -905,10 +931,251 @@ app.post("/ops/stage-items/:id/reject", requireRole("moderator"), (req, res) => 
   }
 });
 
+app.post("/ops/stage-items/:id/needs-source", requireRole("moderator"), ingestStageReviewLimiter, (req, res) => {
+  const stageItemId = Number(req.params.id);
+  if (!Number.isInteger(stageItemId) || stageItemId <= 0) {
+    res.status(400).json({ error: "invalid stage item id" });
+    return;
+  }
+
+  const stageItem = getIngestStageItemById(stageItemId);
+  if (!stageItem) {
+    res.status(404).json({ error: "stage item not found" });
+    return;
+  }
+
+  try {
+    markIngestStageItemNeedsSource(stageItemId, req.auth.userId ?? "moderation");
+    refreshIngestRunCounts(stageItem.runId);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(409).json({ error: (err as Error).message || "unable to mark stage item as needing source" });
+  }
+});
+
 app.get("/abuse/metrics", requireRole("moderator"), (_req, res) => {
   res.json({
     ...buildAbuseMetricsSnapshot(),
     generatedAt: new Date().toISOString()
+  });
+});
+
+const isPageReadinessEntityKind = (value: string): value is PageReadinessEntityKind => {
+  return value === "politician" || value === "party" || value === "canonical_promise";
+};
+
+const isPageReadinessState = (value: string): value is "ready" | "thin_but_honest" | "not_ready" => {
+  return value === "ready" || value === "thin_but_honest" || value === "not_ready";
+};
+
+const pageReadinessEntityExists = (entityKind: PageReadinessEntityKind, entityId: string | number): boolean => {
+  if (entityKind === "politician") {
+    return Boolean(
+      db.prepare("SELECT 1 FROM politicians WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(Number(entityId))
+    );
+  }
+  if (entityKind === "party") {
+    return Boolean(db.prepare("SELECT 1 FROM parties WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(String(entityId)));
+  }
+  return Boolean(
+    db.prepare("SELECT 1 FROM canonical_promises WHERE id = ? AND deleted_at IS NULL LIMIT 1").get(Number(entityId))
+  );
+};
+
+app.put("/ops/page-readiness", requireRole("moderator"), (req, res) => {
+  const { entityKind, entityId, readinessState, freshnessCheckedAt, sourceCount, missingDataKeys, provenanceSummary } =
+    req.body as {
+      entityKind?: string;
+      entityId?: string | number;
+      readinessState?: string;
+      freshnessCheckedAt?: string | null;
+      sourceCount?: number;
+      missingDataKeys?: string[];
+      provenanceSummary?: string;
+    };
+  if (!entityKind || !isPageReadinessEntityKind(entityKind)) {
+    res.status(400).json({ error: "entityKind must be politician, party, or canonical_promise" });
+    return;
+  }
+  if (entityId == null || String(entityId).trim() === "") {
+    res.status(400).json({ error: "entityId is required" });
+    return;
+  }
+  if (!readinessState || !isPageReadinessState(readinessState)) {
+    res.status(400).json({ error: "readinessState must be ready, thin_but_honest, or not_ready" });
+    return;
+  }
+  const normalizedFreshness = freshnessCheckedAt === null ? null : normalizeOptionalDate(freshnessCheckedAt);
+  if (normalizedFreshness === INVALID_DATE_TOKEN) {
+    res.status(400).json({ error: "freshnessCheckedAt must be YYYY-MM-DD when provided" });
+    return;
+  }
+  const normalizedProvenanceSummary = provenanceSummary?.trim() ?? "";
+  if (!normalizedProvenanceSummary) {
+    res.status(400).json({ error: "provenanceSummary is required" });
+    return;
+  }
+  if (!pageReadinessEntityExists(entityKind, entityId)) {
+    res.status(404).json({ error: "readiness entity not found" });
+    return;
+  }
+
+  res.json({
+    readiness: upsertPageReadiness({
+      entityKind,
+      entityId,
+      readinessState,
+      freshnessCheckedAt: normalizedFreshness,
+      sourceCount: Number(sourceCount ?? 0),
+      missingDataKeys: Array.isArray(missingDataKeys) ? missingDataKeys.map((entry) => String(entry)) : [],
+      provenanceSummary: normalizedProvenanceSummary,
+      reviewedBy: req.auth.userId ?? "moderation"
+    })
+  });
+});
+
+app.get("/discussions", (req, res) => {
+  const entityKindRaw = String(req.query.entityKind ?? "");
+  const entityId = String(req.query.entityId ?? "").trim();
+  if (!isDiscussionEntityKind(entityKindRaw) || !entityId) {
+    res.status(400).json({ error: "entityKind and entityId are required" });
+    return;
+  }
+
+  const includeModerated = req.auth.role === "moderator" || req.auth.role === "admin";
+  res.json({
+    items: listDiscussionBundles(entityKindRaw, entityId, includeModerated)
+  });
+});
+
+app.post("/discussions", requireRole("user"), (req, res) => {
+  const { entityKind, entityId, title, body } = req.body as {
+    entityKind?: string;
+    entityId?: string | number;
+    title?: string;
+    body?: string;
+  };
+  const normalizedTitle = title?.trim() ?? "";
+  const normalizedBody = body?.trim() ?? "";
+  if (!entityKind || !isDiscussionEntityKind(entityKind)) {
+    res.status(400).json({ error: "entityKind must be politician or canonical_promise" });
+    return;
+  }
+  if (entityId == null || String(entityId).trim() === "") {
+    res.status(400).json({ error: "entityId is required" });
+    return;
+  }
+  if (!normalizedTitle || !normalizedBody) {
+    res.status(400).json({ error: "title and body are required" });
+    return;
+  }
+  if (!discussionEntityExists(entityKind, entityId)) {
+    res.status(404).json({ error: "discussion entity not found" });
+    return;
+  }
+
+  const bundle = createDiscussionThread({
+    entityKind,
+    entityId,
+    title: normalizedTitle,
+    body: normalizedBody,
+    createdBy: req.auth.userId ?? "user"
+  });
+  res.status(201).json(bundle);
+});
+
+app.post("/discussions/:id/comments", requireRole("user"), (req, res) => {
+  const threadId = Number(req.params.id);
+  const body = (req.body as { body?: string }).body?.trim() ?? "";
+  if (!Number.isInteger(threadId) || threadId <= 0) {
+    res.status(400).json({ error: "invalid discussion thread id" });
+    return;
+  }
+  if (!body) {
+    res.status(400).json({ error: "body is required" });
+    return;
+  }
+
+  try {
+    const comment = addDiscussionComment(threadId, body, req.auth.userId ?? "user");
+    res.status(201).json({ comment });
+  } catch (err) {
+    const message = (err as Error).message;
+    res.status(message.includes("not found") ? 404 : 409).json({ error: message });
+  }
+});
+
+app.post("/discussion-comments/:id/reports", requireRole("user"), (req, res) => {
+  const commentId = Number(req.params.id);
+  const reason = (req.body as { reason?: string }).reason?.trim() ?? "";
+  if (!Number.isInteger(commentId) || commentId <= 0) {
+    res.status(400).json({ error: "invalid discussion comment id" });
+    return;
+  }
+  if (!reason) {
+    res.status(400).json({ error: "reason is required" });
+    return;
+  }
+  if (!getDiscussionCommentById(commentId)) {
+    res.status(404).json({ error: "discussion comment not found" });
+    return;
+  }
+
+  res.status(201).json({
+    report: createDiscussionReport("comment", commentId, req.auth.userId ?? "user", reason)
+  });
+});
+
+app.get("/ops/discussion-reports", requireRole("moderator"), (_req, res) => {
+  res.json({ items: listDiscussionReports() });
+});
+
+app.patch("/ops/discussion-comments/:id/moderation", requireRole("moderator"), (req, res) => {
+  const commentId = Number(req.params.id);
+  const { action, reason } = req.body as { action?: string; reason?: string };
+  if (!Number.isInteger(commentId) || commentId <= 0) {
+    res.status(400).json({ error: "invalid discussion comment id" });
+    return;
+  }
+  if (action !== "hide" && action !== "remove" && action !== "restore") {
+    res.status(400).json({ error: "action must be hide, remove, or restore" });
+    return;
+  }
+  if (!getDiscussionCommentById(commentId)) {
+    res.status(404).json({ error: "discussion comment not found" });
+    return;
+  }
+
+  res.json({
+    comment: moderateDiscussionComment(commentId, action, req.auth.userId ?? "moderation", normalizeOptionalText(reason))
+  });
+});
+
+app.patch("/ops/discussions/:id/moderation", requireRole("moderator"), (req, res) => {
+  const threadId = Number(req.params.id);
+  const { action, reason } = req.body as { action?: string; reason?: string };
+  if (!Number.isInteger(threadId) || threadId <= 0) {
+    res.status(400).json({ error: "invalid discussion thread id" });
+    return;
+  }
+  if (
+    action !== "lock" &&
+    action !== "unlock" &&
+    action !== "hide" &&
+    action !== "remove" &&
+    action !== "restore" &&
+    action !== "escalate"
+  ) {
+    res.status(400).json({ error: "action must be lock, unlock, hide, remove, restore, or escalate" });
+    return;
+  }
+  if (!getDiscussionThreadById(threadId)) {
+    res.status(404).json({ error: "discussion thread not found" });
+    return;
+  }
+
+  res.json({
+    thread: moderateDiscussionThread(threadId, action, req.auth.userId ?? "moderation", normalizeOptionalText(reason))
   });
 });
 
@@ -928,6 +1195,10 @@ app.get("/politicians", (_req, res) => {
       createdAt: string;
     }>;
   const currentParties = new Map(listCurrentPartyContexts().map((entry) => [entry.politicianId, entry]));
+  const readinessByPolitician = getPageReadinessMap(
+    "politician",
+    rows.map((row) => row.id)
+  );
   res.json({
     items: rows.map((row) => {
       const party = currentParties.get(row.id);
@@ -936,6 +1207,7 @@ app.get("/politicians", (_req, res) => {
         partyId: party?.partyId ?? null,
         partyName: party?.partyName ?? null,
         partyShortName: party?.partyShortName ?? null,
+        readiness: serializePublicReadiness(readinessByPolitician.get(String(row.id)), "politician", row.id),
         trustSummary: getPoliticianTrustSummary(row.id, includeNonPublic)
       };
     })
@@ -981,11 +1253,17 @@ app.get("/politicians/:id/trust-summary", (req, res) => {
 
 app.get("/parties", (_req, res) => {
   const includeNonPublic = _req.auth.role === "moderator" || _req.auth.role === "admin";
+  const rows = listParties();
+  const readinessByParty = getPageReadinessMap(
+    "party",
+    rows.map((row) => row.id)
+  );
   res.json({
-    items: listParties().map((row) => {
+    items: rows.map((row) => {
       const trustSummary = getPartyTrustSummary(row.id, includeNonPublic);
       return {
         ...serializePartySummary(row),
+        readiness: serializePublicReadiness(readinessByParty.get(row.id), "party", row.id),
         officialStanceCount: trustSummary.officialStanceCount,
         trustSummary
       };
@@ -1006,6 +1284,7 @@ app.get("/parties/:id", (req, res) => {
   res.json({
     party: {
       ...serializePartySummary(party),
+      readiness: serializePublicReadiness(getPageReadiness("party", partyId), "party", partyId),
       officialStanceCount: trustSummary.officialStanceCount,
       trustSummary
     },
@@ -1687,6 +1966,36 @@ const serializePartySummary = (row: ReturnType<typeof listParties>[number]) => (
   memberCount: Number(row.memberCount ?? 0),
   currentMemberCount: Number(row.currentMemberCount ?? 0)
 });
+
+const serializePublicReadiness = (
+  row: PageReadinessRow | null | undefined,
+  entityKind: PageReadinessEntityKind,
+  entityId: string | number
+) => {
+  if (!row) {
+    return {
+      entityKind,
+      entityId: String(entityId),
+      readinessState: "not_ready",
+      freshnessCheckedAt: null,
+      sourceCount: 0,
+      missingDataKeys: ["readiness_review"],
+      provenanceSummary: "No reviewed page readiness record yet.",
+      reviewedAt: null
+    };
+  }
+
+  return {
+    entityKind: row.entityKind,
+    entityId: row.entityId,
+    readinessState: row.readinessState,
+    freshnessCheckedAt: row.freshnessCheckedAt,
+    sourceCount: row.sourceCount,
+    missingDataKeys: row.missingDataKeys,
+    provenanceSummary: row.provenanceSummary,
+    reviewedAt: row.reviewedAt
+  };
+};
 
 const serializeVoteEventSummary = (row: ReturnType<typeof listVoteEvents>[number]) => ({
   ...row,
@@ -3195,11 +3504,23 @@ app.get("/canonical-promises", (req, res) => {
   }
 
   const includeNonPublic = req.auth.role === "moderator" || req.auth.role === "admin";
+  const promises = listCanonicalPromises({
+    politicianId,
+    includeNonPublic
+  });
+  const readinessByPromise = getPageReadinessMap(
+    "canonical_promise",
+    promises.map((promise) => promise.id)
+  );
   res.json({
-    items: listCanonicalPromises({
-      politicianId,
-      includeNonPublic
-    })
+    items: promises.map((promise) => ({
+      ...promise,
+      readiness: serializePublicReadiness(
+        readinessByPromise.get(String(promise.id)),
+        "canonical_promise",
+        promise.id
+      )
+    }))
   });
 });
 
@@ -3218,7 +3539,14 @@ app.get("/canonical-promises/:id", (req, res) => {
   }
 
   res.json({
-    promise,
+    promise: {
+      ...promise,
+      readiness: serializePublicReadiness(
+        getPageReadiness("canonical_promise", canonicalPromiseId),
+        "canonical_promise",
+        canonicalPromiseId
+      )
+    },
     acceptedSources: listCanonicalPromiseSources(canonicalPromiseId),
     history: listCanonicalHistory(canonicalPromiseId),
     trustContext: getCanonicalPromiseTrustContext(canonicalPromiseId)
